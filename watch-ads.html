@@ -7,7 +7,19 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            padding-bottom: 20px;
+        }
+        .ad-loading {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+    <script src='//libtl.com/sdk.js' data-zone='10166009' data-sdk='show_10166009'></script>
 </head>
 <body class="bg-gray-50">
     <div class="container mx-auto px-4 py-4">
@@ -39,23 +51,43 @@
         <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
             <div class="text-center mb-4">
                 <i class="fas fa-ad text-yellow-500 text-4xl mb-3"></i>
-                <h3 class="font-bold text-lg">রিওয়ার্ডেড এড</h3>
+                <h3 class="font-bold text-lg">রিওয়ার্ডেড এড</h3>
                 <p class="text-gray-600">এই এডটি দেখে পাবেন <span class="font-bold text-green-600">৩০.০০ টাকা</span></p>
             </div>
             
             <!-- এড কন্টেন্ট এরিয়া -->
-            <div class="bg-gray-100 rounded-lg p-8 text-center mb-4">
-                <p class="text-gray-500 mb-4">[এখানে এড কন্টেন্ট দেখানো হবে]</p>
-                <p class="text-sm text-gray-400">আপনি পরে এখানে আপনার এড লিঙ্কস যোগ করবেন</p>
+            <div class="bg-gray-100 rounded-lg p-4 text-center mb-4">
+                <div id="adContent">
+                    <h4 class="font-bold text-lg mb-2">🎬 রিওয়ার্ডেড এড</h4>
+                    <p class="text-gray-600 mb-3">নিচের বাটনে ক্লিক করে এড দেখুন</p>
+                    
+                    <div class="bg-white p-4 rounded-lg border border-gray-300">
+                        <i class="fas fa-video text-blue-500 text-3xl mb-2"></i>
+                        <p class="text-sm text-gray-500 mb-3">এড দেখার জন্য নিচের বাটনে ক্লিক করুন</p>
+                        
+                        <!-- Monetag Ad Container -->
+                        <div id="monetag-ad-container"></div>
+                        
+                        <p class="text-xs text-gray-400 mt-2" id="adStatus">এড লোড হচ্ছে...</p>
+                    </div>
+                </div>
             </div>
             
-            <button onclick="watchAd()" id="watchAdBtn" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-xl font-bold text-lg mb-3">
-                <i class="fas fa-play mr-2"></i>
-                এড দেখুন
-            </button>
+            <!-- দুইটি বাটন -->
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <button onclick="loadMonetagAd()" id="loadAdBtn" class="bg-blue-500 text-white py-3 rounded-lg font-bold">
+                    <i class="fas fa-download mr-2"></i>
+                    এড লোড করুন
+                </button>
+                
+                <button onclick="showMonetagAd()" id="watchAdBtn" class="bg-gray-400 text-white py-3 rounded-lg font-bold" disabled>
+                    <i class="fas fa-play mr-2"></i>
+                    এড দেখুন
+                </button>
+            </div>
             
             <div class="text-center">
-                <p class="text-gray-500 text-sm">এড দেখার পর অটোমেটিক ৩০ টাকা যোগ হবে</p>
+                <p class="text-gray-500 text-sm" id="rewardStatus">প্রথমে "এড লোড করুন" ক্লিক করুন, তারপর "এড দেখুন"</p>
             </div>
         </div>
 
@@ -65,18 +97,59 @@
                 <i class="fas fa-info-circle text-yellow-500 mt-1 mr-2"></i>
                 <div>
                     <h4 class="font-semibold text-yellow-700">গুরুত্বপূর্ণ তথ্য</h4>
+                    <p class="text-yellow-600 text-sm">• প্রথমে "এড লোড করুন" বাটনে ক্লিক করুন</p>
+                    <p class="text-yellow-600 text-sm">• এড লোড হলে "এড দেখুন" বাটন এক্টিভ হবে</p>
+                    <p class="text-yellow-600 text-sm">• এড দেখার পর ৩০ টাকা অটো যোগ হবে</p>
                     <p class="text-yellow-600 text-sm">• প্রতি ঘন্টায় ১০টি এড দেখতে পারবেন</p>
-                    <p class="text-yellow-600 text-sm">• প্রতিটি এডের জন্য ৩০ টাকা পাবেন</p>
-                    <p class="text-yellow-600 text-sm">• এড দেখার পর টাকা অটো যোগ হবে</p>
                 </div>
             </div>
         </div>
+
+        <!-- ব্যাক বাটন -->
+        <a href="tasks.html" class="w-full bg-gray-500 text-white py-3 rounded-xl font-bold text-center block mt-4">
+            <i class="fas fa-arrow-left mr-2"></i>
+            টাস্ক পেজে ফিরে যান
+        </a>
     </div>
+
+    <!-- Monetag Ad Script -->
+    <script>
+        // Monetag configuration
+        let monetagLoaded = false;
+        let adReady = false;
+
+        function loadMonetagScript() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://sdk.monetag.com/?id=10166009';
+                script.onload = () => {
+                    monetagLoaded = true;
+                    resolve();
+                };
+                script.onerror = () => {
+                    reject(new Error('Monetag script failed to load'));
+                };
+                document.head.appendChild(script);
+            });
+        }
+
+        // Load Monetag when page loads
+        window.addEventListener('DOMContentLoaded', function() {
+            loadMonetagScript().then(() => {
+                console.log('Monetag script loaded successfully');
+            }).catch(error => {
+                console.error('Monetag script loading failed:', error);
+                document.getElementById('adStatus').textContent = 'এড লোড করতে সমস্যা - রিফ্রেশ করুন';
+                document.getElementById('adStatus').className = 'text-xs text-red-600';
+            });
+        });
+    </script>
 
     <script src="app.js"></script>
     <script>
         let adsWatched = 0;
         const maxAdsPerHour = 10;
+        let isAdLoading = false;
 
         function initWatchAdsPage() {
             const user = getUserData();
@@ -92,69 +165,160 @@
             document.getElementById('progressBar').style.width = `${progress}%`;
             
             if (adsWatched >= maxAdsPerHour) {
+                document.getElementById('loadAdBtn').disabled = true;
                 document.getElementById('watchAdBtn').disabled = true;
-                document.getElementById('watchAdBtn').classList.remove('bg-gradient-to-r', 'from-green-500', 'to-green-600');
-                document.getElementById('watchAdBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
-                document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-clock mr-2"></i>আজকের লিমিট শেষ';
+                document.getElementById('loadAdBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
+                document.getElementById('loadAdBtn').innerHTML = '<i class="fas fa-clock mr-2"></i>লিমিট শেষ';
             }
         }
 
-        function watchAd() {
+        function loadMonetagAd() {
             if (adsWatched >= maxAdsPerHour) {
                 alert('আজকের এড লিমিট শেষ! ১ ঘন্টা পর আবার চেষ্টা করুন।');
                 return;
             }
 
-            // সিমুলেট এড ওয়াচিং
-            document.getElementById('watchAdBtn').disabled = true;
-            document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>এড লোড হচ্ছে...';
-            
+            if (!monetagLoaded) {
+                alert('এড সিস্টেম এখনও লোড হয়নি! কিছুক্ষণ পর আবার চেষ্টা করুন।');
+                return;
+            }
+
+            isAdLoading = true;
+            document.getElementById('loadAdBtn').disabled = true;
+            document.getElementById('loadAdBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>লোড হচ্ছে...';
+            document.getElementById('adStatus').textContent = 'এড লোড হচ্ছে...';
+            document.getElementById('adStatus').className = 'text-xs text-yellow-600';
+
+            // Wait for Monetag to be ready
+            const checkAdReady = setInterval(() => {
+                if (typeof show_10166009 !== 'undefined') {
+                    clearInterval(checkAdReady);
+                    adReady = true;
+                    
+                    document.getElementById('loadAdBtn').innerHTML = '<i class="fas fa-check mr-2"></i>লোড সম্পন্ন';
+                    document.getElementById('loadAdBtn').classList.remove('bg-blue-500');
+                    document.getElementById('loadAdBtn').classList.add('bg-green-500');
+                    
+                    document.getElementById('watchAdBtn').disabled = false;
+                    document.getElementById('watchAdBtn').classList.remove('bg-gray-400');
+                    document.getElementById('watchAdBtn').classList.add('bg-green-500');
+                    
+                    document.getElementById('adStatus').textContent = 'এড প্রস্তুত - "এড দেখুন" ক্লিক করুন';
+                    document.getElementById('adStatus').className = 'text-xs text-green-600';
+                    document.getElementById('rewardStatus').textContent = 'এখন "এড দেখুন" বাটনে ক্লিক করুন';
+                    
+                    isAdLoading = false;
+                }
+            }, 500);
+
+            // Timeout after 10 seconds
             setTimeout(() => {
-                adsWatched++;
-                updateUserData({ today_ads: adsWatched });
+                clearInterval(checkAdReady);
+                if (!adReady) {
+                    document.getElementById('loadAdBtn').disabled = false;
+                    document.getElementById('loadAdBtn').innerHTML = '<i class="fas fa-download mr-2"></i>এড লোড করুন';
+                    document.getElementById('loadAdBtn').classList.remove('bg-green-500');
+                    document.getElementById('loadAdBtn').classList.add('bg-blue-500');
+                    document.getElementById('adStatus').textContent = 'এড লোড হতে সমস্যা - আবার চেষ্টা করুন';
+                    document.getElementById('adStatus').className = 'text-xs text-red-600';
+                    isAdLoading = false;
+                }
+            }, 10000);
+        }
+
+        function showMonetagAd() {
+            if (!adReady) {
+                alert('প্রথমে "এড লোড করুন" বাটনে ক্লিক করুন!');
+                return;
+            }
+
+            if (adsWatched >= maxAdsPerHour) {
+                alert('আজকের এড লিমিট শেষ!');
+                return;
+            }
+
+            console.log('Showing Monetag ad...');
+
+            // Show Monetag rewarded interstitial ad
+            show_10166009().then(() => {
+                console.log('Ad watched successfully - giving reward');
+                // User watched the ad - give reward
+                rewardUserForWatchingAd();
                 
-                // ব্যালেন্স আপডেট
-                const user = getUserData();
-                const newBalance = user.balance + 30;
-                const newTotalIncome = user.total_income + 30;
-                const newTotalAds = user.total_ads + 1;
+            }).catch((error) => {
+                console.error('Ad failed to show:', error);
+                alert('এড দেখাতে সমস্যা হয়েছে! আবার চেষ্টা করুন।');
                 
-                updateUserData({ 
-                    balance: newBalance,
-                    total_income: newTotalIncome,
-                    total_ads: newTotalAds
+                // Reset buttons
+                resetAdButtons();
+            });
+        }
+
+        function rewardUserForWatchingAd() {
+            // Add reward
+            adsWatched++;
+            
+            // Update user data
+            const user = getUserData();
+            const newBalance = user.balance + 30;
+            const newTotalIncome = user.total_income + 30;
+            const newTotalAds = user.total_ads + 1;
+            
+            updateUserData({ 
+                today_ads: adsWatched,
+                balance: newBalance,
+                total_income: newTotalIncome,
+                total_ads: newTotalAds
+            });
+
+            // Update UI
+            updateCounter();
+            
+            document.getElementById('adStatus').textContent = 'এড দেখা সম্পন্ন! ৩০ টাকা যোগ হয়েছে';
+            document.getElementById('adStatus').className = 'text-xs text-green-600';
+            document.getElementById('rewardStatus').textContent = '৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে!';
+            document.getElementById('rewardStatus').className = 'text-sm text-green-600 font-semibold';
+
+            // Show success message
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.showPopup({
+                    title: 'সফল!',
+                    message: 'এড দেখা সম্পন্ন! ৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।',
+                    buttons: [{ type: 'close' }]
                 });
-                
-                document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ৩০ টাকা যোগ হয়েছে';
-                document.getElementById('watchAdBtn').classList.remove('bg-gradient-to-r', 'from-green-500', 'to-green-600');
-                document.getElementById('watchAdBtn').classList.add('bg-green-500');
-                
-                setTimeout(() => {
-                    if (adsWatched < maxAdsPerHour) {
-                        document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-play mr-2"></i>পরবর্তী এড দেখুন';
-                        document.getElementById('watchAdBtn').classList.remove('bg-green-500');
-                        document.getElementById('watchAdBtn').classList.add('bg-gradient-to-r', 'from-green-500', 'to-green-600');
-                        document.getElementById('watchAdBtn').disabled = false;
-                    }
-                }, 2000);
-                
+            } else {
+                alert('এড দেখা সম্পন্ন! ৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।');
+            }
+            
+            // Reset for next ad
+            setTimeout(() => {
+                resetAdButtons();
             }, 3000);
+        }
+
+        function resetAdButtons() {
+            if (adsWatched < maxAdsPerHour) {
+                adReady = false;
+                
+                document.getElementById('loadAdBtn').disabled = false;
+                document.getElementById('loadAdBtn').innerHTML = '<i class="fas fa-download mr-2"></i>এড লোড করুন';
+                document.getElementById('loadAdBtn').classList.remove('bg-green-500');
+                document.getElementById('loadAdBtn').classList.add('bg-blue-500');
+                
+                document.getElementById('watchAdBtn').disabled = true;
+                document.getElementById('watchAdBtn').classList.remove('bg-green-500');
+                document.getElementById('watchAdBtn').classList.add('bg-gray-400');
+                
+                document.getElementById('adStatus').textContent = 'এড লোড হচ্ছে...';
+                document.getElementById('adStatus').className = 'text-xs text-gray-600';
+                document.getElementById('rewardStatus').textContent = 'প্রথমে "এড লোড করুন" ক্লিক করুন';
+                document.getElementById('rewardStatus').className = 'text-gray-500 text-sm';
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             initWatchAdsPage();
         });
     </script>
-    
-
-// Rewarded interstitial
-
-show_10166009().then(() => {
-    // You need to add your user reward function here, which will be executed after the user watches the ad.
-    // For more details, please refer to the detailed instructions.
-    alert('You have seen an ad!');
-})
-
-        
 </body>
 </html>
