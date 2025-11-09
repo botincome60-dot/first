@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>সহজ ইনকাম - সাপোর্ট</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 pb-16">
+    <div class="container mx-auto px-4 py-4">
+        <!-- হেডার -->
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 text-white mb-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="font-bold text-lg">সাপোর্ট & উইথড্র</h2>
+                    <p class="text-white/80 text-sm">টাকা উত্তোলন করুন</p>
+                </div>
+                <i class="fas fa-headset text-2xl"></i>
+            </div>
+        </div>
+
+        <!-- ব্যালেন্স কার্ড -->
+        <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <p class="text-gray-500 text-sm">মেইন ব্যালেন্স</p>
+                    <h1 class="text-2xl font-bold text-green-600" id="withdrawBalance">0.00 টাকা</h1>
+                </div>
+                <i class="fas fa-wallet text-2xl text-green-500"></i>
+            </div>
+        </div>
+
+        <!-- উইথড্র ফর্ম -->
+        <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
+            <h3 class="font-bold text-lg mb-4">টাকা উত্তোলন করুন</h3>
+            
+            <!-- পেমেন্ট মেথড -->
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-semibold mb-2">পেমেন্ট মেথড</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button class="border-2 border-blue-500 bg-blue-50 rounded-lg p-3 text-center">
+                        <i class="fas fa-mobile-alt text-blue-500 text-xl mb-1"></i>
+                        <p class="font-semibold text-blue-700 text-sm">bKash</p>
+                    </button>
+                    <button class="border border-gray-300 rounded-lg p-3 text-center">
+                        <i class="fas fa-wallet text-gray-500 text-xl mb-1"></i>
+                        <p class="font-semibold text-gray-700 text-sm">Nagad</p>
+                    </button>
+                    <button class="border border-gray-300 rounded-lg p-3 text-center">
+                        <i class="fas fa-rocket text-gray-500 text-xl mb-1"></i>
+                        <p class="font-semibold text-gray-700 text-sm">Rocket</p>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- অ্যামাউন্ট -->
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-semibold mb-2">অ্যামাউন্ট</label>
+                <input type="number" placeholder="৫০০" 
+                    class="w-full border border-gray-300 rounded-lg p-3 text-lg font-semibold">
+                <p class="text-gray-500 text-xs mt-1">ন্যূনতম উত্তোলন: ৫০০ টাকা</p>
+            </div>
+            
+            <!-- অ্যাকাউন্ট নম্বর -->
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-semibold mb-2">আপনার অ্যাকাউন্ট নম্বর</label>
+                <input type="text" placeholder="01XXXXXXXXX" 
+                    class="w-full border border-gray-300 rounded-lg p-3">
+            </div>
+            
+            <button class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg font-bold">
+                উইথড্র রিকোয়েস্ট করুন
+            </button>
+        </div>
+
+        <!-- রেফারেল সেকশন -->
+        <div class="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-4 text-white">
+            <h3 class="font-bold text-lg mb-2">বন্ধুকে রেফার করুন</h3>
+            <p class="text-white/90 text-sm mb-3">প্রতি রেফারেলে পাবেন ১০০ টাকা</p>
+            
+            <div class="bg-white/10 rounded-lg p-3 mb-3">
+                <p class="text-xs mb-1">আপনার রেফারেল লিঙ্ক</p>
+                <div class="flex items-center justify-between">
+                    <code class="text-sm font-mono">https://t.me/your_bot?start=ref123</code>
+                    <button class="bg-white text-purple-600 px-3 py-1 rounded text-sm font-semibold">
+                        কপি
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-white/10 rounded-lg p-3">
+                <p class="text-sm mb-1">উইথড্র এর শর্ত</p>
+                <p class="text-white/80 text-xs">ন্যূনতম ১৫টি রেফারেল প্রয়োজন। আপনার রেফারেল: <span id="userReferrals">0</span></p>
+            </div>
+        </div>
+
+        <!-- সাপোর্ট তথ্য -->
+        <div class="bg-white rounded-xl p-4 shadow-sm mt-4">
+            <h3 class="font-bold text-lg mb-3">সাপোর্ট</h3>
+            <div class="space-y-2">
+                <div class="flex items-center p-3 border border-gray-200 rounded-lg">
+                    <i class="fas fa-envelope text-blue-500 mr-3"></i>
+                    <div>
+                        <p class="font-semibold">ইমেইল</p>
+                        <p class="text-gray-600 text-sm">support@sohojincome.com</p>
+                    </div>
+                </div>
+                <div class="flex items-center p-3 border border-gray-200 rounded-lg">
+                    <i class="fab fa-telegram text-blue-400 mr-3"></i>
+                    <div>
+                        <p class="font-semibold">টেলিগ্রাম</p>
+                        <p class="text-gray-600 text-sm">@sohojincome_support</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- বটম নেভিগেশন -->
+    <div class="bottom-nav">
+        <div class="grid grid-cols-4 gap-1 p-2">
+            <a href="index.html" class="flex flex-col items-center p-2 text-gray-500">
+                <i class="fas fa-home mb-1"></i>
+                <span class="text-xs">হোম</span>
+            </a>
+            <a href="tasks.html" class="flex flex-col items-center p-2 text-gray-500">
+                <i class="fas fa-tasks mb-1"></i>
+                <span class="text-xs">টাস্ক</span>
+            </a>
+            <a href="support.html" class="flex flex-col items-center p-2 text-blue-600">
+                <i class="fas fa-headset mb-1"></i>
+                <span class="text-xs">সাপোর্ট</span>
+            </a>
+            <a href="profile.html" class="flex flex-col items-center p-2 text-gray-500">
+                <i class="fas fa-user mb-1"></i>
+                <span class="text-xs">প্রোফাইল</span>
+            </a>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        function initSupportPage() {
+            const user = getUserData();
+            if (user) {
+                document.getElementById('withdrawBalance').textContent = user.balance.toFixed(2) + ' টাকা';
+                document.getElementById('userReferrals').textContent = user.total_referrals;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initSupportPage();
+        });
+    </script>
+</body>
+</html>

@@ -1,123 +1,176 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sohoj Income Bot</title>
+    <title>সহজ ইনকাম - হোম</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <style>
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-purple-600 to-blue-500 min-h-screen">
-    <div class="container mx-auto px-4 py-6 max-w-md">
-        <!-- Header -->
-        <div class="text-center mb-6">
-            <h1 class="text-3xl font-bold text-white mb-2">💰 Sohoj Income</h1>
-            <p class="text-white/80">Earn money with simple tasks</p>
-        </div>
-
-        <!-- User Info Card -->
-        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-4 mb-4 border border-white/20">
-            <div id="userInfo" class="text-center">
-                <div class="animate-pulse">
-                    <div class="h-4 bg-white/20 rounded w-3/4 mx-auto mb-2"></div>
-                    <div class="h-3 bg-white/20 rounded w-1/2 mx-auto"></div>
+<body class="bg-gray-50 pb-16">
+    <div class="container mx-auto px-4 py-4">
+        <!-- হেডার -->
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 text-white mb-4">
+            <div class="flex items-center space-x-3 mb-3">
+                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                    <i class="fas fa-user text-xl"></i>
                 </div>
-            </div>
-        </div>
-
-        <!-- Balance Card -->
-        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-4 mb-4 border border-white/20">
-            <div class="flex justify-between items-center">
                 <div>
-                    <p class="text-white/80 text-sm">Total Balance</p>
-                    <h2 class="text-2xl font-bold text-white"><span id="pointsBalance">0</span> Points</h2>
+                    <h2 class="font-bold text-lg" id="userName">লোড হচ্ছে...</h2>
+                    <p class="text-white/80 text-sm">আপনার প্রোফাইল</p>
                 </div>
-                <div class="bg-yellow-400 rounded-full p-3">
-                    <i class="fas fa-wallet text-xl text-gray-800"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- Referral Section -->
-        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-4 mb-4 border border-white/20">
-            <div class="flex items-center mb-3">
-                <i class="fas fa-users text-yellow-400 mr-2"></i>
-                <h3 class="text-white font-semibold">Refer & Earn</h3>
-            </div>
-            <p class="text-white/80 text-sm mb-2">Your Referral Code:</p>
-            <div class="flex items-center justify-between bg-white/5 rounded-xl p-3 mb-3">
-                <code class="text-white font-mono font-bold" id="refCode">LOADING...</code>
-                <button onclick="copyReferral()" class="bg-yellow-400 text-gray-800 px-3 py-1 rounded-lg text-sm font-semibold hover:bg-yellow-300 transition">
-                    Copy
-                </button>
-            </div>
-            <p class="text-white/60 text-xs">Earn 100 points for each friend who joins</p>
-        </div>
-
-        <!-- Tasks Section -->
-        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-4 mb-4 border border-white/20">
-            <div class="flex items-center mb-4">
-                <i class="fas fa-tasks text-yellow-400 mr-2"></i>
-                <h3 class="text-white font-semibold">Available Tasks</h3>
             </div>
             
-            <!-- Task 1 -->
-            <div class="bg-white/5 rounded-xl p-3 mb-3">
-                <div class="flex justify-between items-start mb-2">
-                    <div>
-                        <h4 class="text-white font-semibold">Join Telegram Channel</h4>
-                        <p class="text-yellow-400 text-sm">+50 Points</p>
-                    </div>
-                    <i class="fas fa-telegram text-blue-400 text-xl"></i>
-                </div>
-                <button onclick="completeTask('join_channel')" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-2 rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition">
-                    Complete Task
-                </button>
-            </div>
-
-            <!-- Task 2 -->
-            <div class="bg-white/5 rounded-xl p-3 mb-3">
-                <div class="flex justify-between items-start mb-2">
-                    <div>
-                        <h4 class="text-white font-semibold">Watch Video</h4>
-                        <p class="text-yellow-400 text-sm">+30 Points</p>
-                    </div>
-                    <i class="fas fa-play-circle text-red-400 text-xl"></i>
-                </div>
-                <button onclick="completeTask('watch_video')" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition">
-                    Complete Task
-                </button>
-            </div>
-
-            <!-- Task 3 -->
-            <div class="bg-white/5 rounded-xl p-3">
-                <div class="flex justify-between items-start mb-2">
-                    <div>
-                        <h4 class="text-white font-semibold">Share with Friends</h4>
-                        <p class="text-yellow-400 text-sm">+25 Points</p>
-                    </div>
-                    <i class="fas fa-share-alt text-green-400 text-xl"></i>
-                </div>
-                <button onclick="completeTask('share_post')" class="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white py-2 rounded-lg font-semibold hover:from-purple-600 hover:to-purple-700 transition">
-                    Complete Task
-                </button>
+            <div class="bg-white/10 rounded-xl p-3">
+                <p class="text-sm">মেইন ব্যালেন্স</p>
+                <h1 class="text-2xl font-bold" id="mainBalance">0.00 টাকা</h1>
             </div>
         </div>
 
-        <!-- Withdraw Button -->
-        <button onclick="showWithdraw()" class="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-800 py-3 rounded-xl font-bold text-lg mb-4 hover:from-yellow-500 hover:to-yellow-600 transition shadow-lg">
-            <i class="fas fa-money-bill-wave mr-2"></i>
-            Withdraw Money
-        </button>
+        <!-- আজকের স্ট্যাটাস -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="bg-white rounded-xl p-3 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">আজকের এডস</p>
+                        <h3 class="font-bold text-lg" id="todayAds">0/10</h3>
+                    </div>
+                    <i class="fas fa-eye text-blue-500"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-3 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">মোট রেফারেল</p>
+                        <h3 class="font-bold text-lg" id="totalReferrals">0</h3>
+                    </div>
+                    <i class="fas fa-users text-green-500"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-3 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">মোট এডস</p>
+                        <h3 class="font-bold text-lg" id="totalAds">0</h3>
+                    </div>
+                    <i class="fas fa-chart-line text-purple-500"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-3 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">মোট ইনকাম</p>
+                        <h3 class="font-bold text-lg" id="totalIncome">0.00 টাকা</h3>
+                    </div>
+                    <i class="fas fa-wallet text-yellow-500"></i>
+                </div>
+            </div>
+        </div>
 
-        <!-- Footer Info -->
-        <div class="text-center">
-            <p class="text-white/60 text-xs">Minimum withdrawal: 500 points</p>
+        <!-- দ্রুত একশন -->
+        <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
+            <h3 class="font-bold text-lg mb-3">দ্রুত একশন</h3>
+            <div class="grid grid-cols-2 gap-3">
+                <a href="tasks.html" class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                    <i class="fas fa-tasks text-blue-500 text-xl mb-1"></i>
+                    <p class="font-semibold text-blue-700">টাস্ক করুন</p>
+                </a>
+                <a href="support.html" class="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                    <i class="fas fa-hand-holding-usd text-green-500 text-xl mb-1"></i>
+                    <p class="font-semibold text-green-700">উইথড্র</p>
+                </a>
+            </div>
+        </div>
+
+        <!-- রেফারেল সেকশন -->
+        <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 text-white">
+            <h3 class="font-bold text-lg mb-2">বন্ধুকে রেফার করুন</h3>
+            <p class="text-white/90 text-sm mb-3">প্রতি রেফারেলে পাবেন ১০০ টাকা</p>
+            <div class="bg-white/10 rounded-lg p-3 mb-3">
+                <p class="text-xs mb-1">আপনার রেফারেল লিঙ্ক</p>
+                <div class="flex items-center justify-between">
+                    <code class="text-sm font-mono" id="referralLink">লোড হচ্ছে...</code>
+                    <button onclick="copyReferralLink()" class="bg-white text-green-600 px-3 py-1 rounded text-sm font-semibold">
+                        কপি
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- বটম নেভিগেশন -->
+    <div class="bottom-nav">
+        <div class="grid grid-cols-4 gap-1 p-2">
+            <a href="index.html" class="flex flex-col items-center p-2 text-blue-600">
+                <i class="fas fa-home mb-1"></i>
+                <span class="text-xs">হোম</span>
+            </a>
+            <a href="tasks.html" class="flex flex-col items-center p-2 text-gray-500">
+                <i class="fas fa-tasks mb-1"></i>
+                <span class="text-xs">টাস্ক</span>
+            </a>
+            <a href="support.html" class="flex flex-col items-center p-2 text-gray-500">
+                <i class="fas fa-headset mb-1"></i>
+                <span class="text-xs">সাপোর্ট</span>
+            </a>
+            <a href="profile.html" class="flex flex-col items-center p-2 text-gray-500">
+                <i class="fas fa-user mb-1"></i>
+                <span class="text-xs">প্রোফাইল</span>
+            </a>
         </div>
     </div>
 
     <script src="app.js"></script>
+    <script>
+        // হোম পেজের বিশেষ ফাংশনালিটি
+        function initHomePage() {
+            const user = getUserData();
+            if (user) {
+                document.getElementById('userName').textContent = user.first_name || 'ইউজার';
+                document.getElementById('mainBalance').textContent = user.balance.toFixed(2) + ' টাকা';
+                document.getElementById('todayAds').textContent = user.today_ads + '/10';
+                document.getElementById('totalReferrals').textContent = user.total_referrals;
+                document.getElementById('totalAds').textContent = user.total_ads;
+                document.getElementById('totalIncome').textContent = user.total_income.toFixed(2) + ' টাকা';
+                
+                const refLink = `https://t.me/${tg.initDataUnsafe.user?.username || 'your_bot'}?start=ref${user.id}`;
+                document.getElementById('referralLink').textContent = refLink;
+            }
+        }
+
+        function copyReferralLink() {
+            const refLink = document.getElementById('referralLink').textContent;
+            navigator.clipboard.writeText(refLink);
+            
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.showPopup({
+                    title: 'কপি হয়েছে!',
+                    message: 'রেফারেল লিঙ্ক কপি করা হয়েছে।',
+                    buttons: [{ type: 'close' }]
+                });
+            } else {
+                alert('রেফারেল লিঙ্ক কপি করা হয়েছে!');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initHomePage();
+        });
+    </script>
 </body>
 </html>

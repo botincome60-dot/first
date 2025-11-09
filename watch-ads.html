@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>সহজ ইনকাম - এড দেখুন</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-4">
+        <!-- হেডার -->
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 text-white mb-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="font-bold text-lg">এড দেখুন</h2>
+                    <p class="text-white/80 text-sm">এড দেখে আয় করুন</p>
+                </div>
+                <i class="fas fa-play-circle text-2xl"></i>
+            </div>
+        </div>
+
+        <!-- এড কাউন্টার -->
+        <div class="bg-white rounded-xl p-4 shadow-sm mb-4 text-center">
+            <div class="mb-4">
+                <h3 class="font-bold text-lg mb-2">আজকের এড কাউন্ট</h3>
+                <div class="text-4xl font-bold text-blue-600" id="adsCounter">0/10</div>
+                <p class="text-gray-500 text-sm mt-2">প্রতি ঘন্টায় ১০টি এড দেখতে পারবেন</p>
+            </div>
+            
+            <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
+                <div id="progressBar" class="bg-green-500 h-3 rounded-full" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- এড দেখার এরিয়া -->
+        <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
+            <div class="text-center mb-4">
+                <i class="fas fa-ad text-yellow-500 text-4xl mb-3"></i>
+                <h3 class="font-bold text-lg">রিওয়ার্ডেড এড</h3>
+                <p class="text-gray-600">এই এডটি দেখে পাবেন <span class="font-bold text-green-600">৩০.০০ টাকা</span></p>
+            </div>
+            
+            <!-- এড কন্টেন্ট এরিয়া -->
+            <div class="bg-gray-100 rounded-lg p-8 text-center mb-4">
+                <p class="text-gray-500 mb-4">[এখানে এড কন্টেন্ট দেখানো হবে]</p>
+                <p class="text-sm text-gray-400">আপনি পরে এখানে আপনার এড লিঙ্কস যোগ করবেন</p>
+            </div>
+            
+            <button onclick="watchAd()" id="watchAdBtn" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-xl font-bold text-lg mb-3">
+                <i class="fas fa-play mr-2"></i>
+                এড দেখুন
+            </button>
+            
+            <div class="text-center">
+                <p class="text-gray-500 text-sm">এড দেখার পর অটোমেটিক ৩০ টাকা যোগ হবে</p>
+            </div>
+        </div>
+
+        <!-- তথ্য -->
+        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <div class="flex items-start">
+                <i class="fas fa-info-circle text-yellow-500 mt-1 mr-2"></i>
+                <div>
+                    <h4 class="font-semibold text-yellow-700">গুরুত্বপূর্ণ তথ্য</h4>
+                    <p class="text-yellow-600 text-sm">• প্রতি ঘন্টায় ১০টি এড দেখতে পারবেন</p>
+                    <p class="text-yellow-600 text-sm">• প্রতিটি এডের জন্য ৩০ টাকা পাবেন</p>
+                    <p class="text-yellow-600 text-sm">• এড দেখার পর টাকা অটো যোগ হবে</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let adsWatched = 0;
+        const maxAdsPerHour = 10;
+
+        function initWatchAdsPage() {
+            const user = getUserData();
+            if (user) {
+                adsWatched = user.today_ads || 0;
+                updateCounter();
+            }
+        }
+
+        function updateCounter() {
+            document.getElementById('adsCounter').textContent = `${adsWatched}/${maxAdsPerHour}`;
+            const progress = (adsWatched / maxAdsPerHour) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            
+            if (adsWatched >= maxAdsPerHour) {
+                document.getElementById('watchAdBtn').disabled = true;
+                document.getElementById('watchAdBtn').classList.remove('bg-gradient-to-r', 'from-green-500', 'to-green-600');
+                document.getElementById('watchAdBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
+                document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-clock mr-2"></i>আজকের লিমিট শেষ';
+            }
+        }
+
+        function watchAd() {
+            if (adsWatched >= maxAdsPerHour) {
+                alert('আজকের এড লিমিট শেষ! ১ ঘন্টা পর আবার চেষ্টা করুন।');
+                return;
+            }
+
+            // সিমুলেট এড ওয়াচিং
+            document.getElementById('watchAdBtn').disabled = true;
+            document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>এড লোড হচ্ছে...';
+            
+            setTimeout(() => {
+                adsWatched++;
+                updateUserData({ today_ads: adsWatched });
+                
+                // ব্যালেন্স আপডেট
+                const user = getUserData();
+                const newBalance = user.balance + 30;
+                const newTotalIncome = user.total_income + 30;
+                const newTotalAds = user.total_ads + 1;
+                
+                updateUserData({ 
+                    balance: newBalance,
+                    total_income: newTotalIncome,
+                    total_ads: newTotalAds
+                });
+                
+                document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ৩০ টাকা যোগ হয়েছে';
+                document.getElementById('watchAdBtn').classList.remove('bg-gradient-to-r', 'from-green-500', 'to-green-600');
+                document.getElementById('watchAdBtn').classList.add('bg-green-500');
+                
+                setTimeout(() => {
+                    if (adsWatched < maxAdsPerHour) {
+                        document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-play mr-2"></i>পরবর্তী এড দেখুন';
+                        document.getElementById('watchAdBtn').classList.remove('bg-green-500');
+                        document.getElementById('watchAdBtn').classList.add('bg-gradient-to-r', 'from-green-500', 'to-green-600');
+                        document.getElementById('watchAdBtn').disabled = false;
+                    }
+                }, 2000);
+                
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initWatchAdsPage();
+        });
+    </script>
+</body>
+</html>
