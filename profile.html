@@ -7,7 +7,6 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <style>
         .bottom-nav {
             position: fixed;
@@ -17,9 +16,12 @@
             background: white;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
+        body {
+            padding-bottom: 70px;
+        }
     </style>
 </head>
-<body class="bg-gray-50 pb-16">
+<body class="bg-gray-50">
     <div class="container mx-auto px-4 py-4">
         <!-- প্রোফাইল হেডার -->
         <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 text-white mb-4">
@@ -72,11 +74,6 @@
                     <span class="ml-3 font-semibold">রিওয়ার্ডস</span>
                     <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
                 </a>
-                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    <i class="fas fa-bell text-yellow-500 w-6"></i>
-                    <span class="ml-3 font-semibold">নোটিফিকেশন</span>
-                    <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
-                </a>
             </div>
         </div>
 
@@ -84,23 +81,6 @@
         <div class="bg-white rounded-xl p-4 shadow-sm">
             <h3 class="font-bold text-lg mb-3">সেটিংস</h3>
             <div class="space-y-2">
-                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                    <div class="flex items-center">
-                        <i class="fas fa-language text-purple-500 w-6"></i>
-                        <span class="ml-3 font-semibold">ভাষা</span>
-                    </div>
-                    <span class="text-gray-600">বাংলা</span>
-                </div>
-                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                    <div class="flex items-center">
-                        <i class="fas fa-moon text-indigo-500 w-6"></i>
-                        <span class="ml-3 font-semibold">ডার্ক মোড</span>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" class="sr-only peer">
-                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                </div>
                 <a href="#" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
                     <i class="fas fa-shield-alt text-green-500 w-6"></i>
                     <span class="ml-3 font-semibold">প্রাইভেসি পলিসি</span>

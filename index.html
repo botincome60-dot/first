@@ -7,7 +7,6 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <style>
         .bottom-nav {
             position: fixed;
@@ -16,10 +15,15 @@
             right: 0;
             background: white;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        body {
+            padding-bottom: 70px;
         }
     </style>
+    <script src='//libtl.com/sdk.js' data-zone='10166009' data-sdk='show_10166009'></script>
 </head>
-<body class="bg-gray-50 pb-16">
+<body class="bg-gray-50">
     <div class="container mx-auto px-4 py-4">
         <!-- হেডার -->
         <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 text-white mb-4">
@@ -148,7 +152,7 @@
                 document.getElementById('totalAds').textContent = user.total_ads;
                 document.getElementById('totalIncome').textContent = user.total_income.toFixed(2) + ' টাকা';
                 
-                const refLink = `https://t.me/${tg.initDataUnsafe.user?.username || 'your_bot'}?start=ref${user.id}`;
+                const refLink = generateReferralLink();
                 document.getElementById('referralLink').textContent = refLink;
             }
         }
@@ -166,6 +170,12 @@
             } else {
                 alert('রেফারেল লিঙ্ক কপি করা হয়েছে!');
             }
+        }
+
+        function generateReferralLink() {
+            const user = getUserData();
+            const botUsername = 'sohojincomebot';
+            return `https://t.me/${botUsername}?start=ref${user.id}`;
         }
 
         document.addEventListener('DOMContentLoaded', function() {

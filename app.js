@@ -7,13 +7,8 @@ function initTelegramApp() {
         tg.expand();
         tg.ready();
         
-        // Set theme params
-        const theme = tg.themeParams;
-        if (theme.bg_color) {
-            document.documentElement.style.setProperty('--tg-theme-bg-color', theme.bg_color);
-        }
-        
         console.log('Telegram Web App initialized');
+        console.log('User data:', tg.initDataUnsafe?.user);
         
         // Initialize user data if not exists
         initializeUserData();
@@ -23,15 +18,15 @@ function initTelegramApp() {
     }
 }
 
-// User data management
+// User data management - IMPROVED
 function initializeUserData() {
     let userData = localStorage.getItem('telegramUserData');
     
     if (!userData) {
-        // Create new user data
+        // Create new user data from Telegram
         const telegramUser = tg?.initDataUnsafe?.user;
         const newUser = {
-            id: telegramUser?.id || Date.now(),
+            id: telegramUser?.id || Math.floor(100000 + Math.random() * 900000),
             first_name: telegramUser?.first_name || 'ইউজার',
             username: telegramUser?.username || '',
             balance: 0.00,
@@ -44,15 +39,46 @@ function initializeUserData() {
         
         localStorage.setItem('telegramUserData', JSON.stringify(newUser));
         console.log('New user data created:', newUser);
-    } else {
-        console.log('Existing user data loaded:', JSON.parse(userData));
     }
 }
 
-// Get user data
+// Get user data - IMPROVED
 function getUserData() {
-    const userData = localStorage.getItem('telegramUserData');
-    return userData ? JSON.parse(userData) : null;
+    let userData = localStorage.getItem('telegramUserData');
+    
+    if (!userData) {
+        // If no data in localStorage, get from Telegram
+        const telegramUser = tg?.initDataUnsafe?.user;
+        if (telegramUser) {
+            userData = {
+                id: telegramUser.id,
+                first_name: telegramUser.first_name || 'ইউজার',
+                username: telegramUser.username || '',
+                balance: 0.00,
+                today_ads: 0,
+                total_ads: 0,
+                total_referrals: 0,
+                total_income: 0.00,
+                join_date: new Date().toISOString()
+            };
+            localStorage.setItem('telegramUserData', JSON.stringify(userData));
+        } else {
+            // Fallback data
+            userData = {
+                id: Math.floor(100000 + Math.random() * 900000),
+                first_name: 'ইউজার',
+                username: '',
+                balance: 0.00,
+                today_ads: 0,
+                total_ads: 0,
+                total_referrals: 0,
+                total_income: 0.00,
+                join_date: new Date().toISOString()
+            };
+        }
+    }
+    
+    return typeof userData === 'string' ? JSON.parse(userData) : userData;
 }
 
 // Update user data
@@ -61,22 +87,6 @@ function updateUserData(updates) {
     const updatedData = { ...userData, ...updates };
     localStorage.setItem('telegramUserData', JSON.stringify(updatedData));
     return updatedData;
-}
-
-// Reset daily ads (this would typically be called by a backend)
-function resetDailyAds() {
-    const userData = getUserData();
-    if (userData) {
-        // Check if we need to reset (after 24 hours)
-        const lastReset = localStorage.getItem('lastAdsReset');
-        const now = Date.now();
-        
-        if (!lastReset || (now - parseInt(lastReset)) > 24 * 60 * 60 * 1000) {
-            updateUserData({ today_ads: 0 });
-            localStorage.setItem('lastAdsReset', now.toString());
-            console.log('Daily ads reset');
-        }
-    }
 }
 
 // Format currency
@@ -98,10 +108,16 @@ function showNotification(message, type = 'info') {
     }
 }
 
+// Generate referral link - CORRECTED
+function generateReferralLink() {
+    const user = getUserData();
+    const botUsername = 'sohojincomebot'; // আপনার সঠিক username
+    return `https://t.me/${botUsername}?start=ref${user.id}`;
+}
+
 // Initialize when document is ready
 document.addEventListener('DOMContentLoaded', function() {
     initTelegramApp();
-    resetDailyAds(); // Check if daily ads need reset
     
     // Update active nav link
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
@@ -129,3 +145,4 @@ window.getUserData = getUserData;
 window.updateUserData = updateUserData;
 window.showNotification = showNotification;
 window.formatCurrency = formatCurrency;
+window.generateReferralLink = generateReferralLink;

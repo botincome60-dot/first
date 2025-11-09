@@ -7,7 +7,6 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <style>
         .bottom-nav {
             position: fixed;
@@ -17,9 +16,16 @@
             background: white;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
+        body {
+            padding-bottom: 70px;
+        }
+        .payment-method.active {
+            border-color: #3B82F6;
+            background-color: #EFF6FF;
+        }
     </style>
 </head>
-<body class="bg-gray-50 pb-16">
+<body class="bg-gray-50">
     <div class="container mx-auto px-4 py-4">
         <!-- হেডার -->
         <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 text-white mb-4">
@@ -47,41 +53,41 @@
         <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
             <h3 class="font-bold text-lg mb-4">টাকা উত্তোলন করুন</h3>
             
-            <!-- পেমেন্ট মেথড -->
+            <!-- পেমেন্ট মেথড - সবগুলো কাজ করবে -->
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-semibold mb-2">পেমেন্ট মেথড</label>
                 <div class="grid grid-cols-3 gap-2">
-                    <button class="border-2 border-blue-500 bg-blue-50 rounded-lg p-3 text-center">
+                    <button onclick="selectMethod('bkash')" id="bkashBtn" class="border-2 border-blue-500 bg-blue-50 rounded-lg p-3 text-center payment-method active">
                         <i class="fas fa-mobile-alt text-blue-500 text-xl mb-1"></i>
-                        <p class="font-semibold text-blue-700 text-sm">bKash</p>
+                        <p class="font-semibold text-blue-700">bKash</p>
                     </button>
-                    <button class="border border-gray-300 rounded-lg p-3 text-center">
-                        <i class="fas fa-wallet text-gray-500 text-xl mb-1"></i>
-                        <p class="font-semibold text-gray-700 text-sm">Nagad</p>
+                    <button onclick="selectMethod('nagad')" id="nagadBtn" class="border border-gray-300 rounded-lg p-3 text-center payment-method">
+                        <i class="fas fa-wallet text-green-500 text-xl mb-1"></i>
+                        <p class="font-semibold text-gray-700">Nagad</p>
                     </button>
-                    <button class="border border-gray-300 rounded-lg p-3 text-center">
-                        <i class="fas fa-rocket text-gray-500 text-xl mb-1"></i>
-                        <p class="font-semibold text-gray-700 text-sm">Rocket</p>
+                    <button onclick="selectMethod('rocket')" id="rocketBtn" class="border border-gray-300 rounded-lg p-3 text-center payment-method">
+                        <i class="fas fa-rocket text-purple-500 text-xl mb-1"></i>
+                        <p class="font-semibold text-gray-700">Rocket</p>
                     </button>
                 </div>
             </div>
             
             <!-- অ্যামাউন্ট -->
             <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-semibold mb-2">অ্যামাউন্ট</label>
-                <input type="number" placeholder="৫০০" 
+                <label class="block text-gray-700 text-sm font-semibold mb-2">অ্যামাউন্ট (টাকায়)</label>
+                <input type="number" placeholder="500" id="withdrawAmount"
                     class="w-full border border-gray-300 rounded-lg p-3 text-lg font-semibold">
                 <p class="text-gray-500 text-xs mt-1">ন্যূনতম উত্তোলন: ৫০০ টাকা</p>
             </div>
             
             <!-- অ্যাকাউন্ট নম্বর -->
             <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-semibold mb-2">আপনার অ্যাকাউন্ট নম্বর</label>
-                <input type="text" placeholder="01XXXXXXXXX" 
+                <label class="block text-gray-700 text-sm font-semibold mb-2" id="accountLabel">আপনার bKash নম্বর</label>
+                <input type="text" placeholder="01XXXXXXXXX" id="accountNumber"
                     class="w-full border border-gray-300 rounded-lg p-3">
             </div>
             
-            <button class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg font-bold">
+            <button onclick="submitWithdraw()" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg font-bold">
                 উইথড্র রিকোয়েস্ট করুন
             </button>
         </div>
@@ -94,8 +100,8 @@
             <div class="bg-white/10 rounded-lg p-3 mb-3">
                 <p class="text-xs mb-1">আপনার রেফারেল লিঙ্ক</p>
                 <div class="flex items-center justify-between">
-                    <code class="text-sm font-mono">https://t.me/your_bot?start=ref123</code>
-                    <button class="bg-white text-purple-600 px-3 py-1 rounded text-sm font-semibold">
+                    <code class="text-sm font-mono" id="supportReferralLink">লোড হচ্ছে...</code>
+                    <button onclick="copySupportReferral()" class="bg-white text-purple-600 px-3 py-1 rounded text-sm font-semibold">
                         কপি
                     </button>
                 </div>
@@ -103,7 +109,7 @@
             
             <div class="bg-white/10 rounded-lg p-3">
                 <p class="text-sm mb-1">উইথড্র এর শর্ত</p>
-                <p class="text-white/80 text-xs">ন্যূনতম ১৫টি রেফারেল প্রয়োজন। আপনার রেফারেল: <span id="userReferrals">0</span></p>
+                <p class="text-white/80 text-xs">ন্যূনতম ৫০০ টাকা উত্তোলন করতে হবে</p>
             </div>
         </div>
 
@@ -112,16 +118,9 @@
             <h3 class="font-bold text-lg mb-3">সাপোর্ট</h3>
             <div class="space-y-2">
                 <div class="flex items-center p-3 border border-gray-200 rounded-lg">
-                    <i class="fas fa-envelope text-blue-500 mr-3"></i>
-                    <div>
-                        <p class="font-semibold">ইমেইল</p>
-                        <p class="text-gray-600 text-sm">support@sohojincome.com</p>
-                    </div>
-                </div>
-                <div class="flex items-center p-3 border border-gray-200 rounded-lg">
                     <i class="fab fa-telegram text-blue-400 mr-3"></i>
                     <div>
-                        <p class="font-semibold">টেলিগ্রাম</p>
+                        <p class="font-semibold">টেলিগ্রাম সাপোর্ট</p>
                         <p class="text-gray-600 text-sm">@sohojincome_support</p>
                     </div>
                 </div>
@@ -153,12 +152,95 @@
 
     <script src="app.js"></script>
     <script>
+        let selectedMethod = 'bkash';
+
         function initSupportPage() {
             const user = getUserData();
             if (user) {
                 document.getElementById('withdrawBalance').textContent = user.balance.toFixed(2) + ' টাকা';
-                document.getElementById('userReferrals').textContent = user.total_referrals;
+                document.getElementById('supportReferralLink').textContent = generateReferralLink();
             }
+        }
+
+        function selectMethod(method) {
+            selectedMethod = method;
+            
+            // সব বাটনের active class remove করুন
+            document.querySelectorAll('.payment-method').forEach(btn => {
+                btn.classList.remove('active', 'border-2', 'border-blue-500', 'bg-blue-50');
+                btn.classList.add('border', 'border-gray-300');
+            });
+            
+            // selected বাটনে active class add করুন
+            const selectedBtn = document.getElementById(method + 'Btn');
+            selectedBtn.classList.add('active', 'border-2', 'border-blue-500', 'bg-blue-50');
+            selectedBtn.classList.remove('border', 'border-gray-300');
+            
+            // Label update করুন
+            const methodNames = {
+                'bkash': 'bKash',
+                'nagad': 'Nagad', 
+                'rocket': 'Rocket'
+            };
+            document.getElementById('accountLabel').textContent = 'আপনার ' + methodNames[method] + ' নম্বর';
+            document.getElementById('accountNumber').placeholder = '01XXXXXXXXX';
+        }
+
+        function copySupportReferral() {
+            const refLink = document.getElementById('supportReferralLink').textContent;
+            navigator.clipboard.writeText(refLink);
+            
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.showPopup({
+                    title: 'কপি হয়েছে!',
+                    message: 'রেফারেল লিঙ্ক কপি করা হয়েছে।',
+                    buttons: [{ type: 'close' }]
+                });
+            } else {
+                alert('রেফারেল লিঙ্ক কপি করা হয়েছে!');
+            }
+        }
+
+        function submitWithdraw() {
+            const amount = parseInt(document.getElementById('withdrawAmount').value);
+            const accountNumber = document.getElementById('accountNumber').value;
+            const user = getUserData();
+
+            if (!amount || amount < 500) {
+                alert('ন্যূনতম ৫০০ টাকা উত্তোলন করতে হবে!');
+                return;
+            }
+
+            if (!accountNumber || accountNumber.length !== 11) {
+                alert('সঠিক মোবাইল নম্বর দিন (11 ডিজিট)!');
+                return;
+            }
+
+            if (amount > user.balance) {
+                alert('আপনার ব্যালেন্স insufficient!');
+                return;
+            }
+
+            const methodNames = {
+                'bkash': 'bKash',
+                'nagad': 'Nagad',
+                'rocket': 'Rocket'
+            };
+
+            // Withdraw request success
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.showPopup({
+                    title: 'সফল!',
+                    message: `উইথড্র রিকোয়েস্ট জমা হয়েছে!\n\nপরিমাণ: ${amount} টাকা\n${methodNames[selectedMethod]}: ${accountNumber}\n\n২৪ ঘন্টার মধ্যে পেমেন্ট করা হবে।`,
+                    buttons: [{ type: 'close' }]
+                });
+            } else {
+                alert(`উইথড্র রিকোয়েস্ট সফল!\n${amount} টাকা ${accountNumber} নম্বরে পাঠানো হবে।`);
+            }
+
+            // Reset form
+            document.getElementById('withdrawAmount').value = '';
+            document.getElementById('accountNumber').value = '';
         }
 
         document.addEventListener('DOMContentLoaded', function() {
