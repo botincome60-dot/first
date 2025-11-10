@@ -1,4 +1,4 @@
-// app.js - Fixed Referral System
+// app.js - Fixed with startapp parameter
 console.log("🚀 App.js loading...");
 
 const tg = window.Telegram?.WebApp;
@@ -38,9 +38,17 @@ async function initializeUserData() {
             tg.expand();
             tg.ready();
             console.log("✅ Telegram Web App initialized");
+            
+            // Debug: Log all Telegram data
+            console.log('=== TELEGRAM DEBUG INFO ===');
+            console.log('📱 Telegram initDataUnsafe:', tg.initDataUnsafe);
+            console.log('🔍 Telegram start_param:', tg.initDataUnsafe?.start_param);
+            console.log('👤 Telegram user:', tg.initDataUnsafe?.user);
+            console.log('🌐 Telegram platform:', tg.platform);
+            console.log('==========================');
         }
 
-        // Get or create user ID
+        // Get user ID from Telegram or create test ID
         let userId;
         if (tg?.initDataUnsafe?.user?.id) {
             userId = tg.initDataUnsafe.user.id.toString();
@@ -48,7 +56,7 @@ async function initializeUserData() {
         } else {
             // Generate random ID for browser testing
             userId = 'test_' + Math.floor(1000000000 + Math.random() * 9000000000).toString();
-            console.log("🖥️  Test User ID:", userId);
+            console.log("🖥️ Test User ID:", userId);
         }
 
         // Get user data from Firebase
@@ -63,14 +71,14 @@ async function initializeUserData() {
                 id: userId,
                 first_name: tg?.initDataUnsafe?.user?.first_name || 'ইউজার',
                 username: tg?.initDataUnsafe?.user?.username || '',
-                balance: 50.00, // Starting bonus
+                balance: 50.00,
                 today_ads: 0,
                 total_ads: 0,
                 total_referrals: 0,
                 total_income: 50.00,
                 join_date: new Date().toISOString(),
                 lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-                referred_by: null // Track who referred this user
+                referred_by: null
             };
             
             await db.collection('users').doc(userId).set(userData);
@@ -80,109 +88,75 @@ async function initializeUserData() {
         // Update UI immediately
         updateUI();
         
-        // Process referral FIRST before loading count
-        await checkAndProcessReferral();
+        // Process referral - THIS IS THE KEY PART
+        await processReferralWithStartApp();
         
-        // Then load referral count
+        // Load referral count
         await loadReferralCount();
         
         console.log("✅ User initialization complete");
-        
-        // Hide loading overlay
         hideLoading();
         
     } catch (error) {
         console.error("❌ Error initializing user data:", error);
-        // Fallback to basic UI
         fallbackUI();
         hideLoading();
     }
 }
 
-// Check and process referral - UPDATED VERSION
-async function checkAndProcessReferral() {
+// PROCESS REFERRAL WITH STARTAPP - MAIN FUNCTION
+async function processReferralWithStartApp() {
     if (!userData || !db) return;
     
     try {
-        console.log('🔍 Checking for referral...');
+        console.log('🔍 Processing referral with startapp...');
         
-        // Method 1: Check Telegram Web App initData
-        let referralId = null;
+        let referralCode = null;
         
+        // METHOD 1: Check Telegram start_param (startapp parameter)
         if (tg?.initDataUnsafe?.start_param) {
-            referralId = tg.initDataUnsafe.start_param;
-            console.log('📱 Found referral in start_param:', referralId);
+            referralCode = tg.initDataUnsafe.start_param;
+            console.log('🎯 Found referral code in start_param:', referralCode);
         }
         
-        // Method 2: Check URL parameters (for web version)
-        if (!referralId) {
+        // METHOD 2: Check URL parameters for startapp (web testing)
+        if (!referralCode) {
             const urlParams = new URLSearchParams(window.location.search);
-            const startParam = urlParams.get('startapp');
-            if (startParam && startParam.startsWith('ref')) {
-                referralId = startParam;
-                console.log('🌐 Found referral in URL:', referralId);
+            referralCode = urlParams.get('startapp') || urlParams.get('start');
+            console.log('🌐 Found referral code in URL:', referralCode);
+        }
+        
+        // METHOD 3: Check localStorage (fallback)
+        if (!referralCode) {
+            referralCode = localStorage.getItem('pending_referral_startapp');
+            if (referralCode) {
+                console.log('💾 Found referral code in localStorage:', referralCode);
+                localStorage.removeItem('pending_referral_startapp');
             }
         }
         
-        // Method 3: Check localStorage (fallback)
-        if (!referralId) {
-            const savedRef = localStorage.getItem('pending_referral');
-            if (savedRef) {
-                referralId = savedRef;
-                console.log('💾 Found referral in localStorage:', referralId);
-                localStorage.removeItem('pending_referral');
+        if (referralCode && referralCode.startsWith('ref')) {
+            const referrerUserId = referralCode.replace('ref', '');
+            console.log('🔄 Processing referral from user:', referrerUserId);
+            
+            // Validate the referral
+            if (await validateReferral(referrerUserId)) {
+                // Create referral record
+                await createReferralRecord(referrerUserId);
+                
+                // Give bonuses to both users
+                await giveReferralBonuses(referrerUserId);
+                
+                console.log('✅ Referral processed successfully via startapp!');
+                
+                // Show success message
+                showNotification(
+                    '🎉 রেফারেল সফল!\n\nআপনি রেফারেল দ্বারা জয়েন করেছেন। ৫০ টাকা বোনাস পেয়েছেন!',
+                    'success'
+                );
             }
-        }
-        
-        if (referralId && referralId.startsWith('ref')) {
-            const referrerUserId = referralId.replace('ref', '');
-            console.log('🎯 Processing referral from user:', referrerUserId);
-            
-            // Check if this user already has a referrer
-            if (userData.referred_by) {
-                console.log('✅ User already has a referrer:', userData.referred_by);
-                return;
-            }
-            
-            // Check if user is referring themselves
-            if (referrerUserId === userData.id) {
-                console.log('🚫 User cannot refer themselves');
-                return;
-            }
-            
-            // Check if referral already exists
-            const existingRef = await db.collection('referrals')
-                .where('userId', '==', userData.id)
-                .get();
-            
-            if (!existingRef.empty) {
-                console.log('✅ Referral already processed');
-                return;
-            }
-            
-            console.log('✅ New referral detected, processing...');
-            
-            // Add referral record
-            await db.collection('referrals').doc(userData.id).set({
-                userId: userData.id,
-                referredBy: referrerUserId,
-                referrerUserId: referrerUserId,
-                newUserName: userData.first_name,
-                newUserId: userData.id,
-                joinDate: firebase.firestore.FieldValue.serverTimestamp(),
-                timestamp: Date.now(),
-                status: 'completed'
-            });
-            
-            // Update user data with referrer info
-            await updateUserData({
-                referred_by: referrerUserId
-            });
-            
-            console.log('✅ Referral recorded in Firebase');
-            
-            // Give bonuses
-            await giveReferralBonus(referrerUserId);
+        } else {
+            console.log('ℹ️ No referral code found or invalid format');
         }
         
     } catch (error) {
@@ -190,20 +164,90 @@ async function checkAndProcessReferral() {
     }
 }
 
-// Give referral bonus - UPDATED VERSION
-async function giveReferralBonus(referrerUserId) {
-    if (!userData || !db) return;
+// Validate referral
+async function validateReferral(referrerUserId) {
+    console.log('🔍 Validating referral...');
+    
+    // Check if user is referring themselves
+    if (referrerUserId === userData.id) {
+        console.log('🚫 Self-referral detected');
+        showNotification('আপনি নিজেকে রেফার করতে পারবেন না!', 'error');
+        return false;
+    }
+    
+    // Check if user already has a referrer
+    if (userData.referred_by) {
+        console.log('✅ User already referred by:', userData.referred_by);
+        return false;
+    }
+    
+    // Check if referral already exists in database
+    const existingRef = await db.collection('referrals')
+        .where('userId', '==', userData.id)
+        .get();
+        
+    if (!existingRef.empty) {
+        console.log('✅ Referral already exists in database');
+        return false;
+    }
+    
+    // Check if referrer exists in users collection
+    try {
+        const referrerDoc = await db.collection('users').doc(referrerUserId).get();
+        if (!referrerDoc.exists) {
+            console.log('❌ Referrer not found in database');
+            showNotification('রেফারার একাউন্ট খুঁজে পাওয়া যায়নি!', 'error');
+            return false;
+        }
+        console.log('✅ Referrer found in database');
+    } catch (error) {
+        console.log('❌ Error checking referrer:', error);
+        return false;
+    }
+    
+    console.log('✅ Referral validation passed');
+    return true;
+}
+
+// Create referral record
+async function createReferralRecord(referrerUserId) {
+    console.log('📝 Creating referral record...');
+    
+    const referralData = {
+        userId: userData.id,
+        referredBy: referrerUserId,
+        referrerUserId: referrerUserId,
+        newUserName: userData.first_name,
+        newUserId: userData.id,
+        joinDate: firebase.firestore.FieldValue.serverTimestamp(),
+        timestamp: Date.now(),
+        status: 'completed',
+        source: 'telegram_startapp',
+        startapp_param: tg?.initDataUnsafe?.start_param || 'direct'
+    };
+    
+    await db.collection('referrals').doc(userData.id).set(referralData);
+    
+    // Update current user with referrer info
+    await updateUserData({
+        referred_by: referrerUserId
+    });
+    
+    console.log('✅ Referral record created successfully');
+}
+
+// Give referral bonuses
+async function giveReferralBonuses(referrerUserId) {
+    console.log('💰 Giving referral bonuses...');
     
     try {
-        console.log('💰 Giving referral bonuses...');
-        
-        // Give 50 BDT to new user
+        // Give 50 BDT to new user (current user)
         await updateUserData({
             balance: userData.balance + 50,
             total_income: userData.total_income + 50
         });
         
-        console.log('✅ New user got 50 BDT bonus');
+        console.log('✅ New user received 50 BDT bonus');
         
         // Give 100 BDT to referrer and increment their referral count
         const referrerRef = db.collection('users').doc(referrerUserId);
@@ -222,15 +266,12 @@ async function giveReferralBonus(referrerUserId) {
                 lastActive: firebase.firestore.FieldValue.serverTimestamp()
             });
             
-            console.log(`✅ Referrer ${referrerUserId} got 100 BDT bonus. New count: ${newReferralCount}`);
-        } else {
-            console.log('❌ Referrer user not found in database');
+            console.log(`✅ Referrer ${referrerUserId} received 100 BDT. New referral count: ${newReferralCount}`);
         }
         
-        showNotification('🎉 রেফারেল বোনাস! আপনি ৫০ টাকা পেয়েছেন!', 'success');
-        
     } catch (error) {
-        console.error('❌ Error giving referral bonus:', error);
+        console.error('❌ Error giving bonuses:', error);
+        throw error;
     }
 }
 
@@ -253,13 +294,14 @@ async function loadReferralCount() {
     }
 }
 
-// Generate referral link - UPDATED for better Telegram integration
+// Generate referral link with startapp
 function generateReferralLink() {
     if (!userData) return 'লোড হচ্ছে...';
-    return `https://t.me/sohojincomebot?start=ref${userData.id}`;
+    // Use startapp for direct mini app opening
+    return `https://t.me/sohojincomebot?startapp=ref${userData.id}`;
 }
 
-// Copy referral link with better messaging
+// Copy referral link
 async function copyReferralLink() {
     if (!userData) {
         alert('ডেটা লোড হয়নি। রিফ্রেশ করুন।');
@@ -270,16 +312,15 @@ async function copyReferralLink() {
     
     try {
         await navigator.clipboard.writeText(refLink);
-        
-        // Load fresh count
         await loadReferralCount();
         
-        const message = `✅ রেফারেল লিঙ্ক কপি হয়েছে!\n\nলিঙ্ক: ${refLink}\nআপনার রেফারেল: ${userData.total_referrals} জন\n\nবন্ধুকে এই লিঙ্ক দিন, সে টেলিগ্রামে ওপেন করলে আপনি ১০০ টাকা পাবেন!`;
-        
-        showNotification(message, 'success');
+        showNotification(
+            `✅ রেফারেল লিঙ্ক কপি হয়েছে!\n\nলিঙ্ক: ${refLink}\nআপনার রেফারেল: ${userData.total_referrals} জন\n\nবন্ধুকে এই লিঙ্ক দিন, সে ক্লিক করলেই সরাসরি অ্যাপ ওপেন হবে এবং আপনি ১০০ টাকা পাবেন!`, 
+            'success'
+        );
         
     } catch (error) {
-        // Fallback for browsers that don't support clipboard
+        // Fallback for browsers without clipboard support
         const tempInput = document.createElement('input');
         tempInput.value = refLink;
         document.body.appendChild(tempInput);
@@ -287,23 +328,41 @@ async function copyReferralLink() {
         document.execCommand('copy');
         document.body.removeChild(tempInput);
         
-        const message = `✅ রেফারেল লিঙ্ক কপি হয়েছে!\n\nআপনার রেফারেল: ${userData.total_referrals} জন\n\nবন্ধুকে এই লিঙ্ক দিন: ${refLink}`;
-        showNotification(message, 'success');
+        showNotification(
+            `✅ রেফারেল লিঙ্ক কপি হয়েছে!\n\nআপনার রেফারেল: ${userData.total_referrals} জন\n\nলিঙ্ক: ${refLink}`, 
+            'success'
+        );
     }
 }
 
-// Save referral for later processing (for web version)
-function saveReferralForProcessing(referralCode) {
-    localStorage.setItem('pending_referral', referralCode);
-    console.log('💾 Saved referral for processing:', referralCode);
+// Manual test function for referral
+async function testReferralManually() {
+    if (!userData) {
+        alert('User data not loaded');
+        return;
+    }
+    
+    const testReferrerId = prompt('রেফারারের User ID দিন (শুধু নম্বর):');
+    if (!testReferrerId) return;
+    
+    const referralCode = 'ref' + testReferrerId;
+    
+    try {
+        // Simulate the referral process
+        if (await validateReferral(testReferrerId)) {
+            await createReferralRecord(testReferrerId);
+            await giveReferralBonuses(testReferrerId);
+            showNotification('টেস্ট রেফারেল সফল! ৫০ টাকা বোনাস যোগ হয়েছে।', 'success');
+        }
+    } catch (error) {
+        console.error('Test referral error:', error);
+        alert('টেস্ট রেফারেল ব্যর্থ!');
+    }
 }
 
 // Update user data in Firebase
 async function updateUserData(updates) {
-    if (!userData || !db) {
-        console.error("❌ Cannot update: userData or db not available");
-        return;
-    }
+    if (!userData || !db) return;
     
     try {
         Object.assign(userData, updates);
@@ -326,14 +385,8 @@ function getUserData() {
 
 // Update UI with user data
 function updateUI() {
-    if (!userData) {
-        console.log("❌ No user data for UI update");
-        return;
-    }
+    if (!userData) return;
     
-    console.log("🔄 Updating UI with user data:", userData);
-    
-    // Update all possible elements
     const elements = {
         'userName': userData.first_name,
         'profileName': userData.first_name,
@@ -355,9 +408,7 @@ function updateUI() {
     
     for (const [id, value] of Object.entries(elements)) {
         const element = document.getElementById(id);
-        if (element) {
-            element.textContent = value;
-        }
+        if (element) element.textContent = value;
     }
     
     // Update progress bar
@@ -375,10 +426,8 @@ function updateUI() {
     }
 }
 
-// Fallback UI if Firebase fails
+// Fallback UI
 function fallbackUI() {
-    console.log("🔄 Loading fallback UI");
-    
     const elements = {
         'userName': 'ইউজার',
         'profileName': 'ইউজার',
@@ -400,9 +449,7 @@ function fallbackUI() {
     
     for (const [id, value] of Object.entries(elements)) {
         const element = document.getElementById(id);
-        if (element) {
-            element.textContent = value;
-        }
+        if (element) element.textContent = value;
     }
 }
 
@@ -422,9 +469,7 @@ function showNotification(message, type = 'info') {
 // Hide loading overlay
 function hideLoading() {
     const overlay = document.getElementById('loadingOverlay');
-    if (overlay) {
-        overlay.style.display = 'none';
-    }
+    if (overlay) overlay.style.display = 'none';
 }
 
 // Initialize when DOM is loaded
@@ -435,6 +480,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Export functions to global scope
 window.copyReferralLink = copyReferralLink;
-window.saveReferralForProcessing = saveReferralForProcessing;
 window.getUserData = getUserData;
 window.updateUserData = updateUserData;
+window.testReferralManually = testReferralManually; // For testing
