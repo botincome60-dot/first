@@ -24,7 +24,7 @@ function getUserId() {
     return tg?.initDataUnsafe?.user?.id || 'unknown';
 }
 
-// Get Referral Count
+// Get Referral Count from Firebase
 async function getReferralCount(userId) {
     try {
         if (!db) {
@@ -45,7 +45,7 @@ async function getReferralCount(userId) {
     }
 }
 
-// Track New Referral
+// Track New Referral in Firebase
 async function trackNewReferral(referrerId, newUserId, newUserName) {
     try {
         if (!db) {
@@ -74,7 +74,7 @@ async function trackNewReferral(referrerId, newUserId, newUserName) {
             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        console.log('✅ Referral tracked successfully:', updatedCount);
+        console.log('✅ Referral tracked in Firebase:', updatedCount);
         return true;
     } catch (error) {
         console.log('❌ Referral track error:', error);
@@ -82,6 +82,37 @@ async function trackNewReferral(referrerId, newUserId, newUserName) {
     }
 }
 
+// Update User Balance in Firebase
+async function updateUserBalance(userId, amount) {
+    try {
+        if (!db) return false;
+
+        const userRef = db.collection('users').doc(userId);
+        const doc = await userRef.get();
+        
+        if (doc.exists) {
+            const currentBalance = doc.data().balance || 0;
+            await userRef.update({
+                balance: currentBalance + amount,
+                total_income: (doc.data().total_income || 0) + amount,
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } else {
+            await userRef.set({
+                userId: userId,
+                balance: amount,
+                total_income: amount,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+        return true;
+    } catch (error) {
+        console.log('Balance update error:', error);
+        return false;
+    }
+}
+
 // Export functions
 window.getReferralCount = getReferralCount;
 window.trackNewReferral = trackNewReferral;
+window.updateUserBalance = updateUserBalance;
