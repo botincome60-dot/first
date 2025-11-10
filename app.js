@@ -1,14 +1,14 @@
 // Telegram Web App initialization
 const tg = window.Telegram.WebApp;
 
-// User data - START WITH 0 REFERRALS
+// User data
 let userData = {
-    id: tg?.initDataUnsafe?.user?.id || Math.floor(100000 + Math.random() * 900000),
+    id: tg?.initDataUnsafe?.user?.id || 7070041932,
     first_name: tg?.initDataUnsafe?.user?.first_name || 'ইউজার',
-    balance: 0.00,  // Start with 0 balance
+    balance: 0.00,
     today_ads: 0,
     total_ads: 0,
-    total_referrals: 0,  // Start with 0 referrals
+    total_referrals: 0,
     total_income: 0.00
 };
 
@@ -17,21 +17,19 @@ function initializeUserData() {
     const savedData = localStorage.getItem('userData');
     if (!savedData) {
         localStorage.setItem('userData', JSON.stringify(userData));
+    } else {
+        userData = JSON.parse(savedData);
     }
 }
 
-// Get user data
 function getUserData() {
-    const data = localStorage.getItem('userData');
-    return data ? JSON.parse(data) : userData;
+    return userData;
 }
 
-// Update user data
 function updateUserData(updates) {
-    const currentData = getUserData();
-    const updatedData = { ...currentData, ...updates };
-    localStorage.setItem('userData', JSON.stringify(updatedData));
-    return updatedData;
+    Object.assign(userData, updates);
+    localStorage.setItem('userData', JSON.stringify(userData));
+    return userData;
 }
 
 // Generate referral link
@@ -40,77 +38,50 @@ function generateReferralLink() {
     return `https://t.me/sohojincomebot?start=ref${user.id}`;
 }
 
+// Load referral count from Firebase
+async function loadReferralCount() {
+    try {
+        if (typeof getReferralCount !== 'undefined') {
+            const count = await getReferralCount(userData.id);
+            if (count > 0) {
+                updateUserData({ total_referrals: count });
+                updateUI();
+            }
+        }
+    } catch (error) {
+        console.log('Failed to load referral count:', error);
+    }
+}
+
 // Copy referral link
 async function copyReferralLink() {
     const refLink = generateReferralLink();
-    const user = getUserData();
     
     try {
         await navigator.clipboard.writeText(refLink);
         
-        // Try to get Firebase count
-        let displayCount = user.total_referrals;
-        if (typeof getReferralCount !== 'undefined') {
-            try {
-                const firebaseCount = await getReferralCount(user.id);
-                displayCount = firebaseCount;
-                // Update local data with Firebase count
-                updateUserData({ total_referrals: firebaseCount });
-            } catch (error) {
-                console.log('Firebase not available, using local count');
-            }
-        }
+        // Load fresh count
+        await loadReferralCount();
+        const user = getUserData();
         
         if (window.Telegram && Telegram.WebApp) {
             Telegram.WebApp.showPopup({
                 title: "✅ কপি হয়েছে!",
-                message: `রেফারেল লিঙ্ক কপি করা হয়েছে!\n\nআপনার রেফারেল: ${displayCount} জন`,
+                message: `রেফারেল লিঙ্ক কপি করা হয়েছে!\n\nআপনার রেফারেল: ${user.total_referrals} জন`,
                 buttons: [{ type: "close" }]
             });
         } else {
-            alert(`রেফারেল লিঙ্ক কপি হয়েছে!\nআপনার রেফারেল: ${displayCount} জন`);
+            alert(`রেফারেল লিঙ্ক কপি হয়েছে!\nআপনার রেফারেল: ${user.total_referrals} জন`);
         }
     } catch (error) {
         alert('লিঙ্ক কপি করতে সমস্যা হয়েছে!');
     }
 }
 
-// Add referral bonus (when someone uses your link)
-async function addReferralBonus() {
-    const user = getUserData();
-    const newBalance = user.balance + 100; // 100 Taka per referral
-    const newReferrals = user.total_referrals + 1;
-    
-    updateUserData({ 
-        balance: newBalance,
-        total_referrals: newReferrals,
-        total_income: user.total_income + 100
-    });
-    
-    // Also update in Firebase if available
-    if (typeof updateUserBalance !== 'undefined') {
-        try {
-            await updateUserBalance(user.id, 100);
-        } catch (error) {
-            console.log('Firebase update failed');
-        }
-    }
-    
-    alert('🎉 নতুন রেফারেল! ১০০ টাকা বোনাস পেয়েছেন!');
-    window.location.reload();
-}
-
-// Initialize app
-function initApp() {
-    if (tg) {
-        tg.expand();
-        tg.ready();
-    }
-    
-    initializeUserData();
+// Update UI
+function updateUI() {
     const user = getUserData();
     
-    // Update UI immediately
     document.getElementById('userName').textContent = user.first_name;
     document.getElementById('mainBalance').textContent = user.balance.toFixed(2) + ' টাকা';
     document.getElementById('todayAds').textContent = user.today_ads + '/10';
@@ -121,14 +92,20 @@ function initApp() {
     document.getElementById('referralLink').textContent = generateReferralLink();
 }
 
-// Withdraw check
-function checkWithdraw() {
-    const user = getUserData();
-    if (user.total_referrals < 15) {
-        alert(`🚫 Withdraw অযোগ্য!\n\nআপনার ${15 - user.total_referrals}টি আরও রেফারেল দরকার!\n\nআপনার রেফারেল: ${user.total_referrals} জন\nপ্রয়োজন: ১৫ জন`);
-        return false;
+// Initialize app
+function initApp() {
+    if (tg) {
+        tg.expand();
+        tg.ready();
     }
-    return true;
+    
+    initializeUserData();
+    updateUI();
+    
+    // Load referral count from Firebase
+    setTimeout(() => {
+        loadReferralCount();
+    }, 2000);
 }
 
 // Complete ad watch
@@ -142,13 +119,29 @@ function completeAdWatch() {
     });
     
     alert('🎉 এড দেখা সম্পন্ন! ৩০ টাকা যোগ হয়েছে।');
-    window.location.reload();
+    updateUI();
 }
 
-// Manual referral add (for testing)
-function addManualReferral() {
-    if (confirm('আপনি কি একটি রেফারেল যোগ করতে চান? (টেস্টিং এর জন্য)')) {
-        addReferralBonus();
+// Withdraw check
+function checkWithdraw() {
+    const user = getUserData();
+    if (user.total_referrals < 15) {
+        alert(`🚫 Withdraw অযোগ্য!\n\nআপনার ${15 - user.total_referrals}টি আরও রেফারেল দরকার!\n\nআপনার রেফারেল: ${user.total_referrals} জন\nপ্রয়োজন: ১৫ জন`);
+        return false;
+    }
+    return true;
+}
+
+// Manual test function
+function testReferral() {
+    if (confirm('টেস্ট রেফারেল যোগ করবেন?')) {
+        const user = getUserData();
+        updateUserData({
+            total_referrals: user.total_referrals + 1,
+            balance: user.balance + 100
+        });
+        updateUI();
+        alert('✅ টেস্ট রেফারেল যোগ করা হয়েছে! ১০০ টাকা বোনাস পেয়েছেন।');
     }
 }
 
@@ -156,11 +149,7 @@ function addManualReferral() {
 document.addEventListener('DOMContentLoaded', initApp);
 
 // Export functions
-window.getUserData = getUserData;
-window.updateUserData = updateUserData;
-window.generateReferralLink = generateReferralLink;
 window.copyReferralLink = copyReferralLink;
-window.checkWithdraw = checkWithdraw;
 window.completeAdWatch = completeAdWatch;
-window.addManualReferral = addManualReferral;
-window.addReferralBonus = addReferralBonus;
+window.checkWithdraw = checkWithdraw;
+window.testReferral = testReferral;
