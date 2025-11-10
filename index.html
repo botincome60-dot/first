@@ -7,6 +7,11 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    
     <style>
         .bottom-nav {
             position: fixed;
@@ -21,10 +26,6 @@
             padding-bottom: 70px;
         }
     </style>
-    <script src='//libtl.com/sdk.js' data-zone='10166009' data-sdk='show_10166009'></script>
-    <!-- index.html এর <head> section-এ যোগ করুন -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-gray-50">
     <div class="container mx-auto px-4 py-4">
@@ -108,14 +109,19 @@
         <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 text-white">
             <h3 class="font-bold text-lg mb-2">বন্ধুকে রেফার করুন</h3>
             <p class="text-white/90 text-sm mb-3">প্রতি রেফারেলে পাবেন ১০০ টাকা</p>
+            
             <div class="bg-white/10 rounded-lg p-3 mb-3">
                 <p class="text-xs mb-1">আপনার রেফারেল লিঙ্ক</p>
                 <div class="flex items-center justify-between">
-                    <code class="text-sm font-mono" id="referralLink">লোড হচ্ছে...</code>
-                    <button onclick="copyReferralLink()" class="bg-white text-green-600 px-3 py-1 rounded text-sm font-semibold">
+                    <code class="text-sm font-mono break-all" id="referralLink">লোড হচ্ছে...</code>
+                    <button onclick="copyReferralLink()" class="bg-white text-green-600 px-3 py-1 rounded text-sm font-semibold ml-2 whitespace-nowrap">
                         কপি
                     </button>
                 </div>
+            </div>
+            
+            <div class="bg-white/10 rounded-lg p-3">
+                <p class="text-sm">আপনার মোট রেফারেল: <span class="font-bold" id="totalReferrals2">0</span> জন</p>
             </div>
         </div>
     </div>
@@ -152,33 +158,18 @@
                 document.getElementById('mainBalance').textContent = user.balance.toFixed(2) + ' টাকা';
                 document.getElementById('todayAds').textContent = user.today_ads + '/10';
                 document.getElementById('totalReferrals').textContent = user.total_referrals;
+                document.getElementById('totalReferrals2').textContent = user.total_referrals;
                 document.getElementById('totalAds').textContent = user.total_ads;
                 document.getElementById('totalIncome').textContent = user.total_income.toFixed(2) + ' টাকা';
                 
-                const refLink = generateReferralLink();
-                document.getElementById('referralLink').textContent = refLink;
+                // Referral link immediately set
+                document.getElementById('referralLink').textContent = generateReferralLink();
+                
+                // Load fresh referral count from Firebase
+                setTimeout(() => {
+                    updateReferralDisplay();
+                }, 1500);
             }
-        }
-
-        function copyReferralLink() {
-            const refLink = document.getElementById('referralLink').textContent;
-            navigator.clipboard.writeText(refLink);
-            
-            if (window.Telegram && Telegram.WebApp) {
-                Telegram.WebApp.showPopup({
-                    title: 'কপি হয়েছে!',
-                    message: 'রেফারেল লিঙ্ক কপি করা হয়েছে।',
-                    buttons: [{ type: 'close' }]
-                });
-            } else {
-                alert('রেফারেল লিঙ্ক কপি করা হয়েছে!');
-            }
-        }
-
-        function generateReferralLink() {
-            const user = getUserData();
-            const botUsername = 'sohojincomebot';
-            return `https://t.me/${botUsername}?start=ref${user.id}`;
         }
 
         document.addEventListener('DOMContentLoaded', function() {
