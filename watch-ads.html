@@ -229,4 +229,33 @@
                 document.getElementById('watchAdBtn').disabled = false;
                 document.getElementById('adStatus').textContent = 'এড প্রস্তুত';
                 document.getElementById('adStatus').className = 'text-xs text-green-600';
-                document.getElementById('rewardStatus').textContent
+                document.getElementById('rewardStatus').textContent = 'এড দেখার পর অটোমেটিক ৩০ টাকা যোগ হবে';
+                document.getElementById('rewardStatus').className = 'text-gray-500 text-sm';
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.showPopup({
+                    title: type === 'success' ? 'সফল!' : 'মেসেজ',
+                    message: message,
+                    buttons: [{ type: 'close' }]
+                });
+            } else {
+                alert(message);
+            }
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initWatchAdsPage, 1000);
+        });
+    </script>
+</body>
+</html>
