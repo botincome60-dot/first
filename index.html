@@ -149,32 +149,5 @@
     </div>
 
     <script src="app.js"></script>
-    <script>
-        // হোম পেজের বিশেষ ফাংশনালিটি
-        function initHomePage() {
-            const user = getUserData();
-            if (user) {
-                document.getElementById('userName').textContent = user.first_name || 'ইউজার';
-                document.getElementById('mainBalance').textContent = user.balance.toFixed(2) + ' টাকা';
-                document.getElementById('todayAds').textContent = user.today_ads + '/10';
-                document.getElementById('totalReferrals').textContent = user.total_referrals;
-                document.getElementById('totalReferrals2').textContent = user.total_referrals;
-                document.getElementById('totalAds').textContent = user.total_ads;
-                document.getElementById('totalIncome').textContent = user.total_income.toFixed(2) + ' টাকা';
-                
-                // Referral link immediately set
-                document.getElementById('referralLink').textContent = generateReferralLink();
-                
-                // Load fresh referral count from Firebase
-                setTimeout(() => {
-                    updateReferralDisplay();
-                }, 1500);
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            initHomePage();
-        });
-    </script>
 </body>
 </html>

@@ -7,7 +7,11 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    
     <style>
         .bottom-nav {
             position: fixed;
@@ -17,13 +21,12 @@
             background: white;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
-        .task-completed {
-            background: #f0f9ff !important;
-            border-color: #bae6fd !important;
+        body {
+            padding-bottom: 70px;
         }
     </style>
 </head>
-<body class="bg-gray-50 pb-16">
+<body class="bg-gray-50">
     <div class="container mx-auto px-4 py-4">
         <!-- হেডার -->
         <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 text-white mb-4">
@@ -67,8 +70,8 @@
             <h3 class="font-bold text-lg mb-3">বোনাস টাস্কস</h3>
             
             <div class="space-y-3">
-                <!-- টাস্ক ১ - Telegram Channel -->
-                <div class="border border-gray-200 rounded-xl p-3" id="telegramTask">
+                <!-- টাস্ক ১ -->
+                <div class="border border-gray-200 rounded-xl p-3">
                     <div class="flex items-center justify-between mb-2">
                         <div>
                             <h4 class="font-semibold">টেলিগ্রাম চ্যানেল জয়েন করুন</h4>
@@ -76,13 +79,13 @@
                         </div>
                         <i class="fas fa-telegram text-blue-400 text-xl"></i>
                     </div>
-                    <button onclick="completeTelegramTask()" id="telegramBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold">
+                    <button onclick="completeTask('telegram')" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold">
                         ক্লেইম করুন
                     </button>
                 </div>
                 
-                <!-- টাস্ক ২ - YouTube Channel -->
-                <div class="border border-gray-200 rounded-xl p-3" id="youtubeTask">
+                <!-- টাস্ক ২ -->
+                <div class="border border-gray-200 rounded-xl p-3">
                     <div class="flex items-center justify-between mb-2">
                         <div>
                             <h4 class="font-semibold">ইউটিউব চ্যানেল সাবস্ক্রাইব</h4>
@@ -90,35 +93,21 @@
                         </div>
                         <i class="fab fa-youtube text-red-500 text-xl"></i>
                     </div>
-                    <button onclick="completeYoutubeTask()" id="youtubeBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold">
+                    <button onclick="completeTask('youtube')" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold">
                         ক্লেইম করুন
                     </button>
                 </div>
                 
-                <!-- টাস্ক ৩ - Video Task -->
-                <div class="border border-gray-200 rounded-xl p-3" id="videoTask">
+                <!-- টাস্ক ৩ -->
+                <div class="border border-gray-200 rounded-xl p-3">
                     <div class="flex items-center justify-between mb-2">
                         <div>
-                            <h4 class="font-semibold">কাজের ভিডিও দেখুন</h4>
+                            <h4 class="font-semibold">ফেসবুক পোস্ট শেয়ার</h4>
                             <p class="text-green-600 text-sm font-semibold">১০০ টাকা বোনাস</p>
                         </div>
-                        <i class="fas fa-video text-purple-500 text-xl"></i>
+                        <i class="fab fa-facebook text-blue-500 text-xl"></i>
                     </div>
-                    <button onclick="completeVideoTask()" id="videoBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold">
-                        ক্লেইম করুন
-                    </button>
-                </div>
-
-                <!-- টাস্ক ৪ - Website Visit -->
-                <div class="border border-gray-200 rounded-xl p-3" id="websiteTask">
-                    <div class="flex items-center justify-between mb-2">
-                        <div>
-                            <h4 class="font-semibold">ওয়েবসাইট ভিজিট করুন</h4>
-                            <p class="text-green-600 text-sm font-semibold">৭৫ টাকা বোনাস</p>
-                        </div>
-                        <i class="fas fa-globe text-green-500 text-xl"></i>
-                    </div>
-                    <button onclick="completeWebsiteTask()" id="websiteBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold">
+                    <button onclick="completeTask('facebook')" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold">
                         ক্লেইম করুন
                     </button>
                 </div>
@@ -150,162 +139,39 @@
 
     <script src="app.js"></script>
     <script>
-        // টাস্ক স্টেট ম্যানেজমেন্ট
-        const TASK_STATES = {
-            telegram: false,
-            youtube: false,
-            video: false,
-            website: false
-        };
-
-        function initTasksPage() {
-            const user = getUserData();
+        async function initTasksPage() {
+            const user = await getUserData();
             if (user) {
                 const remaining = 10 - user.today_ads;
                 document.getElementById('adsRemaining').textContent = remaining > 0 ? remaining : 0;
             }
-
-            // লোড টাস্ক স্টেটস
-            loadTaskStates();
         }
 
-        function loadTaskStates() {
-            const savedStates = localStorage.getItem('taskStates');
-            if (savedStates) {
-                Object.assign(TASK_STATES, JSON.parse(savedStates));
-                updateTaskButtons();
+        async function completeTask(taskType) {
+            let amount = 0;
+            let taskName = '';
+            
+            switch(taskType) {
+                case 'telegram':
+                    amount = 50;
+                    taskName = 'টেলিগ্রাম চ্যানেল জয়েন';
+                    window.open('https://t.me/your_channel', '_blank');
+                    break;
+                case 'youtube':
+                    amount = 50;
+                    taskName = 'ইউটিউব সাবস্ক্রাইব';
+                    window.open('https://youtube.com/your_channel', '_blank');
+                    break;
+                case 'facebook':
+                    amount = 100;
+                    taskName = 'ফেসবুক শেয়ার';
+                    window.open('https://facebook.com/your_page', '_blank');
+                    break;
             }
-        }
-
-        function saveTaskStates() {
-            localStorage.setItem('taskStates', JSON.stringify(TASK_STATES));
-        }
-
-        function updateTaskButtons() {
-            // Telegram Task
-            if (TASK_STATES.telegram) {
-                document.getElementById('telegramBtn').innerHTML = 'ক্লেইমড';
-                document.getElementById('telegramBtn').classList.remove('bg-green-500');
-                document.getElementById('telegramBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
-                document.getElementById('telegramBtn').disabled = true;
-                document.getElementById('telegramTask').classList.add('task-completed');
-            }
-
-            // YouTube Task
-            if (TASK_STATES.youtube) {
-                document.getElementById('youtubeBtn').innerHTML = 'ক্লেইমড';
-                document.getElementById('youtubeBtn').classList.remove('bg-green-500');
-                document.getElementById('youtubeBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
-                document.getElementById('youtubeBtn').disabled = true;
-                document.getElementById('youtubeTask').classList.add('task-completed');
-            }
-
-            // Video Task
-            if (TASK_STATES.video) {
-                document.getElementById('videoBtn').innerHTML = 'ক্লেইমড';
-                document.getElementById('videoBtn').classList.remove('bg-green-500');
-                document.getElementById('videoBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
-                document.getElementById('videoBtn').disabled = true;
-                document.getElementById('videoTask').classList.add('task-completed');
-            }
-
-            // Website Task
-            if (TASK_STATES.website) {
-                document.getElementById('websiteBtn').innerHTML = 'ক্লেইমড';
-                document.getElementById('websiteBtn').classList.remove('bg-green-500');
-                document.getElementById('websiteBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
-                document.getElementById('websiteBtn').disabled = true;
-                document.getElementById('websiteTask').classList.add('task-completed');
-            }
-        }
-
-        function completeTelegramTask() {
-            // আপনি পরে এখানে আপনার টেলিগ্রাম চ্যানেল লিঙ্ক দিবেন
-            const telegramLink = "https://t.me/your_channel_link"; // আপনার লিঙ্ক দিন
             
-            // ওপেন লিঙ্ক ইন নিউ ট্যাব
-            window.open(telegramLink, '_blank');
-            
-            // টাস্ক কমপ্লিট মার্ক করুন
-            TASK_STATES.telegram = true;
-            saveTaskStates();
-            updateTaskButtons();
-            
-            // বোনাস যোগ করুন
-            addTaskBonus(50, "টেলিগ্রাম চ্যানেল জয়েন");
-            
-            showNotification("টেলিগ্রাম চ্যানেলে জয়েন করুন এবং ৫০ টাকা বোনাস পান!", "info");
-        }
-
-        function completeYoutubeTask() {
-            // আপনি পরে এখানে আপনার ইউটিউব চ্যানেল লিঙ্ক দিবেন
-            const youtubeLink = "https://youtube.com/your_channel_link"; // আপনার লিঙ্ক দিন
-            
-            // ওপেন লিঙ্ক ইন নিউ ট্যাব
-            window.open(youtubeLink, '_blank');
-            
-            // টাস্ক কমপ্লিট মার্ক করুন
-            TASK_STATES.youtube = true;
-            saveTaskStates();
-            updateTaskButtons();
-            
-            // বোনাস যোগ করুন
-            addTaskBonus(50, "ইউটিউব চ্যানেল সাবস্ক্রাইব");
-            
-            showNotification("ইউটিউব চ্যানেল সাবস্ক্রাইব করুন এবং ৫০ টাকা বোনাস পান!", "info");
-        }
-
-        function completeVideoTask() {
-            // আপনি পরে এখানে আপনার ভিডিও লিঙ্ক দিবেন
-            const videoLink = "https://example.com/your_video_link"; // আপনার ভিডিও লিঙ্ক দিন
-            
-            // ওপেন লিঙ্ক ইন নিউ ট্যাব
-            window.open(videoLink, '_blank');
-            
-            // টাস্ক কমপ্লিট মার্ক করুন
-            TASK_STATES.video = true;
-            saveTaskStates();
-            updateTaskButtons();
-            
-            // বোনাস যোগ করুন
-            addTaskBonus(100, "কাজের ভিডিও দেখা");
-            
-            showNotification("ভিডিওটি দেখুন এবং ১০০ টাকা বোনাস পান!", "info");
-        }
-
-        function completeWebsiteTask() {
-            // আপনি পরে এখানে আপনার ওয়েবসাইট লিঙ্ক দিবেন
-            const websiteLink = "https://yourwebsite.com"; // আপনার ওয়েবসাইট লিঙ্ক দিন
-            
-            // ওপেন লিঙ্ক ইন নিউ ট্যাব
-            window.open(websiteLink, '_blank');
-            
-            // টাস্ক কমপ্লিট মার্ক করুন
-            TASK_STATES.website = true;
-            saveTaskStates();
-            updateTaskButtons();
-            
-            // বোনাস যোগ করুন
-            addTaskBonus(75, "ওয়েবসাইট ভিজিট");
-            
-            showNotification("ওয়েবসাইট ভিজিট করুন এবং ৭৫ টাকা বোনাস পান!", "info");
-        }
-
-        function addTaskBonus(amount, taskName) {
-            const user = getUserData();
-            if (user) {
-                const newBalance = user.balance + amount;
-                const newTotalIncome = user.total_income + amount;
-                
-                updateUserData({ 
-                    balance: newBalance,
-                    total_income: newTotalIncome
-                });
-                
-                // সাকসেস মেসেজ
-                setTimeout(() => {
-                    showNotification(`সফল! ${amount} টাকা বোনাস যোগ হয়েছে (${taskName})`, "success");
-                }, 1000);
+            if (amount > 0) {
+                await updateBalance(amount);
+                alert(`✅ ${taskName} সম্পন্ন! ${amount} টাকা বোনাস পেয়েছেন!`);
             }
         }
 

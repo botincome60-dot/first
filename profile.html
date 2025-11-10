@@ -7,6 +7,11 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    
     <style>
         .bottom-nav {
             position: fixed;
@@ -32,7 +37,6 @@
                 <div>
                     <h2 class="font-bold text-xl" id="profileName">লোড হচ্ছে...</h2>
                     <p class="text-white/80">টেলিগ্রাম ইউজার</p>
-                    <p class="text-white/60 text-sm">ইউজার আইডি: <span id="profileUserId">০</span></p>
                 </div>
             </div>
         </div>
@@ -64,33 +68,25 @@
         <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
             <h3 class="font-bold text-lg mb-3">একশনস</h3>
             <div class="space-y-2">
-                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    <i class="fas fa-history text-blue-500 w-6"></i>
-                    <span class="ml-3 font-semibold">ট্রানজেকশন হিস্ট্রি</span>
+                <a href="support.html" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <i class="fas fa-hand-holding-usd text-green-500 w-6"></i>
+                    <span class="ml-3 font-semibold">উইথড্র মানি</span>
                     <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
                 </a>
-                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    <i class="fas fa-gift text-green-500 w-6"></i>
-                    <span class="ml-3 font-semibold">রিওয়ার্ডস</span>
+                <a href="tasks.html" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <i class="fas fa-tasks text-blue-500 w-6"></i>
+                    <span class="ml-3 font-semibold">টাস্ক করুন</span>
                     <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
                 </a>
             </div>
         </div>
 
-        <!-- সেটিংস -->
-        <div class="bg-white rounded-xl p-4 shadow-sm">
-            <h3 class="font-bold text-lg mb-3">সেটিংস</h3>
-            <div class="space-y-2">
-                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    <i class="fas fa-shield-alt text-green-500 w-6"></i>
-                    <span class="ml-3 font-semibold">প্রাইভেসি পলিসি</span>
-                    <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
-                </a>
-                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    <i class="fas fa-file-alt text-gray-500 w-6"></i>
-                    <span class="ml-3 font-semibold">টার্মস অ্যান্ড কন্ডিশন</span>
-                    <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
-                </a>
+        <!-- রেফারেল সেকশন -->
+        <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 text-white mb-4">
+            <h3 class="font-bold text-lg mb-2">রেফারেল স্ট্যাটাস</h3>
+            <div class="bg-white/10 rounded-lg p-3">
+                <p class="text-sm mb-2">আপনার মোট রেফারেল: <span class="font-bold" id="profileRefCount">0</span> জন</p>
+                <p class="text-xs text-white/80">উইথড্র এর জন্য ন্যূনতম ১৫টি রেফারেল প্রয়োজন</p>
             </div>
         </div>
 
@@ -125,27 +121,8 @@
 
     <script src="app.js"></script>
     <script>
-        function initProfilePage() {
-            const user = getUserData();
-            if (user) {
-                document.getElementById('profileName').textContent = user.first_name || 'ইউজার';
-                document.getElementById('profileUserId').textContent = user.id;
-                document.getElementById('profileTotalIncome').textContent = user.total_income.toFixed(2) + ' টাকা';
-                document.getElementById('profileTotalAds').textContent = user.total_ads;
-                document.getElementById('profileReferrals').textContent = user.total_referrals;
-                
-                // জয়ন দিন ক্যালকুলেশন
-                const joinDate = new Date(user.join_date || Date.now());
-                const today = new Date();
-                const diffTime = Math.abs(today - joinDate);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                document.getElementById('profileJoinDays').textContent = diffDays;
-            }
-        }
-
         function logout() {
             if (confirm('আপনি কি লগ আউট করতে চান?')) {
-                localStorage.removeItem('telegramUserData');
                 if (window.Telegram && Telegram.WebApp) {
                     Telegram.WebApp.close();
                 } else {
@@ -153,10 +130,6 @@
                 }
             }
         }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            initProfilePage();
-        });
     </script>
 </body>
 </html>
