@@ -7,6 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     <style>
         .bottom-nav {
             position: fixed;
@@ -123,8 +124,7 @@
                     </button>
                 </div>
 
-                <!-- টাস্ক ৪ - Website Visit -->
-                
+                <!-- Website Visit টাস্ক REMOVE করা হয়েছে -->
             </div>
         </div>
     </div>
@@ -161,8 +161,8 @@
         const TASK_STATES = {
             telegram: false,
             youtube: false,
-            video: false,
-            website: false
+            video: false
+            // website: false - REMOVED
         };
 
         function initTasksPage() {
@@ -180,7 +180,15 @@
         function loadTaskStates() {
             const savedStates = localStorage.getItem('taskStates');
             if (savedStates) {
-                Object.assign(TASK_STATES, JSON.parse(savedStates));
+                const parsedStates = JSON.parse(savedStates);
+                
+                // Only load existing tasks (remove website if it exists)
+                Object.assign(TASK_STATES, {
+                    telegram: parsedStates.telegram || false,
+                    youtube: parsedStates.youtube || false,
+                    video: parsedStates.video || false
+                });
+                
                 updateTaskButtons();
             }
         }
@@ -192,7 +200,7 @@
         function updateTaskButtons() {
             // Telegram Task
             if (TASK_STATES.telegram) {
-                document.getElementById('telegramBtn').innerHTML = 'ক্লেইমড';
+                document.getElementById('telegramBtn').innerHTML = '✅ ক্লেইমড';
                 document.getElementById('telegramBtn').classList.remove('bg-green-500', 'hover:bg-green-600');
                 document.getElementById('telegramBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
                 document.getElementById('telegramBtn').disabled = true;
@@ -201,7 +209,7 @@
 
             // YouTube Task
             if (TASK_STATES.youtube) {
-                document.getElementById('youtubeBtn').innerHTML = 'ক্লেইমড';
+                document.getElementById('youtubeBtn').innerHTML = '✅ ক্লেইমড';
                 document.getElementById('youtubeBtn').classList.remove('bg-green-500', 'hover:bg-green-600');
                 document.getElementById('youtubeBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
                 document.getElementById('youtubeBtn').disabled = true;
@@ -210,24 +218,23 @@
 
             // Video Task
             if (TASK_STATES.video) {
-                document.getElementById('videoBtn').innerHTML = 'ক্লেইমড';
+                document.getElementById('videoBtn').innerHTML = '✅ ক্লেইমড';
                 document.getElementById('videoBtn').classList.remove('bg-green-500', 'hover:bg-green-600');
                 document.getElementById('videoBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
                 document.getElementById('videoBtn').disabled = true;
                 document.getElementById('videoTask').classList.add('task-completed');
             }
 
-            // Website Task
-            if (TASK_STATES.website) {
-                document.getElementById('websiteBtn').innerHTML = 'ক্লেইমড';
-                document.getElementById('websiteBtn').classList.remove('bg-green-500', 'hover:bg-green-600');
-                document.getElementById('websiteBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
-                document.getElementById('websiteBtn').disabled = true;
-                document.getElementById('websiteTask').classList.add('task-completed');
-            }
+            // Website Task - REMOVED
         }
 
         function completeTelegramTask() {
+            // Check if already completed
+            if (TASK_STATES.telegram) {
+                showNotification('আপনি ইতিমধ্যে এই টাস্কটি কমপ্লিট করেছেন!', 'info');
+                return;
+            }
+
             const telegramLink = "https://t.me/sohojincome_channel";
             
             window.open(telegramLink, '_blank');
@@ -242,6 +249,12 @@
         }
 
         function completeYoutubeTask() {
+            // Check if already completed
+            if (TASK_STATES.youtube) {
+                showNotification('আপনি ইতিমধ্যে এই টাস্কটি কমপ্লিট করেছেন!', 'info');
+                return;
+            }
+
             const youtubeLink = "https://youtube.com/@sohojincome";
             
             window.open(youtubeLink, '_blank');
@@ -256,6 +269,12 @@
         }
 
         function completeVideoTask() {
+            // Check if already completed
+            if (TASK_STATES.video) {
+                showNotification('আপনি ইতিমধ্যে এই টাস্কটি কমপ্লিট করেছেন!', 'info');
+                return;
+            }
+
             const videoLink = "https://example.com/sohojincome_video";
             
             window.open(videoLink, '_blank');
@@ -268,8 +287,6 @@
             
             showNotification("ভিডিওটি দেখুন এবং ১০০ টাকা বোনাস পান!", "info");
         }
-
-       
 
         async function addTaskBonus(amount, taskName) {
             const user = getUserData();
@@ -304,9 +321,24 @@
             }
         }
 
+        // Reset all tasks for testing (optional)
+        function resetAllTasks() {
+            if (confirm('আপনি কি সব টাস্ক রিসেট করতে চান? এটি শুধু টেস্টিং এর জন্য।')) {
+                TASK_STATES.telegram = false;
+                TASK_STATES.youtube = false;
+                TASK_STATES.video = false;
+                saveTaskStates();
+                updateTaskButtons();
+                showNotification('সব টাস্ক রিসেট করা হয়েছে!', 'success');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(initTasksPage, 1000);
         });
+
+        // For testing - add this to browser console
+        window.resetAllTasks = resetAllTasks;
     </script>
 </body>
 </html>
