@@ -1,118 +1,162 @@
-// Firebase Configuration
+// Firebase initialization
 const firebaseConfig = {
   apiKey: "AIzaSyABdp9WK7eGLwE5nY19jp-nlDlyTuTyMR0",
   authDomain: "sohojincome-36f1f.firebaseapp.com",
   projectId: "sohojincome-36f1f",
   storageBucket: "sohojincome-36f1f.firebasestorage.app",
   messagingSenderId: "398153090805",
-  appId: "1:398153090805:web:fc8d68130afbc2239be7bc"
+  appId: "1:398153090805:web:fc8d68130afbc2239be7bc",
+  measurementId: "G-VZ47961SJV"
 };
 
 // Initialize Firebase
-let db = null;
 try {
+  if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-    console.log('✅ Firebase initialized');
+  }
+  console.log("Firebase initialized successfully");
 } catch (error) {
-    console.log('❌ Firebase init failed:', error);
+  console.error("Firebase initialization error:", error);
 }
 
-// Get User ID
-function getUserId() {
-    const tg = window.Telegram.WebApp;
-    return tg?.initDataUnsafe?.user?.id || 'unknown';
+const db = firebase.firestore();
+
+// Referral system functions
+async function trackReferral(refUserId) {
+  try {
+    if (!refUserId) return false;
+    
+    // Extract referral ID from parameter (format: ref7070041932)
+    const referralId = refUserId.replace('ref', '');
+    
+    if (!referralId || isNaN(referralId)) {
+      console.log('Invalid referral ID');
+      return false;
+    }
+
+    // Get current user data
+    const currentUser = getUserData();
+    
+    // Check if this user already has referral data
+    const userRef = db.collection('referrals').doc(currentUser.id.toString());
+    const userDoc = await userRef.get();
+    
+    if (userDoc.exists) {
+      console.log('User already exists in referrals');
+      return false;
+    }
+
+    // Add new user with referral info
+    await userRef.set({
+      userId: currentUser.id.toString(),
+      referredBy: referralId,
+      joinDate: firebase.firestore.FieldValue.serverTimestamp(),
+      first_name: currentUser.first_name || 'User'
+    });
+
+    console.log('Referral tracked successfully');
+    return true;
+  } catch (error) {
+    console.error('Error tracking referral:', error);
+    return false;
+  }
 }
 
-// Get Referral Count from Firebase
 async function getReferralCount(userId) {
-    try {
-        if (!db) {
-            console.log('Firebase not available');
-            return 0;
-        }
-        
-        const doc = await db.collection('referrals').doc(userId).get();
-        if (doc.exists) {
-            const count = doc.data().count || 0;
-            console.log('Firebase referral count:', count);
-            return count;
-        }
-        return 0;
-    } catch (error) {
-        console.log('Firebase error:', error);
-        return 0;
-    }
+  try {
+    if (!userId) return 0;
+    
+    const referralsRef = db.collection('referrals');
+    const snapshot = await referralsRef.where('referredBy', '==', userId.toString()).get();
+    
+    const count = snapshot.size;
+    console.log(`Referral count for ${userId}: ${count}`);
+    return count;
+  } catch (error) {
+    console.error('Error getting referral count:', error);
+    return 0;
+  }
 }
 
-// Track New Referral in Firebase
-async function trackNewReferral(referrerId, newUserId, newUserName) {
-    try {
-        if (!db) {
-            console.log('Firebase not available');
-            return false;
-        }
-
-        console.log('Tracking referral:', referrerId, '->', newUserId);
-
-        const referrerRef = db.collection('referrals').doc(referrerId);
-        const doc = await referrerRef.get();
-        
-        let updatedCount = 1;
-        let updatedUsers = [newUserId];
-        
-        if (doc.exists) {
-            const data = doc.data();
-            updatedCount = (data.count || 0) + 1;
-            updatedUsers = [...(data.referredUsers || []), newUserId];
-        }
-        
-        await referrerRef.set({
-            count: updatedCount,
-            referredUsers: updatedUsers,
-            referrerName: newUserName || 'Unknown',
-            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-
-        console.log('✅ Referral tracked in Firebase:', updatedCount);
-        return true;
-    } catch (error) {
-        console.log('❌ Referral track error:', error);
-        return false;
+async function checkAndProcessReferral() {
+  try {
+    // Get URL parameters to check for referral
+    const urlParams = new URLSearchParams(window.location.search);
+    const startParam = urlParams.get('start');
+    
+    if (startParam && startParam.startsWith('ref')) {
+      const refUserId = startParam;
+      console.log('Referral detected:', refUserId);
+      
+      // Track the referral
+      const success = await trackReferral(refUserId);
+      
+      if (success) {
+        // Give bonus to both users
+        await giveReferralBonus(refUserId);
+      }
     }
+  } catch (error) {
+    console.error('Error processing referral:', error);
+  }
 }
 
-// Update User Balance in Firebase
-async function updateUserBalance(userId, amount) {
-    try {
-        if (!db) return false;
-
-        const userRef = db.collection('users').doc(userId);
-        const doc = await userRef.get();
-        
-        if (doc.exists) {
-            const currentBalance = doc.data().balance || 0;
-            await userRef.update({
-                balance: currentBalance + amount,
-                total_income: (doc.data().total_income || 0) + amount,
-                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        } else {
-            await userRef.set({
-                userId: userId,
-                balance: amount,
-                total_income: amount,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        }
-        return true;
-    } catch (error) {
-        console.log('Balance update error:', error);
-        return false;
+async function giveReferralBonus(refUserId) {
+  try {
+    const referralId = refUserId.replace('ref', '');
+    const currentUser = getUserData();
+    
+    // Give bonus to current user (new user)
+    const newUserBonus = 50;
+    updateUserData({
+      balance: currentUser.balance + newUserBonus,
+      total_income: currentUser.total_income + newUserBonus
+    });
+    
+    // Give bonus to referrer
+    const referrerBonus = 100;
+    
+    // Update referrer's data in Firebase
+    const referrerRef = db.collection('users').doc(referralId);
+    const referrerDoc = await referrerRef.get();
+    
+    if (referrerDoc.exists) {
+      const referrerData = referrerDoc.data();
+      await referrerRef.update({
+        balance: (referrerData.balance || 0) + referrerBonus,
+        total_income: (referrerData.total_income || 0) + referrerBonus,
+        total_referrals: (referrerData.total_referrals || 0) + 1
+      });
+    } else {
+      // Create new document for referrer if doesn't exist
+      await referrerRef.set({
+        balance: referrerBonus,
+        total_income: referrerBonus,
+        total_referrals: 1,
+        first_name: 'Referrer',
+        userId: referralId
+      });
     }
+    
+    console.log('Referral bonuses given successfully');
+    
+    // Show success message
+    if (window.Telegram && Telegram.WebApp) {
+      Telegram.WebApp.showPopup({
+        title: "রেফারেল বোনাস!",
+        message: `আপনি রেফারেল দ্বারা জয়েন করেছেন! ${newUserBonus} টাকা বোনাস পেয়েছেন।`,
+        buttons: [{ type: "close" }]
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error giving referral bonus:', error);
+  }
 }
 
-// Export functions
-window.getReferralCount = getReferralCount;
-window.trackNewReferral = trackNewReferral;
-window.updateUserBalance = updateUserBalance;
+// Initialize referral check when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(() => {
+    checkAndProcessReferral();
+  }, 2000);
+});

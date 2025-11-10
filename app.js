@@ -3,13 +3,14 @@ const tg = window.Telegram.WebApp;
 
 // User data
 let userData = {
-    id: tg?.initDataUnsafe?.user?.id || 7070041932,
+    id: tg?.initDataUnsafe?.user?.id || Math.floor(1000000000 + Math.random() * 9000000000),
     first_name: tg?.initDataUnsafe?.user?.first_name || 'ইউজার',
     balance: 0.00,
     today_ads: 0,
     total_ads: 0,
     total_referrals: 0,
-    total_income: 0.00
+    total_income: 0.00,
+    join_date: new Date().toISOString()
 };
 
 // Initialize user data
@@ -17,8 +18,24 @@ function initializeUserData() {
     const savedData = localStorage.getItem('userData');
     if (!savedData) {
         localStorage.setItem('userData', JSON.stringify(userData));
+        // Save to Firebase as well
+        saveUserToFirebase();
     } else {
         userData = JSON.parse(savedData);
+    }
+}
+
+async function saveUserToFirebase() {
+    try {
+        if (typeof db !== 'undefined') {
+            const userRef = db.collection('users').doc(userData.id.toString());
+            await userRef.set({
+                ...userData,
+                lastActive: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+    } catch (error) {
+        console.error('Error saving user to Firebase:', error);
     }
 }
 
@@ -29,7 +46,24 @@ function getUserData() {
 function updateUserData(updates) {
     Object.assign(userData, updates);
     localStorage.setItem('userData', JSON.stringify(userData));
+    
+    // Update Firebase as well
+    updateFirebaseUser();
     return userData;
+}
+
+async function updateFirebaseUser() {
+    try {
+        if (typeof db !== 'undefined') {
+            const userRef = db.collection('users').doc(userData.id.toString());
+            await userRef.set({
+                ...userData,
+                lastActive: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        }
+    } catch (error) {
+        console.error('Error updating Firebase user:', error);
+    }
 }
 
 // Generate referral link
@@ -43,7 +77,7 @@ async function loadReferralCount() {
     try {
         if (typeof getReferralCount !== 'undefined') {
             const count = await getReferralCount(userData.id);
-            if (count > 0) {
+            if (count !== userData.total_referrals) {
                 updateUserData({ total_referrals: count });
                 updateUI();
             }
@@ -105,7 +139,7 @@ function initApp() {
     // Load referral count from Firebase
     setTimeout(() => {
         loadReferralCount();
-    }, 2000);
+    }, 3000);
 }
 
 // Complete ad watch
