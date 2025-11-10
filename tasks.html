@@ -124,18 +124,7 @@
                 </div>
 
                 <!-- টাস্ক ৪ - Website Visit -->
-                <div class="border border-gray-200 rounded-xl p-3" id="websiteTask">
-                    <div class="flex items-center justify-between mb-2">
-                        <div>
-                            <h4 class="font-semibold">ওয়েবসাইট ভিজিট করুন</h4>
-                            <p class="text-green-600 text-sm font-semibold">৭৫ টাকা বোনাস</p>
-                        </div>
-                        <i class="fas fa-globe text-green-500 text-xl"></i>
-                    </div>
-                    <button onclick="completeWebsiteTask()" id="websiteBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
-                        ক্লেইম করুন
-                    </button>
-                </div>
+                
             </div>
         </div>
     </div>
@@ -280,19 +269,7 @@
             showNotification("ভিডিওটি দেখুন এবং ১০০ টাকা বোনাস পান!", "info");
         }
 
-        function completeWebsiteTask() {
-            const websiteLink = "https://sohojincome.com";
-            
-            window.open(websiteLink, '_blank');
-            
-            TASK_STATES.website = true;
-            saveTaskStates();
-            updateTaskButtons();
-            
-            addTaskBonus(75, "ওয়েবসাইট ভিজিট");
-            
-            showNotification("ওয়েবসাইট ভিজিট করুন এবং ৭৫ টাকা বোনাস পান!", "info");
-        }
+       
 
         async function addTaskBonus(amount, taskName) {
             const user = getUserData();
