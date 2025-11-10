@@ -7,7 +7,6 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <style>
         .bottom-nav {
             position: fixed;
@@ -21,10 +20,25 @@
             background: #f0f9ff !important;
             border-color: #bae6fd !important;
         }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body class="bg-gray-50 pb-16">
-    <div class="container mx-auto px-4 py-4">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-gray-600">লোড হচ্ছে...</p>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-4 fade-in">
         <!-- হেডার -->
         <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 text-white mb-4">
             <div class="flex items-center justify-between">
@@ -41,7 +55,7 @@
             <div class="flex items-center justify-between mb-3">
                 <h3 class="font-bold text-lg">এড দেখুন</h3>
                 <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-sm font-semibold">
-                    <span id="adsRemaining">0</span>/১০ এড বাকি
+                    <span id="adsRemaining">০</span>/১০ এড বাকি
                 </span>
             </div>
             
@@ -52,7 +66,7 @@
                     <p class="text-gray-600">প্রতি এড দেখে পাবেন ৩০.০০ টাকা</p>
                 </div>
                 
-                <a href="watch-ads.html" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg font-bold text-center block">
+                <a href="watch-ads.html" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg font-bold text-center block hover:from-blue-600 hover:to-blue-700 transition-colors">
                     এড দেখুন
                 </a>
             </div>
@@ -76,7 +90,7 @@
                         </div>
                         <i class="fas fa-telegram text-blue-400 text-xl"></i>
                     </div>
-                    <button onclick="completeTelegramTask()" id="telegramBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold">
+                    <button onclick="completeTelegramTask()" id="telegramBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
                         ক্লেইম করুন
                     </button>
                 </div>
@@ -90,7 +104,7 @@
                         </div>
                         <i class="fab fa-youtube text-red-500 text-xl"></i>
                     </div>
-                    <button onclick="completeYoutubeTask()" id="youtubeBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold">
+                    <button onclick="completeYoutubeTask()" id="youtubeBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
                         ক্লেইম করুন
                     </button>
                 </div>
@@ -104,7 +118,7 @@
                         </div>
                         <i class="fas fa-video text-purple-500 text-xl"></i>
                     </div>
-                    <button onclick="completeVideoTask()" id="videoBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold">
+                    <button onclick="completeVideoTask()" id="videoBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
                         ক্লেইম করুন
                     </button>
                 </div>
@@ -118,7 +132,7 @@
                         </div>
                         <i class="fas fa-globe text-green-500 text-xl"></i>
                     </div>
-                    <button onclick="completeWebsiteTask()" id="websiteBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold">
+                    <button onclick="completeWebsiteTask()" id="websiteBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
                         ক্লেইম করুন
                     </button>
                 </div>
@@ -148,7 +162,11 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="app.js"></script>
+
     <script>
         // টাস্ক স্টেট ম্যানেজমেন্ট
         const TASK_STATES = {
@@ -167,6 +185,7 @@
 
             // লোড টাস্ক স্টেটস
             loadTaskStates();
+            hideLoading();
         }
 
         function loadTaskStates() {
@@ -185,7 +204,7 @@
             // Telegram Task
             if (TASK_STATES.telegram) {
                 document.getElementById('telegramBtn').innerHTML = 'ক্লেইমড';
-                document.getElementById('telegramBtn').classList.remove('bg-green-500');
+                document.getElementById('telegramBtn').classList.remove('bg-green-500', 'hover:bg-green-600');
                 document.getElementById('telegramBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
                 document.getElementById('telegramBtn').disabled = true;
                 document.getElementById('telegramTask').classList.add('task-completed');
@@ -194,7 +213,7 @@
             // YouTube Task
             if (TASK_STATES.youtube) {
                 document.getElementById('youtubeBtn').innerHTML = 'ক্লেইমড';
-                document.getElementById('youtubeBtn').classList.remove('bg-green-500');
+                document.getElementById('youtubeBtn').classList.remove('bg-green-500', 'hover:bg-green-600');
                 document.getElementById('youtubeBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
                 document.getElementById('youtubeBtn').disabled = true;
                 document.getElementById('youtubeTask').classList.add('task-completed');
@@ -203,7 +222,7 @@
             // Video Task
             if (TASK_STATES.video) {
                 document.getElementById('videoBtn').innerHTML = 'ক্লেইমড';
-                document.getElementById('videoBtn').classList.remove('bg-green-500');
+                document.getElementById('videoBtn').classList.remove('bg-green-500', 'hover:bg-green-600');
                 document.getElementById('videoBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
                 document.getElementById('videoBtn').disabled = true;
                 document.getElementById('videoTask').classList.add('task-completed');
@@ -212,7 +231,7 @@
             // Website Task
             if (TASK_STATES.website) {
                 document.getElementById('websiteBtn').innerHTML = 'ক্লেইমড';
-                document.getElementById('websiteBtn').classList.remove('bg-green-500');
+                document.getElementById('websiteBtn').classList.remove('bg-green-500', 'hover:bg-green-600');
                 document.getElementById('websiteBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
                 document.getElementById('websiteBtn').disabled = true;
                 document.getElementById('websiteTask').classList.add('task-completed');
@@ -220,104 +239,97 @@
         }
 
         function completeTelegramTask() {
-            // আপনি পরে এখানে আপনার টেলিগ্রাম চ্যানেল লিঙ্ক দিবেন
-            const telegramLink = "https://t.me/your_channel_link"; // আপনার লিঙ্ক দিন
+            const telegramLink = "https://t.me/sohojincome_channel";
             
-            // ওপেন লিঙ্ক ইন নিউ ট্যাব
             window.open(telegramLink, '_blank');
             
-            // টাস্ক কমপ্লিট মার্ক করুন
             TASK_STATES.telegram = true;
             saveTaskStates();
             updateTaskButtons();
             
-            // বোনাস যোগ করুন
             addTaskBonus(50, "টেলিগ্রাম চ্যানেল জয়েন");
             
             showNotification("টেলিগ্রাম চ্যানেলে জয়েন করুন এবং ৫০ টাকা বোনাস পান!", "info");
         }
 
         function completeYoutubeTask() {
-            // আপনি পরে এখানে আপনার ইউটিউব চ্যানেল লিঙ্ক দিবেন
-            const youtubeLink = "https://youtube.com/your_channel_link"; // আপনার লিঙ্ক দিন
+            const youtubeLink = "https://youtube.com/@sohojincome";
             
-            // ওপেন লিঙ্ক ইন নিউ ট্যাব
             window.open(youtubeLink, '_blank');
             
-            // টাস্ক কমপ্লিট মার্ক করুন
             TASK_STATES.youtube = true;
             saveTaskStates();
             updateTaskButtons();
             
-            // বোনাস যোগ করুন
             addTaskBonus(50, "ইউটিউব চ্যানেল সাবস্ক্রাইব");
             
             showNotification("ইউটিউব চ্যানেল সাবস্ক্রাইব করুন এবং ৫০ টাকা বোনাস পান!", "info");
         }
 
         function completeVideoTask() {
-            // আপনি পরে এখানে আপনার ভিডিও লিঙ্ক দিবেন
-            const videoLink = "https://example.com/your_video_link"; // আপনার ভিডিও লিঙ্ক দিন
+            const videoLink = "https://example.com/sohojincome_video";
             
-            // ওপেন লিঙ্ক ইন নিউ ট্যাব
             window.open(videoLink, '_blank');
             
-            // টাস্ক কমপ্লিট মার্ক করুন
             TASK_STATES.video = true;
             saveTaskStates();
             updateTaskButtons();
             
-            // বোনাস যোগ করুন
             addTaskBonus(100, "কাজের ভিডিও দেখা");
             
             showNotification("ভিডিওটি দেখুন এবং ১০০ টাকা বোনাস পান!", "info");
         }
 
         function completeWebsiteTask() {
-            // আপনি পরে এখানে আপনার ওয়েবসাইট লিঙ্ক দিবেন
-            const websiteLink = "https://yourwebsite.com"; // আপনার ওয়েবসাইট লিঙ্ক দিন
+            const websiteLink = "https://sohojincome.com";
             
-            // ওপেন লিঙ্ক ইন নিউ ট্যাব
             window.open(websiteLink, '_blank');
             
-            // টাস্ক কমপ্লিট মার্ক করুন
             TASK_STATES.website = true;
             saveTaskStates();
             updateTaskButtons();
             
-            // বোনাস যোগ করুন
             addTaskBonus(75, "ওয়েবসাইট ভিজিট");
             
             showNotification("ওয়েবসাইট ভিজিট করুন এবং ৭৫ টাকা বোনাস পান!", "info");
         }
 
-        function addTaskBonus(amount, taskName) {
+        async function addTaskBonus(amount, taskName) {
             const user = getUserData();
             if (user) {
-                const newBalance = user.balance + amount;
-                const newTotalIncome = user.total_income + amount;
-                
-                updateUserData({ 
-                    balance: newBalance,
-                    total_income: newTotalIncome
+                await updateUserData({ 
+                    balance: user.balance + amount,
+                    total_income: user.total_income + amount
                 });
                 
-                // সাকসেস মেসেজ
                 setTimeout(() => {
                     showNotification(`সফল! ${amount} টাকা বোনাস যোগ হয়েছে (${taskName})`, "success");
                 }, 1000);
             }
         }
 
+        function showNotification(message, type = 'info') {
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.showPopup({
+                    title: type === 'success' ? 'সফল!' : 'মেসেজ',
+                    message: message,
+                    buttons: [{ type: 'close' }]
+                });
+            } else {
+                alert(message);
+            }
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            initTasksPage();
+            setTimeout(initTasksPage, 1000);
         });
     </script>
-    <!-- Firebase SDK প্রথমে লোড করুন -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-<script src="firebase-ref.js"></script>
-
-<script src="app.js"></script>
 </body>
 </html>

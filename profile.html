@@ -19,10 +19,25 @@
         body {
             padding-bottom: 70px;
         }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body class="bg-gray-50">
-    <div class="container mx-auto px-4 py-4">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-gray-600">লোড হচ্ছে...</p>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-4 fade-in">
         <!-- প্রোফাইল হেডার -->
         <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 text-white mb-4">
             <div class="flex items-center space-x-4">
@@ -64,12 +79,12 @@
         <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
             <h3 class="font-bold text-lg mb-3">একশনস</h3>
             <div class="space-y-2">
-                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                     <i class="fas fa-history text-blue-500 w-6"></i>
                     <span class="ml-3 font-semibold">ট্রানজেকশন হিস্ট্রি</span>
                     <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
                 </a>
-                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                     <i class="fas fa-gift text-green-500 w-6"></i>
                     <span class="ml-3 font-semibold">রিওয়ার্ডস</span>
                     <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
@@ -81,12 +96,12 @@
         <div class="bg-white rounded-xl p-4 shadow-sm">
             <h3 class="font-bold text-lg mb-3">সেটিংস</h3>
             <div class="space-y-2">
-                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                     <i class="fas fa-shield-alt text-green-500 w-6"></i>
                     <span class="ml-3 font-semibold">প্রাইভেসি পলিসি</span>
                     <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
                 </a>
-                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <a href="#" class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                     <i class="fas fa-file-alt text-gray-500 w-6"></i>
                     <span class="ml-3 font-semibold">টার্মস অ্যান্ড কন্ডিশন</span>
                     <i class="fas fa-chevron-right text-gray-400 ml-auto"></i>
@@ -95,7 +110,7 @@
         </div>
 
         <!-- লগআউট বাটন -->
-        <button onclick="logout()" class="w-full bg-red-500 text-white py-3 rounded-xl font-bold mt-4">
+        <button onclick="logout()" class="w-full bg-red-500 text-white py-3 rounded-xl font-bold mt-4 hover:bg-red-600 transition-colors">
             <i class="fas fa-sign-out-alt mr-2"></i>
             লগ আউট
         </button>
@@ -123,7 +138,11 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="app.js"></script>
+
     <script>
         function initProfilePage() {
             const user = getUserData();
@@ -141,28 +160,30 @@
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 document.getElementById('profileJoinDays').textContent = diffDays;
             }
+            hideLoading();
         }
 
         function logout() {
             if (confirm('আপনি কি লগ আউট করতে চান?')) {
-                localStorage.removeItem('telegramUserData');
                 if (window.Telegram && Telegram.WebApp) {
                     Telegram.WebApp.close();
                 } else {
                     alert('লগ আউট successful!');
+                    window.location.href = 'index.html';
                 }
             }
         }
 
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            initProfilePage();
+            setTimeout(initProfilePage, 1000);
         });
     </script>
-    <!-- Firebase SDK প্রথমে লোড করুন -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-<script src="firebase-ref.js"></script>
-
-<script src="app.js"></script>
 </body>
 </html>
