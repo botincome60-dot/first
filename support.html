@@ -68,7 +68,7 @@
         <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
             <h3 class="font-bold text-lg mb-4">টাকা উত্তোলন করুন</h3>
             
-            <!-- পেমেন্ট মেথড - সবগুলো কাজ করবে -->
+            <!-- পেমেন্ট মেথড -->
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-semibold mb-2">পেমেন্ট মেথড</label>
                 <div class="grid grid-cols-3 gap-2">
@@ -90,7 +90,7 @@
             <!-- অ্যামাউন্ট -->
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-semibold mb-2">অ্যামাউন্ট (টাকায়)</label>
-                <input type="number" placeholder="500" id="withdrawAmount"
+                <input type="number" placeholder="500" id="withdrawAmount" min="500"
                     class="w-full border border-gray-300 rounded-lg p-3 text-lg font-semibold focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-colors">
                 <p class="text-gray-500 text-xs mt-1">ন্যূনতম উত্তোলন: ৫০০ টাকা</p>
             </div>
@@ -102,7 +102,7 @@
                     class="w-full border border-gray-300 rounded-lg p-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-colors">
             </div>
             
-            <button onclick="submitWithdraw()" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg font-bold hover:from-green-600 hover:to-green-700 transition-colors">
+            <button onclick="submitWithdraw()" id="withdrawBtn" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg font-bold hover:from-green-600 hover:to-green-700 transition-colors">
                 উইথড্র রিকোয়েস্ট করুন
             </button>
         </div>
@@ -225,51 +225,127 @@
             }
         }
 
-        function submitWithdraw() {
-            if (!checkWithdraw()) {
+        async function submitWithdraw() {
+            const user = getUserData();
+            if (!user) {
+                alert('ডেটা লোড হয়নি। রিফ্রেশ করুন।');
                 return;
             }
 
             const amount = parseInt(document.getElementById('withdrawAmount').value);
             const accountNumber = document.getElementById('accountNumber').value;
-            const user = getUserData();
 
+            // Check minimum amount
             if (!amount || amount < 500) {
-                alert('ন্যূনতম ৫০০ টাকা উত্তোলন করতে হবে!');
+                showNotification('ন্যূনতম ৫০০ টাকা উত্তোলন করতে হবে!', 'error');
                 return;
             }
 
-            if (!accountNumber || accountNumber.length !== 11) {
-                alert('সঠিক মোবাইল নম্বর দিন (11 ডিজিট)!');
+            // Check account number
+            if (!accountNumber || accountNumber.length !== 11 || !accountNumber.startsWith('01')) {
+                showNotification('সঠিক মোবাইল নম্বর দিন (11 ডিজিট, 01 দিয়ে শুরু)!', 'error');
                 return;
             }
 
+            // Check balance
             if (amount > user.balance) {
-                alert('আপনার ব্যালেন্স insufficient!');
+                showNotification(`আপনার ব্যালেন্স insufficient!\nআপনার ব্যালেন্স: ${user.balance.toFixed(2)} টাকা`, 'error');
                 return;
             }
 
+            // Check referral requirement
+            if (user.total_referrals < 15) {
+                showNotification(
+                    `রেফারেল প্রয়োজন!\n\nআপনার রেফারেল: ${user.total_referrals} জন\nপ্রয়োজন: ১৫ জন\n\nআরও ${15 - user.total_referrals} জন রেফারেল প্রয়োজন।`,
+                    'error'
+                );
+                return;
+            }
+
+            // All checks passed - Process withdraw
+            await processWithdrawRequest(amount, accountNumber);
+        }
+
+        async function processWithdrawRequest(amount, accountNumber) {
+            const user = getUserData();
+            
+            try {
+                // Show loading
+                const withdrawBtn = document.getElementById('withdrawBtn');
+                withdrawBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>প্রসেস হচ্ছে...';
+                withdrawBtn.disabled = true;
+
+                // Deduct balance from user
+                await updateUserData({
+                    balance: user.balance - amount
+                });
+
+                // Save withdraw request to Firebase
+                await saveWithdrawToFirebase(amount, accountNumber, selectedMethod);
+
+                // Success message
+                showNotification(
+                    `✅ উইথড্র রিকোয়েস্ট সফল!\n\nপরিমাণ: ${amount} টাকা\n${getMethodName(selectedMethod)}: ${accountNumber}\n\n২৪ ঘন্টার মধ্যে পেমেন্ট করা হবে।`,
+                    'success'
+                );
+
+                // Reset form
+                document.getElementById('withdrawAmount').value = '';
+                document.getElementById('accountNumber').value = '';
+                
+                // Update balance display
+                document.getElementById('withdrawBalance').textContent = (user.balance - amount).toFixed(2) + ' টাকা';
+
+            } catch (error) {
+                console.error('Withdraw error:', error);
+                showNotification('উইথড্র রিকোয়েস্ট ব্যর্থ! আবার চেষ্টা করুন।', 'error');
+            } finally {
+                // Reset button
+                withdrawBtn.innerHTML = 'উইথড্র রিকোয়েস্ট করুন';
+                withdrawBtn.disabled = false;
+            }
+        }
+
+        function getMethodName(method) {
             const methodNames = {
                 'bkash': 'bKash',
                 'nagad': 'Nagad',
                 'rocket': 'Rocket'
             };
+            return methodNames[method] || method;
+        }
 
-            // Withdraw request success
-            showNotification(
-                `উইথড্র রিকোয়েস্ট জমা হয়েছে!\n\nপরিমাণ: ${amount} টাকা\n${methodNames[selectedMethod]}: ${accountNumber}\n\n২৪ ঘন্টার মধ্যে পেমেন্ট করা হবে।`,
-                'success'
-            );
-
-            // Reset form
-            document.getElementById('withdrawAmount').value = '';
-            document.getElementById('accountNumber').value = '';
+        async function saveWithdrawToFirebase(amount, accountNumber, methodName) {
+            if (!db) return;
+            
+            try {
+                const user = getUserData();
+                const withdrawData = {
+                    userId: user.id,
+                    userName: user.first_name,
+                    amount: amount,
+                    accountNumber: accountNumber,
+                    method: getMethodName(methodName),
+                    status: 'pending',
+                    requestDate: firebase.firestore.FieldValue.serverTimestamp(),
+                    timestamp: Date.now()
+                };
+                
+                await db.collection('withdrawals').doc().set(withdrawData);
+                console.log('✅ Withdraw request saved to Firebase');
+            } catch (error) {
+                console.error('Error saving withdraw request:', error);
+                throw error;
+            }
         }
 
         function showNotification(message, type = 'info') {
+            const title = type === 'success' ? 'সফল!' : 
+                         type === 'error' ? 'ত্রুটি!' : 'মেসেজ';
+            
             if (window.Telegram && Telegram.WebApp) {
                 Telegram.WebApp.showPopup({
-                    title: type === 'success' ? 'সফল!' : 'মেসেজ',
+                    title: title,
                     message: message,
                     buttons: [{ type: 'close' }]
                 });
