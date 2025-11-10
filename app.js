@@ -1,4 +1,4 @@
-// app.js - Fixed with startapp parameter
+// app.js - Fixed Complete Version with Banner Support
 console.log("🚀 App.js loading...");
 
 const tg = window.Telegram?.WebApp;
@@ -88,19 +88,71 @@ async function initializeUserData() {
         // Update UI immediately
         updateUI();
         
-        // Process referral - THIS IS THE KEY PART
+        // Show welcome banner (NEW FUNCTION)
+        showWelcomeBanner();
+        
+        // Process referral
         await processReferralWithStartApp();
         
         // Load referral count
         await loadReferralCount();
         
         console.log("✅ User initialization complete");
+        
+        // Hide loading overlay
         hideLoading();
         
     } catch (error) {
         console.error("❌ Error initializing user data:", error);
         fallbackUI();
         hideLoading();
+    }
+}
+
+// BANNER MANAGEMENT FUNCTIONS (NEW)
+function showWelcomeBanner() {
+    const banner = document.getElementById('welcomeBanner');
+    if (!banner) {
+        console.log('ℹ️ No banner element found on this page');
+        return;
+    }
+    
+    const hasSeenBanner = localStorage.getItem('hasSeenWelcomeBanner');
+    
+    if (!hasSeenBanner) {
+        banner.style.display = 'block';
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        localStorage.setItem('hasSeenWelcomeBanner', tomorrow.getTime());
+        console.log('🎉 Welcome banner shown (first time)');
+    } else {
+        const savedTime = parseInt(hasSeenBanner);
+        if (Date.now() > savedTime) {
+            banner.style.display = 'block';
+            const newTomorrow = new Date();
+            newTomorrow.setDate(newTomorrow.getDate() + 1);
+            localStorage.setItem('hasSeenWelcomeBanner', newTomorrow.getTime());
+            console.log('🎉 Welcome banner shown (24 hours passed)');
+        } else {
+            banner.style.display = 'none';
+            console.log('ℹ️ Welcome banner hidden (24 hours not passed)');
+        }
+    }
+}
+
+function closeBanner() {
+    const banner = document.getElementById('welcomeBanner');
+    if (banner) {
+        banner.style.display = 'none';
+        console.log('✅ Banner closed by user');
+    }
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+        console.log('✅ Loading overlay hidden');
     }
 }
 
@@ -335,31 +387,6 @@ async function copyReferralLink() {
     }
 }
 
-// Manual test function for referral
-async function testReferralManually() {
-    if (!userData) {
-        alert('User data not loaded');
-        return;
-    }
-    
-    const testReferrerId = prompt('রেফারারের User ID দিন (শুধু নম্বর):');
-    if (!testReferrerId) return;
-    
-    const referralCode = 'ref' + testReferrerId;
-    
-    try {
-        // Simulate the referral process
-        if (await validateReferral(testReferrerId)) {
-            await createReferralRecord(testReferrerId);
-            await giveReferralBonuses(testReferrerId);
-            showNotification('টেস্ট রেফারেল সফল! ৫০ টাকা বোনাস যোগ হয়েছে।', 'success');
-        }
-    } catch (error) {
-        console.error('Test referral error:', error);
-        alert('টেস্ট রেফারেল ব্যর্থ!');
-    }
-}
-
 // Update user data in Firebase
 async function updateUserData(updates) {
     if (!userData || !db) return;
@@ -455,21 +482,18 @@ function fallbackUI() {
 
 // Show notification
 function showNotification(message, type = 'info') {
+    const title = type === 'success' ? 'সফল!' : 
+                 type === 'error' ? 'ত্রুটি!' : 'মেসেজ';
+    
     if (window.Telegram && Telegram.WebApp) {
         Telegram.WebApp.showPopup({
-            title: type === 'success' ? 'সফল!' : 'মেসেজ',
+            title: title,
             message: message,
             buttons: [{ type: 'close' }]
         });
     } else {
         alert(message);
     }
-}
-
-// Hide loading overlay
-function hideLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.style.display = 'none';
 }
 
 // Initialize when DOM is loaded
@@ -482,4 +506,5 @@ document.addEventListener('DOMContentLoaded', function() {
 window.copyReferralLink = copyReferralLink;
 window.getUserData = getUserData;
 window.updateUserData = updateUserData;
-window.testReferralManually = testReferralManually; // For testing
+window.closeBanner = closeBanner;
+window.hideLoading = hideLoading;
