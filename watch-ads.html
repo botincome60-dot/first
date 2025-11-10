@@ -25,6 +25,20 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        #adVideoContainer {
+            display: none;
+            width: 100%;
+            height: 200px;
+            background: #000;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        #adVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -75,6 +89,14 @@
                     <h4 class="font-bold text-lg mb-2">🎬 রিওয়ার্ডেড এড</h4>
                     <p class="text-gray-600 mb-3">নিচের বাটনে ক্লিক করে এড দেখুন এবং ৩০ টাকা উপার্জন করুন</p>
                     
+                    <!-- ভিডিও কন্টেইনার (শুরুতে লুকানো) -->
+                    <div id="adVideoContainer">
+                        <video id="adVideo" controls>
+                            <source src="" type="video/mp4">
+                            আপনার ব্রাউজার ভিডিও সাপোর্ট করে না।
+                        </video>
+                    </div>
+                    
                     <div class="bg-white p-4 rounded-lg border border-gray-300">
                         <i class="fas fa-video text-blue-500 text-3xl mb-2"></i>
                         <p class="text-sm text-gray-500 mb-3">একটি এড দেখুন এবং ৩০ টাকা পান</p>
@@ -120,10 +142,15 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="app.js"></script>
 
+    <!-- Monetag SDK -->
+    <script src='https://libtl.com/sdk.js' data-zone='10166009' data-sdk='show_10166009'></script>
+
     <script>
         let adsWatched = 0;
         const maxAdsPerHour = 10;
         let isAdLoading = false;
+        let monetagReady = false;
+        let adVideo;
 
         function initWatchAdsPage() {
             const user = getUserData();
@@ -131,7 +158,38 @@
                 adsWatched = user.today_ads || 0;
                 updateCounter();
             }
+            
+            // ভিডিও এলিমেন্ট রেফারেন্স
+            adVideo = document.getElementById('adVideo');
+            
+            // Monetag SDK চেক
+            checkMonetagReady();
+            
             hideLoading();
+        }
+
+        function checkMonetagReady() {
+            console.log('🔍 Checking Monetag SDK...');
+            
+            let checkCount = 0;
+            const maxChecks = 20; // 10 seconds max
+            
+            const checkInterval = setInterval(() => {
+                checkCount++;
+                
+                if (typeof show_10166009 !== 'undefined') {
+                    clearInterval(checkInterval);
+                    monetagReady = true;
+                    document.getElementById('adStatus').textContent = 'এড প্রস্তুত';
+                    document.getElementById('adStatus').className = 'text-xs text-green-600';
+                    console.log('✅ Monetag SDK ready');
+                } else if (checkCount >= maxChecks) {
+                    clearInterval(checkInterval);
+                    document.getElementById('adStatus').textContent = 'এড সিস্টেম লোড হয়নি - সিমুলেশন মোড';
+                    document.getElementById('adStatus').className = 'text-xs text-yellow-600';
+                    console.log('⚠️ Monetag SDK failed to load, using simulation mode');
+                }
+            }, 500);
         }
 
         function updateCounter() {
@@ -172,12 +230,128 @@
             document.getElementById('adStatus').className = 'text-xs text-yellow-600';
 
             try {
-                console.log('Showing ad...');
+                console.log('🎬 Attempting to show ad...');
                 
-                // Simulate ad watching for 3 seconds
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                if (monetagReady && typeof show_10166009 !== 'undefined') {
+                    // Real Monetag ad
+                    console.log('✅ Using real Monetag ad');
+                    await showRealMonetagAd();
+                } else {
+                    // Fallback to simulation
+                    console.log('🔄 Using simulation ad');
+                    await showSimulationAd();
+                }
                 
-                // Complete ad watch
+            } catch (error) {
+                console.error('❌ Ad error:', error);
+                document.getElementById('adStatus').textContent = 'এড লোড করতে সমস্যা - আবার চেষ্টা করুন';
+                document.getElementById('adStatus').className = 'text-xs text-red-600';
+                
+                alert('এড লোড করতে সমস্যা হয়েছে! ইন্টারনেট চেক করুন এবং আবার চেষ্টা করুন।');
+                
+                resetAdButton();
+                isAdLoading = false;
+            }
+        }
+
+        // Real Monetag ad function
+        function showRealMonetagAd() {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    console.log('🎯 Showing real Monetag ad...');
+                    
+                    // Show Monetag rewarded interstitial ad
+                    show_10166009().then(() => {
+                        console.log('✅ Monetag ad watched successfully');
+                        // User watched the ad - give reward
+                        rewardUserForWatchingAd();
+                        resolve();
+                    }).catch((error) => {
+                        console.error('❌ Monetag ad failed:', error);
+                        reject(error);
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ Error in real ad:', error);
+                    reject(error);
+                }
+            });
+        }
+
+        // Simulation ad function
+        function showSimulationAd() {
+            return new Promise(async (resolve) => {
+                try {
+                    console.log('🎯 Showing simulation ad...');
+                    
+                    // Show video container
+                    const videoContainer = document.getElementById('adVideoContainer');
+                    videoContainer.style.display = 'block';
+                    
+                    // Use a sample ad video (you can replace with your own)
+                    adVideo.src = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4';
+                    
+                    // Update status
+                    document.getElementById('adStatus').textContent = 'এড চলছে... ভিডিওটি শেষ পর্যন্ত দেখুন';
+                    document.getElementById('adStatus').className = 'text-xs text-blue-600';
+                    
+                    watchBtn.innerHTML = '<i class="fas fa-eye mr-2"></i>এড চলছে...';
+                    
+                    // Wait for video to end
+                    adVideo.onended = async function() {
+                        console.log('✅ Simulation ad completed');
+                        await rewardUserForWatchingAd();
+                        videoContainer.style.display = 'none';
+                        resolve();
+                    };
+                    
+                    // Play the video
+                    await adVideo.play();
+                    
+                    // Auto-reward after 30 seconds if video doesn't end (fallback)
+                    setTimeout(async () => {
+                        if (isAdLoading) {
+                            console.log('🕒 Auto-rewarding after timeout');
+                            await rewardUserForWatchingAd();
+                            videoContainer.style.display = 'none';
+                            resolve();
+                        }
+                    }, 30000);
+                    
+                } catch (error) {
+                    console.error('❌ Simulation ad error:', error);
+                    // Fallback to simple timer
+                    await showSimpleAd();
+                    resolve();
+                }
+            });
+        }
+
+        // Simple ad fallback
+        function showSimpleAd() {
+            return new Promise((resolve) => {
+                console.log('🎯 Showing simple ad...');
+                
+                document.getElementById('adStatus').textContent = 'এড দেখানো হচ্ছে... ১০ সেকেন্ড অপেক্ষা করুন';
+                document.getElementById('adStatus').className = 'text-xs text-blue-600';
+                
+                watchBtn.innerHTML = '<i class="fas fa-eye mr-2"></i>এড চলছে...';
+                
+                // Simulate ad watching for 10 seconds
+                setTimeout(async () => {
+                    console.log('✅ Simple ad completed');
+                    await rewardUserForWatchingAd();
+                    resolve();
+                }, 10000);
+            });
+        }
+
+        async function rewardUserForWatchingAd() {
+            const user = getUserData();
+            if (!user) return;
+            
+            try {
+                // Add reward
                 await updateUserData({ 
                     balance: user.balance + 30,
                     total_income: user.total_income + 30,
@@ -195,11 +369,12 @@
                 document.getElementById('rewardStatus').textContent = '৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে!';
                 document.getElementById('rewardStatus').className = 'text-sm text-green-600 font-semibold';
                 
+                const watchBtn = document.getElementById('watchAdBtn');
                 watchBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ৩০ টাকা যোগ হয়েছে';
                 watchBtn.classList.remove('ad-loading', 'bg-gradient-to-r', 'from-green-500', 'to-green-600', 'hover:from-green-600', 'hover:to-green-700');
                 watchBtn.classList.add('bg-green-500');
                 
-                showNotification('🎉 এড দেখা সম্পন্ন! ৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।');
+                showNotification('🎉 এড দেখা সম্পন্ন! ৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।', 'success');
                 
                 // Reset button after 3 seconds
                 setTimeout(() => {
@@ -210,27 +385,29 @@
                 }, 3000);
                 
             } catch (error) {
-                console.error('Ad error:', error);
-                document.getElementById('adStatus').textContent = 'এড লোড করতে সমস্যা - আবার চেষ্টা করুন';
-                document.getElementById('adStatus').className = 'text-xs text-red-600';
-                
-                alert('এড লোড করতে সমস্যা হয়েছে! ইন্টারনেট চেক করুন এবং আবার চেষ্টা করুন।');
-                
-                resetAdButton();
-                isAdLoading = false;
+                console.error('❌ Error rewarding user:', error);
+                throw error;
             }
         }
 
         function resetAdButton() {
             if (adsWatched < maxAdsPerHour) {
-                document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-play mr-2"></i>এড দেখুন';
-                document.getElementById('watchAdBtn').classList.remove('bg-green-500', 'ad-loading');
-                document.getElementById('watchAdBtn').classList.add('bg-gradient-to-r', 'from-green-500', 'to-green-600', 'hover:from-green-600', 'hover:to-green-700');
-                document.getElementById('watchAdBtn').disabled = false;
+                const watchBtn = document.getElementById('watchAdBtn');
+                watchBtn.innerHTML = '<i class="fas fa-play mr-2"></i>এড দেখুন';
+                watchBtn.classList.remove('bg-green-500', 'ad-loading');
+                watchBtn.classList.add('bg-gradient-to-r', 'from-green-500', 'to-green-600', 'hover:from-green-600', 'hover:to-green-700');
+                watchBtn.disabled = false;
                 document.getElementById('adStatus').textContent = 'এড প্রস্তুত';
                 document.getElementById('adStatus').className = 'text-xs text-green-600';
                 document.getElementById('rewardStatus').textContent = 'এড দেখার পর অটোমেটিক ৩০ টাকা যোগ হবে';
                 document.getElementById('rewardStatus').className = 'text-gray-500 text-sm';
+                
+                // Hide video container
+                document.getElementById('adVideoContainer').style.display = 'none';
+                if (adVideo) {
+                    adVideo.pause();
+                    adVideo.currentTime = 0;
+                }
             }
         }
 
