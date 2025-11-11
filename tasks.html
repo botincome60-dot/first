@@ -123,6 +123,8 @@
                         ক্লেইম করুন
                     </button>
                 </div>
+
+                <!-- Website Visit টাস্ক REMOVE করা হয়েছে -->
             </div>
         </div>
     </div>
@@ -155,75 +157,49 @@
     <script src="app.js"></script>
 
     <script>
-        // Firebase-based task management
-        let db;
-        let userData = null;
+        // টাস্ক স্টেট ম্যানেজমেন্ট
+        const TASK_STATES = {
+            telegram: false,
+            youtube: false,
+            video: false
+            // website: false - REMOVED
+        };
 
-        // Initialize Firebase
-        try {
-            if (!firebase.apps.length) {
-                firebase.initializeApp({
-                    apiKey: "AIzaSyABdp9WK7eGLwE5nY19jp-nlDlyTuTyMR0",
-                    authDomain: "sohojincome-36f1f.firebaseapp.com",
-                    projectId: "sohojincome-36f1f",
-                    storageBucket: "sohojincome-36f1f.firebasestorage.app",
-                    messagingSenderId: "398153090805",
-                    appId: "1:398153090805:web:fc8d68130afbc2239be7bc",
-                    measurementId: "G-VZ47961SJV"
-                });
-            }
-            db = firebase.firestore();
-            console.log("✅ Firebase initialized successfully");
-        } catch (error) {
-            console.error("❌ Firebase initialization error:", error);
-        }
-
-        async function initTasksPage() {
-            userData = getUserData();
-            if (userData) {
-                const remaining = 10 - userData.today_ads;
+        function initTasksPage() {
+            const user = getUserData();
+            if (user) {
+                const remaining = 10 - user.today_ads;
                 document.getElementById('adsRemaining').textContent = remaining > 0 ? remaining : 0;
-                
-                // Load task states from Firebase
-                await loadTaskStatesFromFirebase();
             }
+
+            // লোড টাস্ক স্টেটস
+            loadTaskStates();
             hideLoading();
         }
 
-        // Load task states from Firebase
-        async function loadTaskStatesFromFirebase() {
-            if (!userData || !db) return;
-            
-            try {
-                const taskDoc = await db.collection('user_tasks').doc(userData.id).get();
+        function loadTaskStates() {
+            const savedStates = localStorage.getItem('taskStates');
+            if (savedStates) {
+                const parsedStates = JSON.parse(savedStates);
                 
-                if (taskDoc.exists) {
-                    const taskData = taskDoc.data();
-                    updateTaskButtons(taskData);
-                } else {
-                    // Create initial task document
-                    await db.collection('user_tasks').doc(userData.id).set({
-                        userId: userData.id,
-                        telegram_completed: false,
-                        youtube_completed: false,
-                        video_completed: false,
-                        last_updated: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    updateTaskButtons({
-                        telegram_completed: false,
-                        youtube_completed: false,
-                        video_completed: false
-                    });
-                }
-            } catch (error) {
-                console.error('❌ Error loading task states:', error);
+                // Only load existing tasks (remove website if it exists)
+                Object.assign(TASK_STATES, {
+                    telegram: parsedStates.telegram || false,
+                    youtube: parsedStates.youtube || false,
+                    video: parsedStates.video || false
+                });
+                
+                updateTaskButtons();
             }
         }
 
-        // Update task buttons based on Firebase data
-        function updateTaskButtons(taskData) {
+        function saveTaskStates() {
+            localStorage.setItem('taskStates', JSON.stringify(TASK_STATES));
+        }
+
+        function updateTaskButtons() {
             // Telegram Task
-            if (taskData.telegram_completed) {
+            if (TASK_STATES.telegram) {
                 document.getElementById('telegramBtn').innerHTML = '✅ ক্লেইমড';
                 document.getElementById('telegramBtn').classList.remove('bg-green-500', 'hover:bg-green-600');
                 document.getElementById('telegramBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
@@ -232,7 +208,7 @@
             }
 
             // YouTube Task
-            if (taskData.youtube_completed) {
+            if (TASK_STATES.youtube) {
                 document.getElementById('youtubeBtn').innerHTML = '✅ ক্লেইমড';
                 document.getElementById('youtubeBtn').classList.remove('bg-green-500', 'hover:bg-green-600');
                 document.getElementById('youtubeBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
@@ -241,98 +217,73 @@
             }
 
             // Video Task
-            if (taskData.video_completed) {
+            if (TASK_STATES.video) {
                 document.getElementById('videoBtn').innerHTML = '✅ ক্লেইমড';
                 document.getElementById('videoBtn').classList.remove('bg-green-500', 'hover:bg-green-600');
                 document.getElementById('videoBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
                 document.getElementById('videoBtn').disabled = true;
                 document.getElementById('videoTask').classList.add('task-completed');
             }
+
+            // Website Task - REMOVED
         }
 
-        // Complete Telegram Task
-        async function completeTelegramTask() {
-            if (!userData || !db) {
-                showNotification('ডেটা লোড হয়নি। রিফ্রেশ করুন।', 'error');
-                return;
-            }
-
+        function completeTelegramTask() {
             // Check if already completed
-            const taskDoc = await db.collection('user_tasks').doc(userData.id).get();
-            if (taskDoc.exists && taskDoc.data().telegram_completed) {
+            if (TASK_STATES.telegram) {
                 showNotification('আপনি ইতিমধ্যে এই টাস্কটি কমপ্লিট করেছেন!', 'info');
                 return;
             }
 
             const telegramLink = "https://t.me/sohojincome629";
+            
             window.open(telegramLink, '_blank');
             
-            // Update task completion in Firebase
-            await db.collection('user_tasks').doc(userData.id).set({
-                telegram_completed: true,
-                last_updated: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+            TASK_STATES.telegram = true;
+            saveTaskStates();
+            updateTaskButtons();
             
-            await addTaskBonus(50, "টেলিগ্রাম চ্যানেল জয়েন");
-            await loadTaskStatesFromFirebase(); // Reload task states
+            addTaskBonus(50, "টেলিগ্রাম চ্যানেল জয়েন");
             
             showNotification("টেলিগ্রাম চ্যানেলে জয়েন করুন এবং ৫০ টাকা বোনাস পান!", "info");
         }
 
-        // Complete YouTube Task
-        async function completeYoutubeTask() {
-            if (!userData || !db) {
-                showNotification('ডেটা লোড হয়নি। রিফ্রেশ করুন।', 'error');
-                return;
-            }
-
+        function completeYoutubeTask() {
             // Check if already completed
-            const taskDoc = await db.collection('user_tasks').doc(userData.id).get();
-            if (taskDoc.exists && taskDoc.data().youtube_completed) {
+            if (TASK_STATES.youtube) {
                 showNotification('আপনি ইতিমধ্যে এই টাস্কটি কমপ্লিট করেছেন!', 'info');
                 return;
             }
 
             const youtubeLink = "https://www.youtube.com/@easyincome-x7u";
+            
             window.open(youtubeLink, '_blank');
             
-            // Update task completion in Firebase
-            await db.collection('user_tasks').doc(userData.id).set({
-                youtube_completed: true,
-                last_updated: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+            TASK_STATES.youtube = true;
+            saveTaskStates();
+            updateTaskButtons();
             
-            await addTaskBonus(50, "ইউটিউব চ্যানেল সাবস্ক্রাইব");
-            await loadTaskStatesFromFirebase(); // Reload task states
+            addTaskBonus(50, "ইউটিউব চ্যানেল সাবস্ক্রাইব");
             
             showNotification("ইউটিউব চ্যানেল সাবস্ক্রাইব করুন এবং ৫০ টাকা বোনাস পান!", "info");
         }
 
-        // Complete Video Task
-        async function completeVideoTask() {
-            if (!userData || !db) {
-                showNotification('ডেটা লোড হয়নি। রিফ্রেশ করুন।', 'error');
-                return;
-            }
-
+        function completeVideoTask() {
             // Check if already completed
-            const taskDoc = await db.collection('user_tasks').doc(userData.id).get();
-            if (taskDoc.exists && taskDoc.data().video_completed) {
+            if (TASK_STATES.video) {
                 showNotification('আপনি ইতিমধ্যে এই টাস্কটি কমপ্লিট করেছেন!', 'info');
                 return;
             }
 
             const videoLink = "https://example.com/sohojincome_video";
+            
             window.open(videoLink, '_blank');
             
-            // Update task completion in Firebase
-            await db.collection('user_tasks').doc(userData.id).set({
-                video_completed: true,
-                last_updated: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+            TASK_STATES.video = true;
+            saveTaskStates();
+            updateTaskButtons();
             
-            await addTaskBonus(100, "কাজের ভিডিও দেখা");
-            await loadTaskStatesFromFirebase(); // Reload task states
+            addTaskBonus(100, "কাজের ভিডিও দেখা");
             
             showNotification("ভিডিওটি দেখুন এবং ১০০ টাকা বোনাস পান!", "info");
         }
@@ -370,25 +321,15 @@
             }
         }
 
-        // Admin function to reset tasks for all users (for testing)
-        async function resetAllTasksForUser() {
-            if (!userData || !db) return;
-            
-            if (confirm('আপনি কি সব টাস্ক রিসেট করতে চান?')) {
-                try {
-                    await db.collection('user_tasks').doc(userData.id).set({
-                        telegram_completed: false,
-                        youtube_completed: false,
-                        video_completed: false,
-                        last_updated: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                    
-                    showNotification('সব টাস্ক রিসেট করা হয়েছে!', 'success');
-                    await loadTaskStatesFromFirebase();
-                } catch (error) {
-                    console.error('Error resetting tasks:', error);
-                    showNotification('টাস্ক রিসেট করতে সমস্যা হয়েছে!', 'error');
-                }
+        // Reset all tasks for testing (optional)
+        function resetAllTasks() {
+            if (confirm('আপনি কি সব টাস্ক রিসেট করতে চান? এটি শুধু টেস্টিং এর জন্য।')) {
+                TASK_STATES.telegram = false;
+                TASK_STATES.youtube = false;
+                TASK_STATES.video = false;
+                saveTaskStates();
+                updateTaskButtons();
+                showNotification('সব টাস্ক রিসেট করা হয়েছে!', 'success');
             }
         }
 
@@ -397,7 +338,7 @@
         });
 
         // For testing - add this to browser console
-        window.resetAllTasksForUser = resetAllTasksForUser;
+        window.resetAllTasks = resetAllTasks;
     </script>
 </body>
 </html>
