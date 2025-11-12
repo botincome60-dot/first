@@ -116,7 +116,7 @@
         </div>
 <div class="w-full my-6">
   <button
-    onclick="openYouTubeApp()"
+    onclick="openYouTubeVideo()"
     aria-label="কাজের ভিডিও দেখুন (YouTube App)"
     class="w-full bg-red-50 border border-red-200 rounded-xl py-5 flex flex-col items-center justify-center text-red-600 hover:bg-red-100 transition-all duration-200"
   >
@@ -131,22 +131,31 @@
 </div>
 
 <script>
-function openYouTubeApp() {
+function openYouTubeVideo() {
   const videoId = 'XLXw5o1uU3E';
-  const youtubeAppUrl = `youtube://watch?v=${videoId}`;
-  const youtubeWebUrl = `https://youtu.be/${videoId}`;
-  
-  // Create an invisible iframe to try opening the app
-  const iframe = document.createElement('iframe');
-  iframe.style.display = 'none';
-  iframe.src = youtubeAppUrl;
-  document.body.appendChild(iframe);
-  
-  // Fallback to web version after delay
-  setTimeout(function() {
-    document.body.removeChild(iframe);
-    window.location.href = youtubeWebUrl;
-  }, 500);
+  const youtubeUrls = [
+    `intent://watch?v=${videoId}#Intent;package=com.google.android.youtube;scheme=https;end;`,
+    `vnd.youtube://watch?v=${videoId}`,
+    `https://www.youtube.com/watch?v=${videoId}`,
+    `https://youtu.be/${videoId}`
+  ];
+
+  // Try different methods to open YouTube app
+  try {
+    // Method 1: For Android devices
+    window.location.href = youtubeUrls[0];
+    
+    // Fallback after delay
+    setTimeout(function() {
+      if (!document.hidden) {
+        window.location.href = youtubeUrls[3];
+      }
+    }, 1000);
+    
+  } catch (e) {
+    // If error, open in browser
+    window.location.href = youtubeUrls[3];
+  }
 }
 </script>
 
