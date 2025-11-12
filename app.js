@@ -1,30 +1,44 @@
 
-// app.js - Complete with Minimum Firebase Usage
+// app.js - With New Firebase Configuration
 console.log("🚀 App.js loading...");
 
 const tg = window.Telegram?.WebApp;
 
+// NEW FIREBASE CONFIGURATION
+const firebaseConfig = {
+  apiKey: "AIzaSyC8PAeOIs4Tf5qGLj_d4DzC1D6Z5AEw5yA",
+  authDomain: "newreffer-dc7f3.firebaseapp.com",
+  projectId: "newreffer-dc7f3",
+  storageBucket: "newreffer-dc7f3.firebasestorage.app",
+  messagingSenderId: "60384156805",
+  appId: "1:60384156805:web:8be9b4d64d15082dcc1dec",
+  measurementId: "G-X5F80G5R07"
+};
+
 // Firebase initialization
 let db;
+let isFirebaseInitialized = false;
+
 try {
     if (!firebase.apps.length) {
-        firebase.initializeApp({
-            apiKey: "AIzaSyABdp9WK7eGLwE5nY19jp-nlDlyTuTyMR0",
-            authDomain: "sohojincome-36f1f.firebaseapp.com",
-            projectId: "sohojincome-36f1f",
-            storageBucket: "sohojincome-36f1f.firebasestorage.app",
-            messagingSenderId: "398153090805",
-            appId: "1:398153090805:web:fc8d68130afbc2239be7bc",
-            measurementId: "G-VZ47961SJV"
-        });
+        firebase.initializeApp(firebaseConfig);
     }
     db = firebase.firestore();
-    console.log("✅ Firebase initialized successfully");
+    
+    // Enable offline persistence
+    db.enablePersistence()
+      .catch((err) => {
+          console.log("Persistence failed:", err);
+      });
+    
+    isFirebaseInitialized = true;
+    console.log("✅ New Firebase initialized successfully");
 } catch (error) {
     console.error("❌ Firebase initialization error:", error);
+    isFirebaseInitialized = false;
 }
 
-// Global user data
+// Global user data with local storage fallback
 let userData = null;
 const LOCAL_STORAGE_KEY = 'sohojincome_userdata';
 
@@ -45,32 +59,62 @@ async function initializeUserData() {
             userId = 'test_' + Math.floor(1000000000 + Math.random() * 9000000000);
         }
 
-        // ALWAYS use local storage for user data - NO FIREBASE READ
-        const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (localData) {
-            userData = JSON.parse(localData);
-            if (userData.id === userId) {
-                console.log("✅ User data loaded from localStorage");
-            } else {
-                userData = createNewUserData(userId);
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
+        // Try Firebase first
+        if (isFirebaseInitialized) {
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                
+                if (userDoc.exists) {
+                    userData = userDoc.data();
+                    console.log("✅ User data loaded from New Firebase");
+                    
+                    // Check and reset ads
+                    await checkAndResetAds();
+                } else {
+                    userData = createNewUserData(userId);
+                    await saveUserToFirebase(userData);
+                    console.log("✅ New user created in New Firebase");
+                }
+            } catch (firebaseError) {
+                console.error("❌ New Firebase error, using local storage:", firebaseError);
+                await initializeWithLocalStorage(userId);
             }
         } else {
-            userData = createNewUserData(userId);
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
+            await initializeWithLocalStorage(userId);
         }
 
         updateUI();
         hideLoading();
 
+        // Load referral count
         setTimeout(() => loadReferralCount(), 1000);
+        
+        // Process referral
         setTimeout(() => processReferralWithStartApp(), 2000);
         
     } catch (error) {
         console.error("❌ Error initializing user data:", error);
-        fallbackUI();
+        await initializeWithLocalStorage(tg?.initDataUnsafe?.user?.id || 'test_' + Date.now());
         hideLoading();
     }
+}
+
+// Initialize with local storage when Firebase fails
+async function initializeWithLocalStorage(userId) {
+    const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    
+    if (localData) {
+        const parsedData = JSON.parse(localData);
+        if (parsedData.id === userId) {
+            userData = parsedData;
+            console.log("✅ User data loaded from localStorage");
+            return;
+        }
+    }
+    
+    userData = createNewUserData(userId);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
+    console.log("✅ New user created in localStorage");
 }
 
 function createNewUserData(userId) {
@@ -90,26 +134,76 @@ function createNewUserData(userId) {
     };
 }
 
+// Save user to Firebase
+async function saveUserToFirebase(userData) {
+    if (!isFirebaseInitialized || !db) {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
+        return;
+    }
+    
+    try {
+        await db.collection('users').doc(userData.id).set({
+            ...userData,
+            lastActive: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
+    } catch (error) {
+        console.error("❌ Error saving to New Firebase:", error);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
+    }
+}
+
+// Check and reset ads
+async function checkAndResetAds() {
+    if (!userData) return;
+    
+    const now = new Date();
+    const updates = {};
+    
+    // Check main ads reset
+    const lastMainReset = new Date(userData.last_ad_reset);
+    const mainHoursDiff = (now - lastMainReset) / (1000 * 60 * 60);
+    if (mainHoursDiff >= 1) {
+        updates.today_ads = 0;
+        updates.last_ad_reset = now.toISOString();
+    }
+    
+    // Check bonus ads reset
+    const lastBonusReset = new Date(userData.last_bonus_ad_reset);
+    const bonusHoursDiff = (now - lastBonusReset) / (1000 * 60 * 60);
+    if (bonusHoursDiff >= 1) {
+        updates.today_bonus_ads = 0;
+        updates.last_bonus_ad_reset = now.toISOString();
+    }
+    
+    if (Object.keys(updates).length > 0) {
+        await updateUserData(updates);
+    }
+}
+
+// Load referral count from Firebase
 async function loadReferralCount() {
-    if (!userData || !db) return;
+    if (!userData || !isFirebaseInitialized) return;
     
     try {
         const referralsRef = db.collection('referrals');
         const snapshot = await referralsRef.where('referredBy', '==', userData.id).get();
         
         const count = snapshot.size;
-        userData.total_referrals = count;
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
+        console.log(`✅ New Firebase referral count: ${count}`);
         
-        updateUI();
+        if (count !== userData.total_referrals) {
+            await updateUserData({ total_referrals: count });
+        }
         
     } catch (error) {
-        console.error("❌ Error loading referral count:", error);
+        console.error("❌ Error loading referral count from New Firebase:", error);
     }
 }
 
+// Process referral
 async function processReferralWithStartApp() {
-    if (!userData || !db) return;
+    if (!userData) return;
     
     try {
         if (userData.referred_by) return;
@@ -128,8 +222,7 @@ async function processReferralWithStartApp() {
             
             if (referrerUserId !== userData.id) {
                 await createReferralRecord(referrerUserId);
-                giveBonusToCurrentUser();
-                await giveBonusToReferrer(referrerUserId);
+                await giveReferralBonuses(referrerUserId);
                 
                 showNotification(
                     '🎉 রেফারেল সফল!\n\nআপনি রেফারেল দ্বারা জয়েন করেছেন। ৫০ টাকা বোনাস পেয়েছেন!',
@@ -142,6 +235,7 @@ async function processReferralWithStartApp() {
     }
 }
 
+// Create referral record
 async function createReferralRecord(referrerUserId) {
     try {
         const referralData = {
@@ -157,47 +251,67 @@ async function createReferralRecord(referrerUserId) {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
         
     } catch (error) {
-        console.error("❌ Error creating referral record:", error);
+        console.error("❌ Error creating referral record in New Firebase:", error);
         throw error;
     }
 }
 
-function giveBonusToCurrentUser() {
-    userData.balance += 50;
-    userData.total_income += 50;
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
-    updateUI();
-}
-
-async function giveBonusToReferrer(referrerUserId) {
-    try {
-        const referrerRef = db.collection('users').doc(referrerUserId);
-        
-        await referrerRef.update({
-            balance: firebase.firestore.FieldValue.increment(100),
-            total_income: firebase.firestore.FieldValue.increment(100),
-            total_referrals: firebase.firestore.FieldValue.increment(1)
-        });
-        
-    } catch (error) {
-        console.error("❌ Error giving bonus to referrer:", error);
+// Give referral bonuses
+async function giveReferralBonuses(referrerUserId) {
+    // Give 50 BDT to new user
+    await updateUserData({
+        balance: userData.balance + 50,
+        total_income: userData.total_income + 50
+    });
+    
+    // Give 100 BDT to referrer
+    if (isFirebaseInitialized) {
+        try {
+            const referrerRef = db.collection('users').doc(referrerUserId);
+            
+            await referrerRef.update({
+                balance: firebase.firestore.FieldValue.increment(100),
+                total_income: firebase.firestore.FieldValue.increment(100),
+                total_referrals: firebase.firestore.FieldValue.increment(1)
+            });
+            
+        } catch (error) {
+            console.error("❌ Error giving referrer bonus in New Firebase:", error);
+        }
     }
 }
 
+// Update user data
 async function updateUserData(updates) {
     if (!userData) return;
     
     Object.assign(userData, updates);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
-    updateUI();
     
+    // Update local storage immediately
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
+    
+    // Update Firebase in background
+    if (isFirebaseInitialized && db) {
+        try {
+            await db.collection('users').doc(userData.id).set({
+                ...userData,
+                lastActive: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        } catch (error) {
+            console.error("❌ Error updating New Firebase:", error);
+        }
+    }
+    
+    updateUI();
     return userData;
 }
 
+// Get user data
 function getUserData() {
     return userData;
 }
 
+// Update UI
 function updateUI() {
     if (!userData) return;
     
@@ -245,6 +359,7 @@ function updateUI() {
     }
 }
 
+// Fallback UI
 function fallbackUI() {
     const elements = {
         'userName': 'ইউজার',
@@ -272,6 +387,7 @@ function fallbackUI() {
     }
 }
 
+// Copy referral link
 async function copyReferralLink() {
     if (!userData) return;
     
@@ -279,7 +395,13 @@ async function copyReferralLink() {
     
     try {
         await navigator.clipboard.writeText(refLink);
-        showNotification('✅ রেফারেল লিঙ্ক কপি হয়েছে!', 'success');
+        await loadReferralCount();
+        
+        showNotification(
+            `✅ রেফারেল লিঙ্ক কপি হয়েছে!\n\nআপনার রেফারেল: ${userData.total_referrals} জন`, 
+            'success'
+        );
+        
     } catch (error) {
         const tempInput = document.createElement('input');
         tempInput.value = refLink;
@@ -287,10 +409,15 @@ async function copyReferralLink() {
         tempInput.select();
         document.execCommand('copy');
         document.body.removeChild(tempInput);
-        showNotification('✅ রেফারেল লিঙ্ক কপি হয়েছে!', 'success');
+        
+        showNotification(
+            `✅ রেফারেল লিঙ্ক কপি হয়েছে!\n\nআপনার রেফারেল: ${userData.total_referrals} জন`, 
+            'success'
+        );
     }
 }
 
+// Show notification
 function showNotification(message, type = 'info') {
     if (window.Telegram && Telegram.WebApp) {
         Telegram.WebApp.showPopup({
@@ -303,11 +430,13 @@ function showNotification(message, type = 'info') {
     }
 }
 
+// Hide loading
 function hideLoading() {
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) overlay.style.display = 'none';
 }
 
+// Helper functions
 function canWatchMoreAds() {
     if (!userData) return false;
     
@@ -372,6 +501,7 @@ function getTimeUntilNextBonusReset() {
     }
 }
 
+// Export functions
 window.copyReferralLink = copyReferralLink;
 window.getUserData = getUserData;
 window.updateUserData = updateUserData;
@@ -380,6 +510,7 @@ window.getTimeUntilNextReset = getTimeUntilNextReset;
 window.canWatchMoreBonusAds = canWatchMoreBonusAds;
 window.getTimeUntilNextBonusReset = getTimeUntilNextBonusReset;
 
+// Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(initializeUserData, 1000);
 });
