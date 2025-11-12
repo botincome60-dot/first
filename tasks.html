@@ -1,3 +1,5 @@
+[file name]: tasks.html
+[file content begin]
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -110,17 +112,17 @@
                     </button>
                 </div>
                 
-                <!-- টাস্ক ৩ - Video Task -->
+                <!-- টাস্ক ৩ - Video Task (FIXED: No bonus, just watch video) -->
                 <div class="border border-gray-200 rounded-xl p-3" id="videoTask">
                     <div class="flex items-center justify-between mb-2">
                         <div>
                             <h4 class="font-semibold">কাজের ভিডিও দেখুন</h4>
-                            <p class="text-green-600 text-sm font-semibold">১০০ টাকা বোনাস</p>
+                            <p class="text-gray-600 text-sm">কাজের নিয়ম শিখুন</p>
                         </div>
                         <i class="fas fa-video text-purple-500 text-xl"></i>
                     </div>
-                    <button onclick="completeVideoTask()" id="videoBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
-                        ক্লেইম করুন
+                    <button onclick="watchVideo()" id="videoBtn" class="w-full bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
+                        কাজের ভিডিও দেখুন
                     </button>
                 </div>
 
@@ -160,9 +162,8 @@
         // টাস্ক স্টেট ম্যানেজমেন্ট
         const TASK_STATES = {
             telegram: false,
-            youtube: false,
-            video: false
-            // website: false - REMOVED
+            youtube: false
+            // video: false - REMOVED since no bonus for video
         };
 
         function initTasksPage() {
@@ -182,11 +183,10 @@
             if (savedStates) {
                 const parsedStates = JSON.parse(savedStates);
                 
-                // Only load existing tasks (remove website if it exists)
+                // Only load existing tasks (remove video if it exists)
                 Object.assign(TASK_STATES, {
                     telegram: parsedStates.telegram || false,
-                    youtube: parsedStates.youtube || false,
-                    video: parsedStates.video || false
+                    youtube: parsedStates.youtube || false
                 });
                 
                 updateTaskButtons();
@@ -216,16 +216,12 @@
                 document.getElementById('youtubeTask').classList.add('task-completed');
             }
 
-            // Video Task
-            if (TASK_STATES.video) {
-                document.getElementById('videoBtn').innerHTML = '✅ ক্লেইমড';
-                document.getElementById('videoBtn').classList.remove('bg-green-500', 'hover:bg-green-600');
-                document.getElementById('videoBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
-                document.getElementById('videoBtn').disabled = true;
-                document.getElementById('videoTask').classList.add('task-completed');
-            }
-
-            // Website Task - REMOVED
+            // Video Task - Always enabled, no completion state
+            document.getElementById('videoBtn').innerHTML = 'কাজের ভিডিও দেখুন';
+            document.getElementById('videoBtn').classList.remove('bg-gray-400', 'cursor-not-allowed');
+            document.getElementById('videoBtn').classList.add('bg-blue-500', 'hover:bg-blue-600');
+            document.getElementById('videoBtn').disabled = false;
+            document.getElementById('videoTask').classList.remove('task-completed');
         }
 
         function completeTelegramTask() {
@@ -268,24 +264,11 @@
             showNotification("ইউটিউব চ্যানেল সাবস্ক্রাইব করুন এবং ৫০ টাকা বোনাস পান!", "info");
         }
 
-        function completeVideoTask() {
-            // Check if already completed
-            if (TASK_STATES.video) {
-                showNotification('আপনি ইতিমধ্যে এই টাস্কটি কমপ্লিট করেছেন!', 'info');
-                return;
-            }
-
+        // NEW: Watch video function (no bonus)
+        function watchVideo() {
             const videoLink = "https://youtu.be/XLXw5o1uU3E?si=HmuoguPxrQY4PmkH";
-            
             window.open(videoLink, '_blank');
-            
-            TASK_STATES.video = true;
-            saveTaskStates();
-            updateTaskButtons();
-            
-            addTaskBonus(100, "কাজের ভিডিও দেখা");
-            
-            showNotification("ভিডিওটি দেখুন এবং ১০০ টাকা বোনাস পান!", "info");
+            showNotification("ভিডিওটি দেখুন এবং কাজের নিয়ম শিখুন!", "info");
         }
 
         async function addTaskBonus(amount, taskName) {
@@ -326,7 +309,6 @@
             if (confirm('আপনি কি সব টাস্ক রিসেট করতে চান? এটি শুধু টেস্টিং এর জন্য।')) {
                 TASK_STATES.telegram = false;
                 TASK_STATES.youtube = false;
-                TASK_STATES.video = false;
                 saveTaskStates();
                 updateTaskButtons();
                 showNotification('সব টাস্ক রিসেট করা হয়েছে!', 'success');
@@ -342,3 +324,4 @@
     </script>
 </body>
 </html>
+[file content end]
