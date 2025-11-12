@@ -1,13 +1,11 @@
 
-// app.js - Fixed with Hourly AD Reset System and Bonus Ads
+// app.js - Complete with Minimum Firebase Usage
 console.log("🚀 App.js loading...");
 
 const tg = window.Telegram?.WebApp;
 
 // Firebase initialization
 let db;
-
-// Initialize Firebase immediately
 try {
     if (!firebase.apps.length) {
         firebase.initializeApp({
@@ -28,75 +26,45 @@ try {
 
 // Global user data
 let userData = null;
+const LOCAL_STORAGE_KEY = 'sohojincome_userdata';
 
 // Initialize user data
 async function initializeUserData() {
     console.log("🔄 Initializing user data...");
     
     try {
-        // Expand Telegram Web App
         if (tg) {
             tg.expand();
             tg.ready();
-            console.log("✅ Telegram Web App initialized");
         }
 
-        // Get user ID from Telegram or create test ID
         let userId;
         if (tg?.initDataUnsafe?.user?.id) {
             userId = tg.initDataUnsafe.user.id.toString();
-            console.log("📱 Telegram User ID:", userId);
         } else {
-            // Generate random ID for browser testing
-            userId = 'test_' + Math.floor(1000000000 + Math.random() * 9000000000).toString();
-            console.log("🖥️ Test User ID:", userId);
+            userId = 'test_' + Math.floor(1000000000 + Math.random() * 9000000000);
         }
 
-        // Get user data from Firebase
-        const userDoc = await db.collection('users').doc(userId).get();
-        
-        if (userDoc.exists) {
-            userData = userDoc.data();
-            console.log("✅ User data loaded from Firebase:", userData);
-            
-            // Check and reset daily ads if needed
-            await checkAndResetHourlyAds();
-            // Check and reset bonus ads if needed
-            await checkAndResetBonusAds();
+        // ALWAYS use local storage for user data - NO FIREBASE READ
+        const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (localData) {
+            userData = JSON.parse(localData);
+            if (userData.id === userId) {
+                console.log("✅ User data loaded from localStorage");
+            } else {
+                userData = createNewUserData(userId);
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
+            }
         } else {
-            // Create new user
-            userData = {
-                id: userId,
-                first_name: tg?.initDataUnsafe?.user?.first_name || 'ইউজার',
-                username: tg?.initDataUnsafe?.user?.username || '',
-                balance: 50.00,
-                today_ads: 0,
-                total_ads: 0,
-                today_bonus_ads: 0, // New: Bonus ads counter
-                total_referrals: 0,
-                total_income: 50.00,
-                join_date: new Date().toISOString(),
-                lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-                referred_by: null,
-                last_ad_reset: new Date().toISOString(), // Track last reset time for main ads
-                last_bonus_ad_reset: new Date().toISOString() // New: Track last reset time for bonus ads
-            };
-            
-            await db.collection('users').doc(userId).set(userData);
-            console.log("✅ New user created in Firebase");
+            userData = createNewUserData(userId);
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
         }
 
-        // Update UI immediately
         updateUI();
-        
-        // Process referral
-        await processReferralWithStartApp();
-        
-        // Load referral count
-        await loadReferralCount();
-        
-        console.log("✅ User initialization complete");
         hideLoading();
+
+        setTimeout(() => loadReferralCount(), 1000);
+        setTimeout(() => processReferralWithStartApp(), 2000);
         
     } catch (error) {
         console.error("❌ Error initializing user data:", error);
@@ -105,274 +73,23 @@ async function initializeUserData() {
     }
 }
 
-// Check and reset hourly ads for main ads
-async function checkAndResetHourlyAds() {
-    if (!userData || !db) return;
-    
-    try {
-        const lastReset = new Date(userData.last_ad_reset || userData.join_date);
-        const now = new Date();
-        const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
-        
-        console.log(`🕒 Last main ad reset: ${lastReset}`);
-        console.log(`🕒 Current time: ${now}`);
-        console.log(`🕒 Hours difference: ${hoursDiff.toFixed(2)}`);
-        
-        // Reset if 1 hour has passed since last reset
-        if (hoursDiff >= 1) {
-            console.log('🔄 Resetting hourly main ads counter');
-            
-            await updateUserData({
-                today_ads: 0,
-                last_ad_reset: now.toISOString()
-            });
-            
-            console.log('✅ Hourly main ads reset to 0');
-        } else {
-            const remainingMinutes = Math.ceil(60 - (hoursDiff * 60));
-            console.log(`⏳ Next main ad reset in: ${remainingMinutes} minutes`);
-        }
-        
-    } catch (error) {
-        console.error('❌ Error resetting hourly main ads:', error);
-    }
-}
-
-// NEW: Check and reset hourly ads for bonus ads
-async function checkAndResetBonusAds() {
-    if (!userData || !db) return;
-    
-    try {
-        const lastReset = new Date(userData.last_bonus_ad_reset || userData.join_date);
-        const now = new Date();
-        const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
-        
-        console.log(`🕒 Last bonus ad reset: ${lastReset}`);
-        console.log(`🕒 Hours difference: ${hoursDiff.toFixed(2)}`);
-        
-        // Reset if 1 hour has passed since last reset
-        if (hoursDiff >= 1) {
-            console.log('🔄 Resetting hourly bonus ads counter');
-            
-            await updateUserData({
-                today_bonus_ads: 0,
-                last_bonus_ad_reset: now.toISOString()
-            });
-            
-            console.log('✅ Hourly bonus ads reset to 0');
-        } else {
-            const remainingMinutes = Math.ceil(60 - (hoursDiff * 60));
-            console.log(`⏳ Next bonus ad reset in: ${remainingMinutes} minutes`);
-        }
-        
-    } catch (error) {
-        console.error('❌ Error resetting hourly bonus ads:', error);
-    }
-}
-
-// Check if user can watch more main ads
-function canWatchMoreAds() {
-    if (!userData) return false;
-    
-    const lastReset = new Date(userData.last_ad_reset || userData.join_date);
-    const now = new Date();
-    const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
-    
-    // If 1 hour has passed, user can watch ads again
-    if (hoursDiff >= 1) {
-        return true;
-    }
-    
-    // Check if user hasn't reached the hourly limit
-    return userData.today_ads < 10;
-}
-
-// NEW: Check if user can watch more bonus ads
-function canWatchMoreBonusAds() {
-    if (!userData) return false;
-    
-    const lastReset = new Date(userData.last_bonus_ad_reset || userData.join_date);
-    const now = new Date();
-    const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
-    
-    // If 1 hour has passed, user can watch bonus ads again
-    if (hoursDiff >= 1) {
-        return true;
-    }
-    
-    // Check if user hasn't reached the hourly limit
-    return (userData.today_bonus_ads || 0) < 10;
-}
-
-// Get time until next reset for main ads
-function getTimeUntilNextReset() {
-    if (!userData) return 'লোড হচ্ছে...';
-    
-    const lastReset = new Date(userData.last_ad_reset || userData.join_date);
-    const now = new Date();
-    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000)); // 1 hour later
-    const timeDiff = nextReset - now;
-    
-    if (timeDiff <= 0) {
-        return 'এখনই রিসেট হবে';
-    }
-    
-    const minutes = Math.ceil(timeDiff / (1000 * 60));
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    
-    if (hours > 0) {
-        return `${hours} ঘন্টা ${remainingMinutes} মিনিট`;
-    } else {
-        return `${minutes} মিনিট`;
-    }
-}
-
-// NEW: Get time until next reset for bonus ads
-function getTimeUntilNextBonusReset() {
-    if (!userData) return 'লোড হচ্ছে...';
-    
-    const lastReset = new Date(userData.last_bonus_ad_reset || userData.join_date);
-    const now = new Date();
-    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000)); // 1 hour later
-    const timeDiff = nextReset - now;
-    
-    if (timeDiff <= 0) {
-        return 'এখনই রিসেট হবে';
-    }
-    
-    const minutes = Math.ceil(timeDiff / (1000 * 60));
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    
-    if (hours > 0) {
-        return `${hours} ঘন্টা ${remainingMinutes} মিনিট`;
-    } else {
-        return `${minutes} মিনিট`;
-    }
-}
-
-// PROCESS REFERRAL WITH STARTAPP - MAIN FUNCTION
-async function processReferralWithStartApp() {
-    if (!userData || !db) return;
-    
-    try {
-        console.log('🔍 Processing referral with startapp...');
-        
-        let referralCode = null;
-        
-        // METHOD 1: Check Telegram start_param (startapp parameter)
-        if (tg?.initDataUnsafe?.start_param) {
-            referralCode = tg.initDataUnsafe.start_param;
-            console.log('🎯 Found referral code in start_param:', referralCode);
-        }
-        
-        // METHOD 2: Check URL parameters for startapp (web testing)
-        if (!referralCode) {
-            const urlParams = new URLSearchParams(window.location.search);
-            referralCode = urlParams.get('startapp') || urlParams.get('start');
-            console.log('🌐 Found referral code in URL:', referralCode);
-        }
-        
-        if (referralCode && referralCode.startsWith('ref')) {
-            const referrerUserId = referralCode.replace('ref', '');
-            console.log('🔄 Processing referral from user:', referrerUserId);
-            
-            // Validate the referral
-            if (await validateReferral(referrerUserId)) {
-                // Create referral record
-                await createReferralRecord(referrerUserId);
-                
-                // Give bonuses to both users
-                await giveReferralBonuses(referrerUserId);
-                
-                console.log('✅ Referral processed successfully via startapp!');
-                
-                // Show success message
-                showNotification(
-                    '🎉 রেফারেল সফল!\n\nআপনি রেফারেল দ্বারা জয়েন করেছেন। ৫০ টাকা বোনাস পেয়েছেন!',
-                    'success'
-                );
-            }
-        }
-        
-    } catch (error) {
-        console.error('❌ Error processing referral:', error);
-    }
-}
-
-// Validate referral
-async function validateReferral(referrerUserId) {
-    // Check self-referral
-    if (referrerUserId === userData.id) {
-        console.log('🚫 Self-referral detected');
-        return false;
-    }
-    
-    // Check if user already has a referrer
-    if (userData.referred_by) {
-        console.log('✅ User already referred by:', userData.referred_by);
-        return false;
-    }
-    
-    // Check if referral already exists
-    const existingRef = await db.collection('referrals')
-        .where('userId', '==', userData.id)
-        .get();
-        
-    if (!existingRef.empty) {
-        console.log('✅ Referral already exists');
-        return false;
-    }
-    
-    return true;
-}
-
-// Create referral record
-async function createReferralRecord(referrerUserId) {
-    const referralData = {
-        userId: userData.id,
-        referredBy: referrerUserId,
-        referrerUserId: referrerUserId,
-        newUserName: userData.first_name,
-        newUserId: userData.id,
-        joinDate: firebase.firestore.FieldValue.serverTimestamp(),
-        timestamp: Date.now(),
-        status: 'completed',
-        source: 'telegram_startapp'
+function createNewUserData(userId) {
+    return {
+        id: userId,
+        first_name: tg?.initDataUnsafe?.user?.first_name || 'ইউজার',
+        balance: 50.00,
+        today_ads: 0,
+        total_ads: 0,
+        today_bonus_ads: 0,
+        total_referrals: 0,
+        total_income: 50.00,
+        join_date: new Date().toISOString(),
+        referred_by: null,
+        last_ad_reset: new Date().toISOString(),
+        last_bonus_ad_reset: new Date().toISOString()
     };
-    
-    await db.collection('referrals').doc(userData.id).set(referralData);
-    
-    // Update user with referrer info
-    await updateUserData({
-        referred_by: referrerUserId
-    });
 }
 
-// Give referral bonuses
-async function giveReferralBonuses(referrerUserId) {
-    // Give 50 BDT to new user
-    await updateUserData({
-        balance: userData.balance + 50,
-        total_income: userData.total_income + 50
-    });
-    
-    // Give 100 BDT to referrer
-    const referrerRef = db.collection('users').doc(referrerUserId);
-    const referrerDoc = await referrerRef.get();
-    
-    if (referrerDoc.exists) {
-        const referrerData = referrerDoc.data();
-        await referrerRef.update({
-            balance: (referrerData.balance || 0) + 100,
-            total_income: (referrerData.total_income || 0) + 100,
-            total_referrals: firebase.firestore.FieldValue.increment(1)
-        });
-    }
-}
-
-// Load referral count from Firebase
 async function loadReferralCount() {
     if (!userData || !db) return;
     
@@ -381,76 +98,106 @@ async function loadReferralCount() {
         const snapshot = await referralsRef.where('referredBy', '==', userData.id).get();
         
         const count = snapshot.size;
-        if (count !== userData.total_referrals) {
-            await updateUserData({ total_referrals: count });
-        }
+        userData.total_referrals = count;
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
+        
+        updateUI();
+        
     } catch (error) {
         console.error("❌ Error loading referral count:", error);
     }
 }
 
-// Generate referral link
-function generateReferralLink() {
-    if (!userData) return 'লোড হচ্ছে...';
-    return `https://t.me/sohojincomebot?startapp=ref${userData.id}`;
-}
-
-// Copy referral link
-async function copyReferralLink() {
-    if (!userData) {
-        alert('ডেটা লোড হয়নি। রিফ্রেশ করুন।');
-        return;
-    }
-    
-    const refLink = generateReferralLink();
-    
-    try {
-        await navigator.clipboard.writeText(refLink);
-        await loadReferralCount();
-        
-        showNotification(
-            `✅ রেফারেল লিঙ্ক কপি হয়েছে!\n\nআপনার রেফারেল: ${userData.total_referrals} জন`, 
-            'success'
-        );
-        
-    } catch (error) {
-        // Fallback
-        const tempInput = document.createElement('input');
-        tempInput.value = refLink;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
-        
-        showNotification(
-            `✅ রেফারেল লিঙ্ক কপি হয়েছে!\n\nআপনার রেফারেল: ${userData.total_referrals} জন`, 
-            'success'
-        );
-    }
-}
-
-// Update user data in Firebase
-async function updateUserData(updates) {
+async function processReferralWithStartApp() {
     if (!userData || !db) return;
     
     try {
-        Object.assign(userData, updates);
-        userData.lastActive = firebase.firestore.FieldValue.serverTimestamp();
+        if (userData.referred_by) return;
         
-        await db.collection('users').doc(userData.id).set(userData, { merge: true });
-        updateUI();
-        return userData;
+        let referralCode = null;
+        
+        if (tg?.initDataUnsafe?.start_param) {
+            referralCode = tg.initDataUnsafe.start_param;
+        } else {
+            const urlParams = new URLSearchParams(window.location.search);
+            referralCode = urlParams.get('startapp') || urlParams.get('start');
+        }
+        
+        if (referralCode && referralCode.startsWith('ref')) {
+            const referrerUserId = referralCode.replace('ref', '');
+            
+            if (referrerUserId !== userData.id) {
+                await createReferralRecord(referrerUserId);
+                giveBonusToCurrentUser();
+                await giveBonusToReferrer(referrerUserId);
+                
+                showNotification(
+                    '🎉 রেফারেল সফল!\n\nআপনি রেফারেল দ্বারা জয়েন করেছেন। ৫০ টাকা বোনাস পেয়েছেন!',
+                    'success'
+                );
+            }
+        }
     } catch (error) {
-        console.error("❌ Error updating user data:", error);
+        console.error('❌ Error processing referral:', error);
     }
 }
 
-// Get user data
+async function createReferralRecord(referrerUserId) {
+    try {
+        const referralData = {
+            userId: userData.id,
+            referredBy: referrerUserId,
+            newUserName: userData.first_name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        await db.collection('referrals').doc(userData.id).set(referralData);
+        
+        userData.referred_by = referrerUserId;
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
+        
+    } catch (error) {
+        console.error("❌ Error creating referral record:", error);
+        throw error;
+    }
+}
+
+function giveBonusToCurrentUser() {
+    userData.balance += 50;
+    userData.total_income += 50;
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
+    updateUI();
+}
+
+async function giveBonusToReferrer(referrerUserId) {
+    try {
+        const referrerRef = db.collection('users').doc(referrerUserId);
+        
+        await referrerRef.update({
+            balance: firebase.firestore.FieldValue.increment(100),
+            total_income: firebase.firestore.FieldValue.increment(100),
+            total_referrals: firebase.firestore.FieldValue.increment(1)
+        });
+        
+    } catch (error) {
+        console.error("❌ Error giving bonus to referrer:", error);
+    }
+}
+
+async function updateUserData(updates) {
+    if (!userData) return;
+    
+    Object.assign(userData, updates);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userData));
+    updateUI();
+    
+    return userData;
+}
+
 function getUserData() {
     return userData;
 }
 
-// Update UI with user data
 function updateUI() {
     if (!userData) return;
     
@@ -461,15 +208,15 @@ function updateUI() {
         'withdrawBalance': userData.balance.toFixed(2) + ' টাকা',
         'todayAds': userData.today_ads + '/10',
         'adsCounter': userData.today_ads + '/10',
-        'bonusAdsCount': (userData.today_bonus_ads || 0) + '/10', // NEW: Bonus ads counter
+        'bonusAdsCount': (userData.today_bonus_ads || 0) + '/10',
         'totalReferrals': userData.total_referrals,
         'totalReferrals2': userData.total_referrals,
         'totalAds': userData.total_ads,
         'profileTotalAds': userData.total_ads,
         'totalIncome': userData.total_income.toFixed(2) + ' টাকা',
         'profileTotalIncome': userData.total_income.toFixed(2) + ' টাকা',
-        'referralLink': generateReferralLink(),
-        'supportReferralLink': generateReferralLink(),
+        'referralLink': `https://t.me/sohojincomebot?startapp=ref${userData.id}`,
+        'supportReferralLink': `https://t.me/sohojincomebot?startapp=ref${userData.id}`,
         'profileUserId': userData.id,
         'profileReferrals': userData.total_referrals
     };
@@ -479,21 +226,18 @@ function updateUI() {
         if (element) element.textContent = value;
     }
     
-    // Update progress bar for main ads
     const progressBar = document.getElementById('progressBar');
     if (progressBar) {
         const progress = (userData.today_ads / 10) * 100;
         progressBar.style.width = `${progress}%`;
     }
     
-    // Update progress bar for bonus ads
     const bonusProgressBar = document.getElementById('bonusProgressBar');
     if (bonusProgressBar) {
         const bonusProgress = ((userData.today_bonus_ads || 0) / 10) * 100;
         bonusProgressBar.style.width = `${bonusProgress}%`;
     }
     
-    // Update ads remaining for main ads
     const adsRemaining = document.getElementById('adsRemaining');
     if (adsRemaining) {
         const remaining = 10 - userData.today_ads;
@@ -501,7 +245,6 @@ function updateUI() {
     }
 }
 
-// Fallback UI
 function fallbackUI() {
     const elements = {
         'userName': 'ইউজার',
@@ -510,7 +253,7 @@ function fallbackUI() {
         'withdrawBalance': '50.00 টাকা',
         'todayAds': '0/10',
         'adsCounter': '0/10',
-        'bonusAdsCount': '0/10', // NEW: Bonus ads counter
+        'bonusAdsCount': '0/10',
         'totalReferrals': '0',
         'totalReferrals2': '0',
         'totalAds': '0',
@@ -529,7 +272,25 @@ function fallbackUI() {
     }
 }
 
-// Show notification
+async function copyReferralLink() {
+    if (!userData) return;
+    
+    const refLink = `https://t.me/sohojincomebot?startapp=ref${userData.id}`;
+    
+    try {
+        await navigator.clipboard.writeText(refLink);
+        showNotification('✅ রেফারেল লিঙ্ক কপি হয়েছে!', 'success');
+    } catch (error) {
+        const tempInput = document.createElement('input');
+        tempInput.value = refLink;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        showNotification('✅ রেফারেল লিঙ্ক কপি হয়েছে!', 'success');
+    }
+}
+
 function showNotification(message, type = 'info') {
     if (window.Telegram && Telegram.WebApp) {
         Telegram.WebApp.showPopup({
@@ -542,23 +303,83 @@ function showNotification(message, type = 'info') {
     }
 }
 
-// Hide loading overlay
 function hideLoading() {
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) overlay.style.display = 'none';
 }
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 DOM loaded, initializing app...");
-    setTimeout(initializeUserData, 1000);
-});
+function canWatchMoreAds() {
+    if (!userData) return false;
+    
+    const lastReset = new Date(userData.last_ad_reset);
+    const now = new Date();
+    const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
+    
+    if (hoursDiff >= 1) return true;
+    return userData.today_ads < 10;
+}
 
-// Export functions to global scope
+function canWatchMoreBonusAds() {
+    if (!userData) return false;
+    
+    const lastReset = new Date(userData.last_bonus_ad_reset);
+    const now = new Date();
+    const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
+    
+    if (hoursDiff >= 1) return true;
+    return (userData.today_bonus_ads || 0) < 10;
+}
+
+function getTimeUntilNextReset() {
+    if (!userData) return 'লোড হচ্ছে...';
+    
+    const lastReset = new Date(userData.last_ad_reset);
+    const now = new Date();
+    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000));
+    const timeDiff = nextReset - now;
+    
+    if (timeDiff <= 0) return 'এখনই রিসেট হবে';
+    
+    const minutes = Math.ceil(timeDiff / (1000 * 60));
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    
+    if (hours > 0) {
+        return `${hours} ঘন্টা ${remainingMinutes} মিনিট`;
+    } else {
+        return `${minutes} মিনিট`;
+    }
+}
+
+function getTimeUntilNextBonusReset() {
+    if (!userData) return 'লোড হচ্ছে...';
+    
+    const lastReset = new Date(userData.last_bonus_ad_reset);
+    const now = new Date();
+    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000));
+    const timeDiff = nextReset - now;
+    
+    if (timeDiff <= 0) return 'এখনই রিসেট হবে';
+    
+    const minutes = Math.ceil(timeDiff / (1000 * 60));
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    
+    if (hours > 0) {
+        return `${hours} ঘন্টা ${remainingMinutes} মিনিট`;
+    } else {
+        return `${minutes} মিনিট`;
+    }
+}
+
 window.copyReferralLink = copyReferralLink;
 window.getUserData = getUserData;
 window.updateUserData = updateUserData;
 window.canWatchMoreAds = canWatchMoreAds;
 window.getTimeUntilNextReset = getTimeUntilNextReset;
-window.canWatchMoreBonusAds = canWatchMoreBonusAds; // NEW: Export bonus ads function
-window.getTimeUntilNextBonusReset = getTimeUntilNextBonusReset; // NEW: Export bonus reset function
+window.canWatchMoreBonusAds = canWatchMoreBonusAds;
+window.getTimeUntilNextBonusReset = getTimeUntilNextBonusReset;
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(initializeUserData, 1000);
+});
