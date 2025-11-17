@@ -1,4 +1,3 @@
-
 // app.js - Fixed with Hourly AD Reset System and Bonus Ads
 console.log("🚀 App.js loading...");
 
@@ -11,13 +10,13 @@ let db;
 try {
     if (!firebase.apps.length) {
         firebase.initializeApp({
-            apiKey: "AIzaSyABdp9WK7eGLwE5nY19jp-nlDlyTuTyMR0",
-            authDomain: "sohojincome-36f1f.firebaseapp.com",
-            projectId: "sohojincome-36f1f",
-            storageBucket: "sohojincome-36f1f.firebasestorage.app",
-            messagingSenderId: "398153090805",
-            appId: "1:398153090805:web:fc8d68130afbc2239be7bc",
-            measurementId: "G-VZ47961SJV"
+            apiKey: "AIzaSyC8PAeOIs4Tf5qGLj_d4DzC1D6Z5AEw5yA",
+            authDomain: "newreffer-dc7f3.firebaseapp.com",
+            projectId: "newreffer-dc7f3",
+            storageBucket: "newreffer-dc7f3.firebasestorage.app",
+            messagingSenderId: "60384156805",
+            appId: "1:60384156805:web:8be9b4d64d15082dcc1dec",
+            measurementId: "G-X5F80G5R07"
         });
     }
     db = firebase.firestore();
@@ -461,7 +460,7 @@ function updateUI() {
         'withdrawBalance': userData.balance.toFixed(2) + ' টাকা',
         'todayAds': userData.today_ads + '/10',
         'adsCounter': userData.today_ads + '/10',
-        'bonusAdsCount': (userData.today_bonus_ads || 0) + '/10', // NEW: Bonus ads counter
+        'bonusAdsCounter': (userData.today_bonus_ads || 0) + '/10', // NEW: Bonus ads counter
         'totalReferrals': userData.total_referrals,
         'totalReferrals2': userData.total_referrals,
         'totalAds': userData.total_ads,
