@@ -99,9 +99,32 @@ async function initializeUserData() {
         
     } catch (error) {
         console.error("❌ Error initializing user data:", error);
+        // Use fallback data
+        userData = getFallbackUserData();
         fallbackUI();
         hideLoading();
     }
+}
+
+// Fallback user data function
+function getFallbackUserData() {
+    const userId = tg?.initDataUnsafe?.user?.id || 'test_' + Math.floor(1000000000 + Math.random() * 9000000000).toString();
+    
+    return {
+        id: userId,
+        first_name: tg?.initDataUnsafe?.user?.first_name || 'ইউজার',
+        username: tg?.initDataUnsafe?.user?.username || '',
+        balance: 50.00,
+        today_ads: 0,
+        total_ads: 0,
+        today_bonus_ads: 0,
+        total_referrals: 0,
+        total_income: 50.00,
+        join_date: new Date().toISOString(),
+        referred_by: null,
+        last_ad_reset: new Date().toISOString(),
+        last_bonus_ad_reset: new Date().toISOString()
+    };
 }
 
 // Check and reset hourly ads for main ads
@@ -451,7 +474,12 @@ function getUserData() {
 
 // Update UI with user data
 function updateUI() {
-    if (!userData) return;
+    if (!userData) {
+        console.log("❌ No user data available for UI update");
+        return;
+    }
+    
+    console.log("🔄 Updating UI with user data:", userData);
     
     const elements = {
         'userName': userData.first_name,
@@ -460,7 +488,7 @@ function updateUI() {
         'withdrawBalance': userData.balance.toFixed(2) + ' টাকা',
         'todayAds': userData.today_ads + '/10',
         'adsCounter': userData.today_ads + '/10',
-        'bonusAdsCounter': (userData.today_bonus_ads || 0) + '/10', // NEW: Bonus ads counter
+        'bonusAdsCounter': (userData.today_bonus_ads || 0) + '/10',
         'totalReferrals': userData.total_referrals,
         'totalReferrals2': userData.total_referrals,
         'totalAds': userData.total_ads,
@@ -475,7 +503,12 @@ function updateUI() {
     
     for (const [id, value] of Object.entries(elements)) {
         const element = document.getElementById(id);
-        if (element) element.textContent = value;
+        if (element) {
+            element.textContent = value;
+            console.log(`✅ Updated ${id}: ${value}`);
+        } else {
+            console.log(`❌ Element not found: ${id}`);
+        }
     }
     
     // Update progress bar for main ads
@@ -483,6 +516,7 @@ function updateUI() {
     if (progressBar) {
         const progress = (userData.today_ads / 10) * 100;
         progressBar.style.width = `${progress}%`;
+        console.log(`✅ Updated progress bar: ${progress}%`);
     }
     
     // Update progress bar for bonus ads
@@ -490,6 +524,7 @@ function updateUI() {
     if (bonusProgressBar) {
         const bonusProgress = ((userData.today_bonus_ads || 0) / 10) * 100;
         bonusProgressBar.style.width = `${bonusProgress}%`;
+        console.log(`✅ Updated bonus progress bar: ${bonusProgress}%`);
     }
     
     // Update ads remaining for main ads
@@ -497,34 +532,45 @@ function updateUI() {
     if (adsRemaining) {
         const remaining = 10 - userData.today_ads;
         adsRemaining.textContent = remaining > 0 ? remaining : 0;
+        console.log(`✅ Updated ads remaining: ${adsRemaining.textContent}`);
     }
+    
+    console.log("✅ UI update complete");
 }
 
 // Fallback UI
 function fallbackUI() {
+    console.log("🔄 Using fallback UI");
+    
+    const userId = tg?.initDataUnsafe?.user?.id || 'test_user';
+    const userName = tg?.initDataUnsafe?.user?.first_name || 'ইউজার';
+    
     const elements = {
-        'userName': 'ইউজার',
-        'profileName': 'ইউজার',
+        'userName': userName,
+        'profileName': userName,
         'mainBalance': '50.00 টাকা',
         'withdrawBalance': '50.00 টাকা',
         'todayAds': '0/10',
         'adsCounter': '0/10',
-        'bonusAdsCount': '0/10', // NEW: Bonus ads counter
+        'bonusAdsCounter': '0/10',
         'totalReferrals': '0',
         'totalReferrals2': '0',
         'totalAds': '0',
         'profileTotalAds': '0',
         'totalIncome': '50.00 টাকা',
         'profileTotalIncome': '50.00 টাকা',
-        'referralLink': 'লোড হচ্ছে...',
-        'supportReferralLink': 'লোড হচ্ছে...',
-        'profileUserId': '০',
+        'referralLink': `https://t.me/sohojincomebot?startapp=ref${userId}`,
+        'supportReferralLink': `https://t.me/sohojincomebot?startapp=ref${userId}`,
+        'profileUserId': userId,
         'profileReferrals': '০'
     };
     
     for (const [id, value] of Object.entries(elements)) {
         const element = document.getElementById(id);
-        if (element) element.textContent = value;
+        if (element) {
+            element.textContent = value;
+            console.log(`✅ Fallback updated ${id}: ${value}`);
+        }
     }
 }
 
@@ -544,7 +590,10 @@ function showNotification(message, type = 'info') {
 // Hide loading overlay
 function hideLoading() {
     const overlay = document.getElementById('loadingOverlay');
-    if (overlay) overlay.style.display = 'none';
+    if (overlay) {
+        overlay.style.display = 'none';
+        console.log("✅ Loading overlay hidden");
+    }
 }
 
 // Initialize when DOM is loaded
@@ -559,5 +608,8 @@ window.getUserData = getUserData;
 window.updateUserData = updateUserData;
 window.canWatchMoreAds = canWatchMoreAds;
 window.getTimeUntilNextReset = getTimeUntilNextReset;
-window.canWatchMoreBonusAds = canWatchMoreBonusAds; // NEW: Export bonus ads function
-window.getTimeUntilNextBonusReset = getTimeUntilNextBonusReset; // NEW: Export bonus reset function
+window.canWatchMoreBonusAds = canWatchMoreBonusAds;
+window.getTimeUntilNextBonusReset = getTimeUntilNextBonusReset;
+window.updateUI = updateUI;
+window.fallbackUI = fallbackUI;
+window.hideLoading = hideLoading;
