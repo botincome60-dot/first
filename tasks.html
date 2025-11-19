@@ -7,6 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     <style>
         .bottom-nav {
             position: fixed;
@@ -162,6 +163,9 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="app.js"></script>
 
     <script>
@@ -283,6 +287,25 @@
                 setTimeout(() => {
                     showNotification(`সফল! ${amount} টাকা বোনাস যোগ হয়েছে (${taskName})`, "success");
                 }, 1000);
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.showPopup({
+                    title: type === 'success' ? 'সফল!' : 'মেসেজ',
+                    message: message,
+                    buttons: [{ type: 'close' }]
+                });
+            } else {
+                alert(message);
+            }
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
             }
         }
 
