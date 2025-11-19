@@ -1,4 +1,4 @@
-// app.js - Production Version with Render Backend - FIXED
+// app.js - Production Version with Render Backend
 console.log("🚀 App.js loading with Production Backend...");
 
 const tg = window.Telegram?.WebApp;
@@ -19,7 +19,7 @@ async function initializeUserData() {
       console.log("✅ Telegram Web App initialized");
     }
 
-    // Get user ID from Telegram or create test ID - FIXED
+    // Get user ID from Telegram or create test ID
     let userId;
     let firstName = 'ইউজার';
     let username = '';
@@ -30,8 +30,7 @@ async function initializeUserData() {
       username = tg.initDataUnsafe.user.username || '';
       console.log("📱 Telegram User ID:", userId);
     } else {
-      // Generate random ID for browser testing (without test_ prefix)
-      userId = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+      userId = 'test_' + Math.floor(1000000000 + Math.random() * 9000000000).toString();
       console.log("🖥️ Test User ID:", userId);
     }
 
@@ -82,8 +81,7 @@ async function processReferralWithStartApp() {
     if (referralCode && referralCode.startsWith('ref')) {
       const referrerUserId = referralCode.replace('ref', '');
       
-      // Validate not self-referral and user doesn't already have referrer
-      if (referrerUserId !== userData.userId.replace('test_', '') && !userData.referred_by) {
+      if (referrerUserId !== userData.userId && !userData.referred_by) {
         console.log('🔄 Processing referral from:', referrerUserId);
         
         await createReferralRecord(referrerUserId);
@@ -105,20 +103,15 @@ async function createReferralRecord(referrerUserId) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        userId: userData.userId.replace('test_', ''),
+        userId: userData.userId,
         referredBy: referrerUserId,
         newUserName: userData.first_name,
-        newUserId: userData.userId.replace('test_', '')
+        newUserId: userData.userId
       })
     });
     
     if (response.ok) {
       console.log('✅ Referral record created');
-      
-      // Update user's referred_by field
-      await updateUserData({
-        referred_by: referrerUserId
-      });
     }
   } catch (error) {
     console.error('❌ Error creating referral record:', error);
@@ -134,13 +127,12 @@ async function giveReferralBonuses(referrerUserId) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        newUserId: userData.userId.replace('test_', ''),
+        newUserId: userData.userId,
         referrerUserId: referrerUserId
       })
     });
     
     if (response.ok) {
-      // Reload user data to get updated balance
       const userResponse = await fetch(`${API_BASE}/users/${userData.userId}`);
       const result = await userResponse.json();
       userData = result.data;
@@ -189,9 +181,6 @@ function getUserData() {
 function updateUI() {
   if (!userData) return;
   
-  // Clean user ID for display (remove test_ prefix)
-  const displayUserId = userData.userId.replace('test_', '');
-  
   const elements = {
     'userName': userData.first_name,
     'profileName': userData.first_name,
@@ -208,7 +197,7 @@ function updateUI() {
     'profileTotalIncome': userData.total_income.toFixed(2) + ' টাকা',
     'referralLink': generateReferralLink(),
     'supportReferralLink': generateReferralLink(),
-    'profileUserId': displayUserId,
+    'profileUserId': userData.userId,
     'profileReferrals': userData.total_referrals
   };
   
@@ -216,44 +205,12 @@ function updateUI() {
     const element = document.getElementById(id);
     if (element) element.textContent = value;
   }
-  
-  // Update progress bars if they exist
-  updateProgressBars();
 }
 
-// Update progress bars
-function updateProgressBars() {
-  if (!userData) return;
-  
-  // Main ads progress bar
-  const progressBar = document.getElementById('progressBar');
-  if (progressBar) {
-    const progress = (userData.today_ads / 10) * 100;
-    progressBar.style.width = `${progress}%`;
-  }
-  
-  // Bonus ads progress bar
-  const bonusProgressBar = document.getElementById('bonusProgressBar');
-  if (bonusProgressBar) {
-    const bonusProgress = ((userData.today_bonus_ads || 0) / 10) * 100;
-    bonusProgressBar.style.width = `${bonusProgress}%`;
-  }
-  
-  // Ads remaining counter
-  const adsRemaining = document.getElementById('adsRemaining');
-  if (adsRemaining) {
-    const remaining = 10 - userData.today_ads;
-    adsRemaining.textContent = remaining > 0 ? remaining : 0;
-  }
-}
-
-// Generate referral link - FIXED
+// Generate referral link
 function generateReferralLink() {
   if (!userData) return 'লোড হচ্ছে...';
-  
-  // Remove any "test_" prefix from user ID for referral links
-  const cleanUserId = userData.userId.replace('test_', '');
-  return `https://t.me/sohojincomebot?startapp=ref${cleanUserId}`;
+  return `https://t.me/sohojincomebot?startapp=ref${userData.userId}`;
 }
 
 // Fallback UI
@@ -303,7 +260,7 @@ function hideLoading() {
   if (overlay) overlay.style.display = 'none';
 }
 
-// Copy referral link - FIXED
+// Copy referral link
 async function copyReferralLink() {
   if (!userData) {
     alert('ডেটা লোড হয়নি। রিফ্রেশ করুন।');
@@ -332,29 +289,6 @@ async function copyReferralLink() {
       `✅ রেফারেল লিঙ্ক কপি হয়েছে!\n\nআপনার রেফারেল: ${userData.total_referrals} জন`, 
       'success'
     );
-  }
-}
-
-// Copy support referral link
-async function copySupportReferral() {
-  if (!userData) {
-    alert('ডেটা লোড হয়নি। রিফ্রেশ করুন।');
-    return;
-  }
-  
-  const refLink = generateReferralLink();
-  
-  try {
-    await navigator.clipboard.writeText(refLink);
-    showNotification('রেফারেল লিঙ্ক কপি করা হয়েছে!', 'success');
-  } catch (error) {
-    const tempInput = document.createElement('input');
-    tempInput.value = refLink;
-    document.body.appendChild(tempInput);
-    tempInput.select();
-    document.execCommand('copy');
-    document.body.removeChild(tempInput);
-    showNotification('রেফারেল লিঙ্ক কপি করা হয়েছে!', 'success');
   }
 }
 
@@ -434,7 +368,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Export functions to global scope
 window.copyReferralLink = copyReferralLink;
-window.copySupportReferral = copySupportReferral;
 window.getUserData = getUserData;
 window.updateUserData = updateUserData;
 window.canWatchMoreAds = canWatchMoreAds;
@@ -443,43 +376,3 @@ window.canWatchMoreBonusAds = canWatchMoreBonusAds;
 window.getTimeUntilNextBonusReset = getTimeUntilNextBonusReset;
 window.generateReferralLink = generateReferralLink;
 window.showNotification = showNotification;
-
-// Watch ads page specific functions
-if (typeof updateCounter !== 'undefined') {
-  window.updateCounter = updateCounter;
-}
-
-if (typeof updateBonusCounter !== 'undefined') {
-  window.updateBonusCounter = updateBonusCounter;
-}
-
-// Support page specific functions
-if (typeof selectMethod !== 'undefined') {
-  window.selectMethod = selectMethod;
-}
-
-if (typeof getMethodName !== 'undefined') {
-  window.getMethodName = getMethodName;
-}
-
-// Tasks page specific functions
-if (typeof completeTelegramTask !== 'undefined') {
-  window.completeTelegramTask = completeTelegramTask;
-}
-
-if (typeof completeYoutubeTask !== 'undefined') {
-  window.completeYoutubeTask = completeYoutubeTask;
-}
-
-if (typeof watchVideo !== 'undefined') {
-  window.watchVideo = watchVideo;
-}
-
-if (typeof addTaskBonus !== 'undefined') {
-  window.addTaskBonus = addTaskBonus;
-}
-
-// Profile page specific functions
-if (typeof logout !== 'undefined') {
-  window.logout = logout;
-}
