@@ -167,9 +167,6 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="app.js"></script>
 
     <script>
@@ -236,43 +233,33 @@
             const amount = parseInt(document.getElementById('withdrawAmount').value);
             const accountNumber = document.getElementById('accountNumber').value;
 
-            // Check minimum amount
+            // Validation checks
             if (!amount || amount < 500) {
                 showNotification('ন্যূনতম ৫০০ টাকা উত্তোলন করতে হবে!', 'error');
                 return;
             }
 
-            // Check account number
             if (!accountNumber || accountNumber.length !== 11 || !accountNumber.startsWith('01')) {
                 showNotification('সঠিক মোবাইল নম্বর দিন (11 ডিজিট, 01 দিয়ে শুরু)!', 'error');
                 return;
             }
 
-            // Check balance
             if (amount > user.balance) {
                 showNotification(`আপনার ব্যালেন্স insufficient!\nআপনার ব্যালেন্স: ${user.balance.toFixed(2)} টাকা`, 'error');
                 return;
             }
 
-            // Check referral requirement
             if (user.total_referrals < 15) {
-                showNotification(
-                    `রেফারেল প্রয়োজন!\n\nআপনার রেফারেল: ${user.total_referrals} জন\nপ্রয়োজন: ১৫ জন\n\nআরও ${15 - user.total_referrals} জন রেফারেল প্রয়োজন।`,
-                    'error'
-                );
+                showNotification(`রেফারেল প্রয়োজন!\n\nআপনার রেফারেল: ${user.total_referrals} জন\nপ্রয়োজন: ১৫ জন`, 'error');
                 return;
             }
 
-            // Check AD requirement - NEW REQUIREMENT
             if (user.total_ads < 10) {
-                showNotification(
-                    `এড দেখার প্রয়োজন!\n\nআপনার দেখা এড: ${user.total_ads} টি\nপ্রয়োজন: ১০ টি\n\nআরও ${10 - user.total_ads} টি এড দেখুন।`,
-                    'error'
-                );
+                showNotification(`এড দেখার প্রয়োজন!\n\nআপনার দেখা এড: ${user.total_ads} টি\nপ্রয়োজন: ১০ টি`, 'error');
                 return;
             }
 
-            // All checks passed - Process withdraw
+            // Process withdraw via API
             await processWithdrawRequest(amount, accountNumber);
         }
 
@@ -280,20 +267,35 @@
             const user = getUserData();
             
             try {
-                // Show loading
                 const withdrawBtn = document.getElementById('withdrawBtn');
                 withdrawBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>প্রসেস হচ্ছে...';
                 withdrawBtn.disabled = true;
 
-                // Deduct balance from user
-                await updateUserData({
-                    balance: user.balance - amount
+                const response = await fetch(`${API_BASE}/withdrawals`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: user.userId,
+                        userName: user.first_name,
+                        amount: amount,
+                        accountNumber: accountNumber,
+                        method: getMethodName(selectedMethod)
+                    })
                 });
 
-                // Save withdraw request to Firebase
-                await saveWithdrawToFirebase(amount, accountNumber, selectedMethod);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Withdrawal failed');
+                }
 
-                // Success message
+                const result = await response.json();
+                
+                // Update local user data
+                user.balance = result.data.newBalance;
+                updateUI();
+
                 showNotification(
                     `✅ উইথড্র রিকোয়েস্ট সফল!\n\nপরিমাণ: ${amount} টাকা\n${getMethodName(selectedMethod)}: ${accountNumber}\n\n২৪ ঘন্টার মধ্যে পেমেন্ট করা হবে।`,
                     'success'
@@ -303,14 +305,11 @@
                 document.getElementById('withdrawAmount').value = '';
                 document.getElementById('accountNumber').value = '';
                 
-                // Update balance display
-                document.getElementById('withdrawBalance').textContent = (user.balance - amount).toFixed(2) + ' টাকা';
-
             } catch (error) {
                 console.error('Withdraw error:', error);
-                showNotification('উইথড্র রিকোয়েস্ট ব্যর্থ! আবার চেষ্টা করুন।', 'error');
+                showNotification(error.message || 'উইথড্র রিকোয়েস্ট ব্যর্থ! আবার চেষ্টা করুন।', 'error');
             } finally {
-                // Reset button
+                const withdrawBtn = document.getElementById('withdrawBtn');
                 withdrawBtn.innerHTML = 'উইথড্র রিকোয়েস্ট করুন';
                 withdrawBtn.disabled = false;
             }
@@ -323,47 +322,6 @@
                 'rocket': 'Rocket'
             };
             return methodNames[method] || method;
-        }
-
-        async function saveWithdrawToFirebase(amount, accountNumber, methodName) {
-            if (!db) return;
-            
-            try {
-                const user = getUserData();
-                const withdrawData = {
-                    userId: user.id,
-                    userName: user.first_name,
-                    amount: amount,
-                    accountNumber: accountNumber,
-                    method: getMethodName(methodName),
-                    status: 'pending',
-                    requestDate: firebase.firestore.FieldValue.serverTimestamp(),
-                    timestamp: Date.now(),
-                    userAds: user.total_ads, // Store user's AD count at time of withdraw
-                    userReferrals: user.total_referrals // Store user's referral count
-                };
-                
-                await db.collection('withdrawals').doc().set(withdrawData);
-                console.log('✅ Withdraw request saved to Firebase');
-            } catch (error) {
-                console.error('Error saving withdraw request:', error);
-                throw error;
-            }
-        }
-
-        function showNotification(message, type = 'info') {
-            const title = type === 'success' ? 'সফল!' : 
-                         type === 'error' ? 'ত্রুটি!' : 'মেসেজ';
-            
-            if (window.Telegram && Telegram.WebApp) {
-                Telegram.WebApp.showPopup({
-                    title: title,
-                    message: message,
-                    buttons: [{ type: 'close' }]
-                });
-            } else {
-                alert(message);
-            }
         }
 
         function hideLoading() {
