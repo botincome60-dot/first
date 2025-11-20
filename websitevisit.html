@@ -117,6 +117,16 @@
             </div>
         </div>
 
+        <!-- রিসেট বাটন (ডিবাগ করার জন্য) -->
+        <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+            <h4 class="font-semibold text-red-700 mb-2">টেস্টিং এর জন্য</h4>
+            <button onclick="resetAllProgress()" class="w-full bg-red-500 text-white py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors">
+                <i class="fas fa-redo mr-2"></i>
+                সব প্রোগ্রেস রিসেট করুন
+            </button>
+            <p class="text-red-600 text-xs mt-2 text-center">এটি শুধু টেস্টিং এর জন্য, প্রোডাকশনে remove করবেন</p>
+        </div>
+
         <!-- তথ্য সেকশন -->
         <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
             <div class="flex items-start">
@@ -157,14 +167,14 @@
             //     id: 2, 
             //     name: "ওয়েবসাইট #2",
             //     code: "WEB002", // আপনার আসল কোড
-            //     link: "https://example-website2.com", // আপনার আসল ওয়েবসাইট লিঙ্ক
+            //     link: "https://example2.com", // আপনার আসল ওয়েবসাইট লিঙ্ক
             //     description: "দ্বিতীয় ওয়েবসাইট ভিজিট করুন"
             // },
             // {
             //     id: 3,
             //     name: "ওয়েবসাইট #3", 
             //     code: "WEB003", // আপনার আসল কোড
-            //     link: "https://example-website3.com", // আপনার আসল ওয়েবসাইট লিঙ্ক
+            //     link: "https://example3.com", // আপনার আসল ওয়েবসাইট লিঙ্ক
             //     description: "তৃতীয় ওয়েবসাইট ভিজিট করুন"
             // }
             // নতুন ওয়েবসাইট যোগ করতে এই array তে নতুন object যোগ করবেন
@@ -174,6 +184,7 @@
         let completedWebsites = [];
 
         function initWebsiteVisitPage() {
+            console.log("🔄 ওয়েবসাইট পেজ লোড হচ্ছে...");
             loadUserProgress();
             updateUI();
             hideLoading();
@@ -181,13 +192,22 @@
 
         function loadUserProgress() {
             const user = getUserData();
-            if (!user) return;
+            if (!user) {
+                console.log("❌ ইউজার ডেটা নেই");
+                return;
+            }
 
+            console.log("👤 ইউজার:", user.id);
+            
             const userProgress = JSON.parse(localStorage.getItem('websiteProgress') || '{}');
             completedWebsites = userProgress[user.id] || [];
+            
+            console.log("✅ কমপ্লিটেড ওয়েবসাইট:", completedWebsites);
 
             // বর্তমান ওয়েবসাইট খুঁজে বের করুন (প্রথম ইনকমপ্লিটেড)
             currentWebsite = ALL_WEBSITES.find(website => !completedWebsites.includes(website.id));
+            
+            console.log("🎯 কারেন্ট ওয়েবসাইট:", currentWebsite);
         }
 
         function updateUI() {
@@ -203,17 +223,22 @@
                 document.getElementById('visitBtn').disabled = false;
                 document.getElementById('visitBtn').classList.remove('bg-gray-400', 'cursor-not-allowed');
                 document.getElementById('visitBtn').classList.add('bg-green-500', 'hover:bg-green-600');
+                document.getElementById('visitBtn').innerHTML = '<i class="fas fa-external-link-alt mr-2"></i>ওয়েবসাইট ভিজিট করুন';
                 
                 document.getElementById('verifyBtn').disabled = false;
                 document.getElementById('verifyBtn').classList.remove('bg-gray-400', 'cursor-not-allowed');
                 document.getElementById('verifyBtn').classList.add('bg-blue-500', 'hover:bg-blue-600');
+                document.getElementById('verifyBtn').innerHTML = 'কোড ভেরিফাই করুন';
                 
                 document.getElementById('codeInput').disabled = false;
                 document.getElementById('codeInput').placeholder = 'ওয়েবসাইটে দেখানো কোডটি লিখুন';
+                document.getElementById('codeInput').value = '';
                 
                 currentTaskSection.style.display = 'block';
                 document.getElementById('statusMessage').textContent = 'সঠিক কোড দিলে ৫০ টাকা বোনাস পাবেন';
                 document.getElementById('statusMessage').className = 'text-gray-500 text-sm mt-2 text-center';
+                
+                console.log("✅ কারেন্ট টাস্ক দেখানো হচ্ছে:", currentWebsite.name);
             } else {
                 // সব টাস্ক কমপ্লিট
                 currentTaskSection.style.display = 'block';
@@ -236,6 +261,8 @@
                 
                 document.getElementById('statusMessage').textContent = 'আপনি সব ওয়েবসাইট টাস্ক কমপ্লিট করেছেন!';
                 document.getElementById('statusMessage').className = 'text-green-600 text-sm mt-2 text-center font-semibold';
+                
+                console.log("✅ সব টাস্ক সম্পন্ন");
             }
 
             // কমপ্লিটেড টাস্কস দেখান
@@ -324,8 +351,12 @@
                     if (!userProgress[user.id]) {
                         userProgress[user.id] = [];
                     }
-                    userProgress[user.id].push(currentWebsite.id);
-                    localStorage.setItem('websiteProgress', JSON.stringify(userProgress));
+                    
+                    // চেক করুন যে ইতিমধ্যে কমপ্লিট করা নেই
+                    if (!userProgress[user.id].includes(currentWebsite.id)) {
+                        userProgress[user.id].push(currentWebsite.id);
+                        localStorage.setItem('websiteProgress', JSON.stringify(userProgress));
+                    }
                     
                     showNotification(`🎉 সফল! ${currentWebsite.name} কমপ্লিট! ৫০ টাকা বোনাস যোগ হয়েছে!`, 'success');
                     
@@ -339,6 +370,22 @@
                 console.error('Error rewarding website task:', error);
                 showNotification('সিস্টেম এরর! আবার চেষ্টা করুন।', 'error');
             }
+        }
+
+        // রিসেট ফাংশন (টেস্টিং এর জন্য)
+        function resetAllProgress() {
+            const user = getUserData();
+            if (!user) return;
+
+            const userProgress = JSON.parse(localStorage.getItem('websiteProgress') || '{}');
+            userProgress[user.id] = [];
+            localStorage.setItem('websiteProgress', JSON.stringify(userProgress));
+            
+            showNotification('সব প্রোগ্রেস রিসেট করা হয়েছে!', 'success');
+            
+            // UI রিফ্রেশ করুন
+            loadUserProgress();
+            updateUI();
         }
 
         function watchTutorial() {
