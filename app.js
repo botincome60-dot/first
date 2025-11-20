@@ -10,13 +10,13 @@ let db;
 try {
     if (!firebase.apps.length) {
         firebase.initializeApp({
-              apiKey: "AIzaSyD39QOod4Kms_Szzdw93yz3UDVF8OmiwFY",
-  authDomain: "dsgdfgsdg-749d2.firebaseapp.com",
-  projectId: "dsgdfgsdg-749d2",
-  storageBucket: "dsgdfgsdg-749d2.firebasestorage.app",
-  messagingSenderId: "708979846840",
-  appId: "1:708979846840:web:b15c4bb59df209f5c58e4d",
-  measurementId: "G-PEVV77MKDR"
+            apiKey: "AIzaSyD39QOod4Kms_Szzdw93yz3UDVF8OmiwFY",
+            authDomain: "dsgdfgsdg-749d2.firebaseapp.com",
+            projectId: "dsgdfgsdg-749d2",
+            storageBucket: "dsgdfgsdg-749d2.firebasestorage.app",
+            messagingSenderId: "708979846840",
+            appId: "1:708979846840:web:b15c4bb59df209f5c58e4d",
+            measurementId: "G-PEVV77MKDR"
         });
     }
     db = firebase.firestore();
@@ -62,6 +62,8 @@ async function initializeUserData() {
             await checkAndResetHourlyAds();
             // Check and reset bonus ads if needed
             await checkAndResetBonusAds();
+            // Check and reset bonus ads 2 if needed
+            await checkAndResetBonusAds2();
         } else {
             // Create new user
             userData = {
@@ -72,13 +74,15 @@ async function initializeUserData() {
                 today_ads: 0,
                 total_ads: 0,
                 today_bonus_ads: 0, // New: Bonus ads counter
+                today_bonus_ads_2: 0, // New: Bonus ads 2 counter
                 total_referrals: 0,
                 total_income: 50.00,
                 join_date: new Date().toISOString(),
                 lastActive: firebase.firestore.FieldValue.serverTimestamp(),
                 referred_by: null,
                 last_ad_reset: new Date().toISOString(), // Track last reset time for main ads
-                last_bonus_ad_reset: new Date().toISOString() // New: Track last reset time for bonus ads
+                last_bonus_ad_reset: new Date().toISOString(), // New: Track last reset time for bonus ads
+                last_bonus_ad_reset_2: new Date().toISOString() // New: Track last reset time for bonus ads 2
             };
             
             await db.collection('users').doc(userId).set(userData);
@@ -169,6 +173,38 @@ async function checkAndResetBonusAds() {
     }
 }
 
+// NEW: Check and reset hourly ads for bonus ads 2
+async function checkAndResetBonusAds2() {
+    if (!userData || !db) return;
+    
+    try {
+        const lastReset = new Date(userData.last_bonus_ad_reset_2 || userData.join_date);
+        const now = new Date();
+        const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
+        
+        console.log(`🕒 Last bonus ad 2 reset: ${lastReset}`);
+        console.log(`🕒 Hours difference: ${hoursDiff.toFixed(2)}`);
+        
+        // Reset if 1 hour has passed since last reset
+        if (hoursDiff >= 1) {
+            console.log('🔄 Resetting hourly bonus ads 2 counter');
+            
+            await updateUserData({
+                today_bonus_ads_2: 0,
+                last_bonus_ad_reset_2: now.toISOString()
+            });
+            
+            console.log('✅ Hourly bonus ads 2 reset to 0');
+        } else {
+            const remainingMinutes = Math.ceil(60 - (hoursDiff * 60));
+            console.log(`⏳ Next bonus ad 2 reset in: ${remainingMinutes} minutes`);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error resetting hourly bonus ads 2:', error);
+    }
+}
+
 // Check if user can watch more main ads
 function canWatchMoreAds() {
     if (!userData) return false;
@@ -203,6 +239,23 @@ function canWatchMoreBonusAds() {
     return (userData.today_bonus_ads || 0) < 10;
 }
 
+// NEW: Check if user can watch more bonus ads 2
+function canWatchMoreBonusAds2() {
+    if (!userData) return false;
+    
+    const lastReset = new Date(userData.last_bonus_ad_reset_2 || userData.join_date);
+    const now = new Date();
+    const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
+    
+    // If 1 hour has passed, user can watch bonus ads again
+    if (hoursDiff >= 1) {
+        return true;
+    }
+    
+    // Check if user hasn't reached the hourly limit
+    return (userData.today_bonus_ads_2 || 0) < 10;
+}
+
 // Get time until next reset for main ads
 function getTimeUntilNextReset() {
     if (!userData) return 'লোড হচ্ছে...';
@@ -232,6 +285,30 @@ function getTimeUntilNextBonusReset() {
     if (!userData) return 'লোড হচ্ছে...';
     
     const lastReset = new Date(userData.last_bonus_ad_reset || userData.join_date);
+    const now = new Date();
+    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000)); // 1 hour later
+    const timeDiff = nextReset - now;
+    
+    if (timeDiff <= 0) {
+        return 'এখনই রিসেট হবে';
+    }
+    
+    const minutes = Math.ceil(timeDiff / (1000 * 60));
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    
+    if (hours > 0) {
+        return `${hours} ঘন্টা ${remainingMinutes} মিনিট`;
+    } else {
+        return `${minutes} মিনিট`;
+    }
+}
+
+// NEW: Get time until next reset for bonus ads 2
+function getTimeUntilNextBonusReset2() {
+    if (!userData) return 'লোড হচ্ছে...';
+    
+    const lastReset = new Date(userData.last_bonus_ad_reset_2 || userData.join_date);
     const now = new Date();
     const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000)); // 1 hour later
     const timeDiff = nextReset - now;
@@ -460,7 +537,8 @@ function updateUI() {
         'withdrawBalance': userData.balance.toFixed(2) + ' টাকা',
         'todayAds': userData.today_ads + '/10',
         'adsCounter': userData.today_ads + '/10',
-        'bonusAdsCount': (userData.today_bonus_ads || 0) + '/10', // NEW: Bonus ads counter
+        'bonusAdsCount': (userData.today_bonus_ads || 0) + '/10',
+        'bonusAdsCount2': (userData.today_bonus_ads_2 || 0) + '/10', // NEW: Bonus ads 2 counter
         'totalReferrals': userData.total_referrals,
         'totalReferrals2': userData.total_referrals,
         'totalAds': userData.total_ads,
@@ -492,6 +570,13 @@ function updateUI() {
         bonusProgressBar.style.width = `${bonusProgress}%`;
     }
     
+    // Update progress bar for bonus ads 2
+    const bonusProgressBar2 = document.getElementById('bonusProgressBar2');
+    if (bonusProgressBar2) {
+        const bonusProgress2 = ((userData.today_bonus_ads_2 || 0) / 10) * 100;
+        bonusProgressBar2.style.width = `${bonusProgress2}%`;
+    }
+    
     // Update ads remaining for main ads
     const adsRemaining = document.getElementById('adsRemaining');
     if (adsRemaining) {
@@ -509,7 +594,8 @@ function fallbackUI() {
         'withdrawBalance': '50.00 টাকা',
         'todayAds': '0/10',
         'adsCounter': '0/10',
-        'bonusAdsCount': '0/10', // NEW: Bonus ads counter
+        'bonusAdsCount': '0/10',
+        'bonusAdsCount2': '0/10',
         'totalReferrals': '0',
         'totalReferrals2': '0',
         'totalAds': '0',
@@ -559,5 +645,7 @@ window.getUserData = getUserData;
 window.updateUserData = updateUserData;
 window.canWatchMoreAds = canWatchMoreAds;
 window.getTimeUntilNextReset = getTimeUntilNextReset;
-window.canWatchMoreBonusAds = canWatchMoreBonusAds; // NEW: Export bonus ads function
-window.getTimeUntilNextBonusReset = getTimeUntilNextBonusReset; // NEW: Export bonus reset function
+window.canWatchMoreBonusAds = canWatchMoreBonusAds;
+window.getTimeUntilNextBonusReset = getTimeUntilNextBonusReset;
+window.canWatchMoreBonusAds2 = canWatchMoreBonusAds2; // NEW: Export bonus ads 2 function
+window.getTimeUntilNextBonusReset2 = getTimeUntilNextBonusReset2; // NEW: Export bonus reset 2 function
