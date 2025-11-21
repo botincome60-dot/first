@@ -10,13 +10,13 @@ let db;
 try {
     if (!firebase.apps.length) {
         firebase.initializeApp({
-            apiKey: "AIzaSyC8PAeOIs4Tf5qGLj_d4DzC1D6Z5AEw5yA",
-  authDomain: "newreffer-dc7f3.firebaseapp.com",
-  projectId: "newreffer-dc7f3",
-  storageBucket: "newreffer-dc7f3.firebasestorage.app",
-  messagingSenderId: "60384156805",
-  appId: "1:60384156805:web:8be9b4d64d15082dcc1dec",
-  measurementId: "G-X5F80G5R07"
+            apiKey: "AIzaSyB6x9IetuEcvSJ4vbEiIDkSPbBYWCE6R0w",
+  authDomain: "werewrwr-bdab0.firebaseapp.com",
+  projectId: "werewrwr-bdab0",
+  storageBucket: "werewrwr-bdab0.firebasestorage.app",
+  messagingSenderId: "58461999084",
+  appId: "1:58461999084:web:f4c4785dd884716077bac9",
+  measurementId: "G-Y8JYQP9G5J"
         });
     }
     db = firebase.firestore();
