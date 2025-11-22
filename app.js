@@ -1,4 +1,4 @@
-// app.js - Minimal Firebase (Referrals + Withdrawals Only)
+// app.js - Fixed with Hourly AD Reset System and Bonus Ads
 console.log("🚀 App.js loading...");
 
 const tg = window.Telegram?.WebApp;
@@ -6,17 +6,17 @@ const tg = window.Telegram?.WebApp;
 // Firebase initialization
 let db;
 
-// Initialize Firebase
+// Initialize Firebase immediately
 try {
     if (!firebase.apps.length) {
         firebase.initializeApp({
             apiKey: "AIzaSyD0VrrvbSNN88WbJeG1MDcSeQAfYxdNlzk",
-            authDomain: "ertertertert-6cfc8.firebaseapp.com",
-            projectId: "ertertertert-6cfc8",
-            storageBucket: "ertertertert-6cfc8.firebasestorage.app",
-            messagingSenderId: "91929460922",
-            appId: "1:91929460922:web:3d63fa093c3a5e271f8283",
-            measurementId: "G-0Y134VSSBM"
+  authDomain: "ertertertert-6cfc8.firebaseapp.com",
+  projectId: "ertertertert-6cfc8",
+  storageBucket: "ertertertert-6cfc8.firebasestorage.app",
+  messagingSenderId: "91929460922",
+  appId: "1:91929460922:web:3d63fa093c3a5e271f8283",
+  measurementId: "G-0Y134VSSBM"
         });
     }
     db = firebase.firestore();
@@ -25,42 +25,47 @@ try {
     console.error("❌ Firebase initialization error:", error);
 }
 
-// Global user data - Store locally only
+// Global user data
 let userData = null;
 
-// Initialize user data (Local storage only)
+// Initialize user data
 async function initializeUserData() {
     console.log("🔄 Initializing user data...");
     
     try {
+        // Expand Telegram Web App
         if (tg) {
             tg.expand();
             tg.ready();
+            console.log("✅ Telegram Web App initialized");
         }
 
-        // Get user ID
+        // Get user ID from Telegram or create test ID
         let userId;
         if (tg?.initDataUnsafe?.user?.id) {
             userId = tg.initDataUnsafe.user.id.toString();
             console.log("📱 Telegram User ID:", userId);
         } else {
+            // Generate random ID for browser testing
             userId = 'test_' + Math.floor(1000000000 + Math.random() * 9000000000).toString();
             console.log("🖥️ Test User ID:", userId);
         }
 
-        // Load from localStorage only - No Firebase read for user data
-        const localData = localStorage.getItem(`user_${userId}`);
+        // Get user data from Firebase
+        const userDoc = await db.collection('users').doc(userId).get();
         
-        if (localData) {
-            userData = JSON.parse(localData);
-            console.log("✅ User data loaded from localStorage");
+        if (userDoc.exists) {
+            userData = userDoc.data();
+            console.log("✅ User data loaded from Firebase:", userData);
             
-            // Check and reset hourly ads if needed
+            // Check and reset daily ads if needed
             await checkAndResetHourlyAds();
+            // Check and reset bonus ads if needed
             await checkAndResetBonusAds();
+            // Check and reset bonus ads 2 if needed
             await checkAndResetBonusAds2();
         } else {
-            // Create new user locally
+            // Create new user
             userData = {
                 id: userId,
                 first_name: tg?.initDataUnsafe?.user?.first_name || 'ইউজার',
@@ -68,24 +73,32 @@ async function initializeUserData() {
                 balance: 50.00,
                 today_ads: 0,
                 total_ads: 0,
-                today_bonus_ads: 0,
-                today_bonus_ads_2: 0,
+                today_bonus_ads: 0, // New: Bonus ads counter
+                today_bonus_ads_2: 0, // New: Bonus ads 2 counter
                 total_referrals: 0,
                 total_income: 50.00,
                 join_date: new Date().toISOString(),
+                lastActive: firebase.firestore.FieldValue.serverTimestamp(),
                 referred_by: null,
-                last_ad_reset: new Date().toISOString(),
-                last_bonus_ad_reset: new Date().toISOString(),
-                last_bonus_ad_reset_2: new Date().toISOString()
+                last_ad_reset: new Date().toISOString(), // Track last reset time for main ads
+                last_bonus_ad_reset: new Date().toISOString(), // New: Track last reset time for bonus ads
+                last_bonus_ad_reset_2: new Date().toISOString() // New: Track last reset time for bonus ads 2
             };
             
-            localStorage.setItem(`user_${userId}`, JSON.stringify(userData));
-            console.log("✅ New user created locally");
+            await db.collection('users').doc(userId).set(userData);
+            console.log("✅ New user created in Firebase");
         }
 
+        // Update UI immediately
         updateUI();
-        await processReferralWithStartApp(); // Only Firebase operation for referrals
-        await loadReferralCount(); // Load referral count from Firebase
+        
+        // Process referral
+        await processReferralWithStartApp();
+        
+        // Load referral count
+        await loadReferralCount();
+        
+        console.log("✅ User initialization complete");
         hideLoading();
         
     } catch (error) {
@@ -97,7 +110,7 @@ async function initializeUserData() {
 
 // Check and reset hourly ads for main ads
 async function checkAndResetHourlyAds() {
-    if (!userData) return;
+    if (!userData || !db) return;
     
     try {
         const lastReset = new Date(userData.last_ad_reset || userData.join_date);
@@ -105,6 +118,7 @@ async function checkAndResetHourlyAds() {
         const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
         
         console.log(`🕒 Last main ad reset: ${lastReset}`);
+        console.log(`🕒 Current time: ${now}`);
         console.log(`🕒 Hours difference: ${hoursDiff.toFixed(2)}`);
         
         // Reset if 1 hour has passed since last reset
@@ -117,6 +131,9 @@ async function checkAndResetHourlyAds() {
             });
             
             console.log('✅ Hourly main ads reset to 0');
+        } else {
+            const remainingMinutes = Math.ceil(60 - (hoursDiff * 60));
+            console.log(`⏳ Next main ad reset in: ${remainingMinutes} minutes`);
         }
         
     } catch (error) {
@@ -124,9 +141,9 @@ async function checkAndResetHourlyAds() {
     }
 }
 
-// Check and reset hourly ads for bonus ads
+// NEW: Check and reset hourly ads for bonus ads
 async function checkAndResetBonusAds() {
-    if (!userData) return;
+    if (!userData || !db) return;
     
     try {
         const lastReset = new Date(userData.last_bonus_ad_reset || userData.join_date);
@@ -134,6 +151,7 @@ async function checkAndResetBonusAds() {
         const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
         
         console.log(`🕒 Last bonus ad reset: ${lastReset}`);
+        console.log(`🕒 Hours difference: ${hoursDiff.toFixed(2)}`);
         
         // Reset if 1 hour has passed since last reset
         if (hoursDiff >= 1) {
@@ -145,6 +163,9 @@ async function checkAndResetBonusAds() {
             });
             
             console.log('✅ Hourly bonus ads reset to 0');
+        } else {
+            const remainingMinutes = Math.ceil(60 - (hoursDiff * 60));
+            console.log(`⏳ Next bonus ad reset in: ${remainingMinutes} minutes`);
         }
         
     } catch (error) {
@@ -152,9 +173,9 @@ async function checkAndResetBonusAds() {
     }
 }
 
-// Check and reset hourly ads for bonus ads 2
+// NEW: Check and reset hourly ads for bonus ads 2
 async function checkAndResetBonusAds2() {
-    if (!userData) return;
+    if (!userData || !db) return;
     
     try {
         const lastReset = new Date(userData.last_bonus_ad_reset_2 || userData.join_date);
@@ -162,6 +183,7 @@ async function checkAndResetBonusAds2() {
         const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
         
         console.log(`🕒 Last bonus ad 2 reset: ${lastReset}`);
+        console.log(`🕒 Hours difference: ${hoursDiff.toFixed(2)}`);
         
         // Reset if 1 hour has passed since last reset
         if (hoursDiff >= 1) {
@@ -173,6 +195,9 @@ async function checkAndResetBonusAds2() {
             });
             
             console.log('✅ Hourly bonus ads 2 reset to 0');
+        } else {
+            const remainingMinutes = Math.ceil(60 - (hoursDiff * 60));
+            console.log(`⏳ Next bonus ad 2 reset in: ${remainingMinutes} minutes`);
         }
         
     } catch (error) {
@@ -197,7 +222,7 @@ function canWatchMoreAds() {
     return userData.today_ads < 10;
 }
 
-// Check if user can watch more bonus ads
+// NEW: Check if user can watch more bonus ads
 function canWatchMoreBonusAds() {
     if (!userData) return false;
     
@@ -214,7 +239,7 @@ function canWatchMoreBonusAds() {
     return (userData.today_bonus_ads || 0) < 10;
 }
 
-// Check if user can watch more bonus ads 2
+// NEW: Check if user can watch more bonus ads 2
 function canWatchMoreBonusAds2() {
     if (!userData) return false;
     
@@ -237,7 +262,7 @@ function getTimeUntilNextReset() {
     
     const lastReset = new Date(userData.last_ad_reset || userData.join_date);
     const now = new Date();
-    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000));
+    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000)); // 1 hour later
     const timeDiff = nextReset - now;
     
     if (timeDiff <= 0) {
@@ -255,13 +280,13 @@ function getTimeUntilNextReset() {
     }
 }
 
-// Get time until next reset for bonus ads
+// NEW: Get time until next reset for bonus ads
 function getTimeUntilNextBonusReset() {
     if (!userData) return 'লোড হচ্ছে...';
     
     const lastReset = new Date(userData.last_bonus_ad_reset || userData.join_date);
     const now = new Date();
-    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000));
+    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000)); // 1 hour later
     const timeDiff = nextReset - now;
     
     if (timeDiff <= 0) {
@@ -279,13 +304,13 @@ function getTimeUntilNextBonusReset() {
     }
 }
 
-// Get time until next reset for bonus ads 2
+// NEW: Get time until next reset for bonus ads 2
 function getTimeUntilNextBonusReset2() {
     if (!userData) return 'লোড হচ্ছে...';
     
     const lastReset = new Date(userData.last_bonus_ad_reset_2 || userData.join_date);
     const now = new Date();
-    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000));
+    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000)); // 1 hour later
     const timeDiff = nextReset - now;
     
     if (timeDiff <= 0) {
@@ -303,25 +328,26 @@ function getTimeUntilNextBonusReset2() {
     }
 }
 
-// PROCESS REFERRAL - ONLY FIREBASE WRITE OPERATION
+// PROCESS REFERRAL WITH STARTAPP - MAIN FUNCTION
 async function processReferralWithStartApp() {
     if (!userData || !db) return;
     
     try {
-        console.log('🔍 Processing referral...');
+        console.log('🔍 Processing referral with startapp...');
         
         let referralCode = null;
         
-        // Check Telegram start_param
+        // METHOD 1: Check Telegram start_param (startapp parameter)
         if (tg?.initDataUnsafe?.start_param) {
             referralCode = tg.initDataUnsafe.start_param;
-            console.log('🎯 Found referral code:', referralCode);
+            console.log('🎯 Found referral code in start_param:', referralCode);
         }
         
-        // Check URL parameters
+        // METHOD 2: Check URL parameters for startapp (web testing)
         if (!referralCode) {
             const urlParams = new URLSearchParams(window.location.search);
             referralCode = urlParams.get('startapp') || urlParams.get('start');
+            console.log('🌐 Found referral code in URL:', referralCode);
         }
         
         if (referralCode && referralCode.startsWith('ref')) {
@@ -330,7 +356,7 @@ async function processReferralWithStartApp() {
             
             // Validate the referral
             if (await validateReferral(referrerUserId)) {
-                // Create referral record in Firebase (ONLY FIREBASE WRITE)
+                // Create referral record
                 await createReferralRecord(referrerUserId);
                 
                 // Give bonuses to both users
@@ -338,6 +364,7 @@ async function processReferralWithStartApp() {
                 
                 console.log('✅ Referral processed successfully via startapp!');
                 
+                // Show success message
                 showNotification(
                     '🎉 রেফারেল সফল!\n\nআপনি রেফারেল দ্বারা জয়েন করেছেন। ৫০ টাকা বোনাস পেয়েছেন!',
                     'success'
@@ -364,25 +391,20 @@ async function validateReferral(referrerUserId) {
         return false;
     }
     
-    // Check if referral already exists in Firebase
-    try {
-        const existingRef = await db.collection('referrals')
-            .where('userId', '==', userData.id)
-            .get();
-            
-        if (!existingRef.empty) {
-            console.log('✅ Referral already exists in Firebase');
-            return false;
-        }
-    } catch (error) {
-        console.error('Error checking existing referral:', error);
+    // Check if referral already exists
+    const existingRef = await db.collection('referrals')
+        .where('userId', '==', userData.id)
+        .get();
+        
+    if (!existingRef.empty) {
+        console.log('✅ Referral already exists');
         return false;
     }
     
     return true;
 }
 
-// Create referral record in Firebase (ONLY FIREBASE WRITE)
+// Create referral record
 async function createReferralRecord(referrerUserId) {
     const referralData = {
         userId: userData.id,
@@ -398,7 +420,7 @@ async function createReferralRecord(referrerUserId) {
     
     await db.collection('referrals').doc(userData.id).set(referralData);
     
-    // Update user with referrer info locally
+    // Update user with referrer info
     await updateUserData({
         referred_by: referrerUserId
     });
@@ -406,37 +428,23 @@ async function createReferralRecord(referrerUserId) {
 
 // Give referral bonuses
 async function giveReferralBonuses(referrerUserId) {
-    // Give 50 BDT to new user (local only)
+    // Give 50 BDT to new user
     await updateUserData({
         balance: userData.balance + 50,
         total_income: userData.total_income + 50
     });
     
-    // Give 100 BDT to referrer (Firebase write)
-    try {
-        const referrerRef = db.collection('users').doc(referrerUserId);
-        const referrerDoc = await referrerRef.get();
-        
-        if (referrerDoc.exists) {
-            const referrerData = referrerDoc.data();
-            await referrerRef.update({
-                balance: (referrerData.balance || 0) + 100,
-                total_income: (referrerData.total_income || 0) + 100,
-                total_referrals: firebase.firestore.FieldValue.increment(1)
-            });
-        } else {
-            // Create referrer if doesn't exist
-            await referrerRef.set({
-                balance: 100,
-                total_income: 100,
-                total_referrals: 1,
-                first_name: 'Referrer',
-                userId: referrerUserId,
-                join_date: new Date().toISOString()
-            });
-        }
-    } catch (error) {
-        console.error('Error updating referrer:', error);
+    // Give 100 BDT to referrer
+    const referrerRef = db.collection('users').doc(referrerUserId);
+    const referrerDoc = await referrerRef.get();
+    
+    if (referrerDoc.exists) {
+        const referrerData = referrerDoc.data();
+        await referrerRef.update({
+            balance: (referrerData.balance || 0) + 100,
+            total_income: (referrerData.total_income || 0) + 100,
+            total_referrals: firebase.firestore.FieldValue.increment(1)
+        });
     }
 }
 
@@ -497,21 +505,20 @@ async function copyReferralLink() {
     }
 }
 
-// Save user data locally only
-function saveUserDataLocally() {
-    if (userData) {
-        localStorage.setItem(`user_${userData.id}`, JSON.stringify(userData));
-        updateUI();
-    }
-}
-
-// Update user data locally
+// Update user data in Firebase
 async function updateUserData(updates) {
-    if (!userData) return;
+    if (!userData || !db) return;
     
-    Object.assign(userData, updates);
-    saveUserDataLocally();
-    return userData;
+    try {
+        Object.assign(userData, updates);
+        userData.lastActive = firebase.firestore.FieldValue.serverTimestamp();
+        
+        await db.collection('users').doc(userData.id).set(userData, { merge: true });
+        updateUI();
+        return userData;
+    } catch (error) {
+        console.error("❌ Error updating user data:", error);
+    }
 }
 
 // Get user data
@@ -531,7 +538,7 @@ function updateUI() {
         'todayAds': userData.today_ads + '/10',
         'adsCounter': userData.today_ads + '/10',
         'bonusAdsCount': (userData.today_bonus_ads || 0) + '/10',
-        'bonusAdsCount2': (userData.today_bonus_ads_2 || 0) + '/10',
+        'bonusAdsCount2': (userData.today_bonus_ads_2 || 0) + '/10', // NEW: Bonus ads 2 counter
         'totalReferrals': userData.total_referrals,
         'totalReferrals2': userData.total_referrals,
         'totalAds': userData.total_ads,
@@ -640,5 +647,5 @@ window.canWatchMoreAds = canWatchMoreAds;
 window.getTimeUntilNextReset = getTimeUntilNextReset;
 window.canWatchMoreBonusAds = canWatchMoreBonusAds;
 window.getTimeUntilNextBonusReset = getTimeUntilNextBonusReset;
-window.canWatchMoreBonusAds2 = canWatchMoreBonusAds2;
-window.getTimeUntilNextBonusReset2 = getTimeUntilNextBonusReset2;
+window.canWatchMoreBonusAds2 = canWatchMoreBonusAds2; // NEW: Export bonus ads 2 function
+window.getTimeUntilNextBonusReset2 = getTimeUntilNextBonusReset2; // NEW: Export bonus reset 2 function

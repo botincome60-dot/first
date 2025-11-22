@@ -263,7 +263,7 @@
                 return;
             }
 
-            // Check AD requirement
+            // Check AD requirement - NEW REQUIREMENT
             if (user.total_ads < 10) {
                 showNotification(
                     `এড দেখার প্রয়োজন!\n\nআপনার দেখা এড: ${user.total_ads} টি\nপ্রয়োজন: ১০ টি\n\nআরও ${10 - user.total_ads} টি এড দেখুন।`,
@@ -285,12 +285,12 @@
                 withdrawBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>প্রসেস হচ্ছে...';
                 withdrawBtn.disabled = true;
 
-                // Deduct balance from user locally
+                // Deduct balance from user
                 await updateUserData({
                     balance: user.balance - amount
                 });
 
-                // Save withdraw request to Firebase (ONLY FIREBASE WRITE)
+                // Save withdraw request to Firebase
                 await saveWithdrawToFirebase(amount, accountNumber, selectedMethod);
 
                 // Success message
@@ -339,8 +339,8 @@
                     status: 'pending',
                     requestDate: firebase.firestore.FieldValue.serverTimestamp(),
                     timestamp: Date.now(),
-                    userAds: user.total_ads,
-                    userReferrals: user.total_referrals
+                    userAds: user.total_ads, // Store user's AD count at time of withdraw
+                    userReferrals: user.total_referrals // Store user's referral count
                 };
                 
                 await db.collection('withdrawals').doc().set(withdrawData);
