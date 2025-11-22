@@ -102,35 +102,18 @@
 
         <!-- দ্রুত একশন -->
         <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
-    <h3 class="font-bold text-lg mb-3">দ্রুত একশন</h3>
-    <div class="grid grid-cols-2 gap-3">
-        <a href="tasks.html" class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center hover:bg-blue-100 transition-colors">
-            <i class="fas fa-tasks text-blue-500 text-xl mb-1"></i>
-            <p class="font-semibold text-blue-700">টাস্ক করুন</p>
-        </a>
-        <a href="support.html" class="bg-green-50 border border-green-200 rounded-lg p-3 text-center hover:bg-green-100 transition-colors">
-            <i class="fas fa-hand-holding-usd text-green-500 text-xl mb-1"></i>
-            <p class="font-semibold text-green-700">উইথড্র</p>
-        </a>
-    </div>
-    <div class="border rounded-xl p-3 mt-3" id="videoTask">
-        <div class="flex items-center justify-between mb-2">
-            <div>
-                <h4 class="font-semibold">কাজের ভিডিও দেখুন</h4>
-                <p class="text-gray-600 text-sm">কাজের নিয়ম শিখুন</p>
+            <h3 class="font-bold text-lg mb-3">দ্রুত একশন</h3>
+            <div class="grid grid-cols-2 gap-3">
+                <a href="tasks.html" class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center hover:bg-blue-100 transition-colors">
+                    <i class="fas fa-tasks text-blue-500 text-xl mb-1"></i>
+                    <p class="font-semibold text-blue-700">টাস্ক করুন</p>
+                </a>
+                <a href="support.html" class="bg-green-50 border border-green-200 rounded-lg p-3 text-center hover:bg-green-100 transition-colors">
+                    <i class="fas fa-hand-holding-usd text-green-500 text-xl mb-1"></i>
+                    <p class="font-semibold text-green-700">উইথড্র</p>
+                </a>
             </div>
-            <i class="fas fa-video text-purple-500 text-xl"></i>
         </div>
-        <button onclick="watchVideo()" id="videoBtn" class="w-full bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
-            কাজের ভিডিও দেখুন
-        </button>
-    </div>
-</div>
-<script>  function watchVideo() {
-            const videoLink = "https://youtu.be/XLXw5o1uU3E?si=HmuoguPxrQY4PmkH";
-            window.open(videoLink, '_blank');
-            showNotification("ভিডিওটি দেখুন এবং কাজের নিয়ম শিখুন!", "info");
-        }</script>
 
         <!-- রেফারেল সেকশন -->
         <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 text-white">
@@ -175,9 +158,6 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

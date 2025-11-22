@@ -115,13 +115,10 @@
         </a>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="app.js"></script>
-
     <!-- Monetag SDK -->
     <script src='https://libtl.com/sdk.js' data-zone='10166009' data-sdk='show_10166009'></script>
+
+    <script src="app.js"></script>
 
     <script>
         let isAdLoading = false;
@@ -261,7 +258,7 @@
             if (!user) return;
             
             try {
-                // Add reward
+                // Add reward via API
                 await updateUserData({ 
                     balance: user.balance + 30,
                     total_income: user.total_income + 30,
@@ -311,18 +308,6 @@
                 document.getElementById('adStatus').className = 'text-xs text-green-600';
                 document.getElementById('rewardStatus').textContent = 'এড দেখার পর অটোমেটিক ৩০ টাকা যোগ হবে';
                 document.getElementById('rewardStatus').className = 'text-gray-500 text-sm';
-            }
-        }
-
-        function showNotification(message, type = 'info') {
-            if (window.Telegram && Telegram.WebApp) {
-                Telegram.WebApp.showPopup({
-                    title: type === 'success' ? 'সফল!' : 'মেসেজ',
-                    message: message,
-                    buttons: [{ type: 'close' }]
-                });
-            } else {
-                alert(message);
             }
         }
 
