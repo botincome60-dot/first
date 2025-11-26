@@ -66,18 +66,18 @@
             <div class="text-center mb-4">
                 <i class="fas fa-ad text-yellow-500 text-4xl mb-3"></i>
                 <h3 class="font-bold text-lg">রিওয়ার্ডেড এড</h3>
-                <p class="text-gray-600">এই এডটি দেখে পাবেন <span class="font-bold text-green-600">৩০.০০ টাকা</span></p>
+                <p class="text-gray-600">এই এডটি দেখে পাবেন <span class="font-bold text-green-600">২০.০০ টাকা</span></p>
             </div>
             
             <!-- এড কন্টেন্ট এরিয়া -->
             <div class="bg-gray-100 rounded-lg p-4 text-center mb-4">
                 <div id="adContent">
                     <h4 class="font-bold text-lg mb-2">🎬 রিওয়ার্ডেড এড</h4>
-                    <p class="text-gray-600 mb-3">নিচের বাটনে ক্লিক করে এড দেখুন এবং ৩০ টাকা উপার্জন করুন</p>
+                    <p class="text-gray-600 mb-3">নিচের বাটনে ক্লিক করে এড দেখুন এবং ২০ টাকা উপার্জন করুন</p>
                     
                     <div class="bg-white p-4 rounded-lg border border-gray-300">
                         <i class="fas fa-video text-blue-500 text-3xl mb-2"></i>
-                        <p class="text-sm text-gray-500 mb-3">একটি এড দেখুন এবং ৩০ টাকা পান</p>
+                        <p class="text-sm text-gray-500 mb-3">একটি এড দেখুন এবং ২০ টাকা পান</p>
                         <p class="text-xs text-gray-400" id="adStatus">এড প্রস্তুত</p>
                     </div>
                 </div>
@@ -90,7 +90,7 @@
             </button>
             
             <div class="text-center">
-                <p class="text-gray-500 text-sm" id="rewardStatus">এড দেখার পর অটোমেটিক ৩০ টাকা যোগ হবে</p>
+                <p class="text-gray-500 text-sm" id="rewardStatus">এড দেখার পর অটোমেটিক ২০ টাকা যোগ হবে</p>
             </div>
         </div>
 
@@ -100,7 +100,7 @@
                 <i class="fas fa-info-circle text-yellow-500 mt-1 mr-2"></i>
                 <div>
                     <h4 class="font-semibold text-yellow-700">গুরুত্বপূর্ণ তথ্য</h4>
-                    <p class="text-yellow-600 text-sm">• এড দেখার পর ৩০ টাকা অটো যোগ হবে</p>
+                    <p class="text-yellow-600 text-sm">• এড দেখার পর ২০ টাকা অটো যোগ হবে</p>
                     <p class="text-yellow-600 text-sm">• প্রতি ঘন্টায় ১০টি এড দেখতে পারবেন</p>
                     <p class="text-yellow-600 text-sm">• এড লোড হতে ১০-১৫ সেকেন্ড সময় লাগতে পারে</p>
                     <p class="text-yellow-600 text-sm">• ইন্টারনেট কানেকশন চেক করুন</p>
@@ -261,10 +261,10 @@
             if (!user) return;
             
             try {
-                // Add reward
+                // Add reward - CHANGED TO 20 Tk
                 await updateUserData({ 
-                    balance: user.balance + 30,
-                    total_income: user.total_income + 30,
+                    balance: user.balance + 20,
+                    total_income: user.total_income + 20,
                     total_ads: user.total_ads + 1,
                     today_ads: user.today_ads + 1
                 });
@@ -274,17 +274,17 @@
                 updateResetTimer();
                 
                 // Success message
-                document.getElementById('adStatus').textContent = 'এড দেখা সম্পন্ন! ৩০ টাকা যোগ হয়েছে';
+                document.getElementById('adStatus').textContent = 'এড দেখা সম্পন্ন! ২০ টাকা যোগ হয়েছে';
                 document.getElementById('adStatus').className = 'text-xs text-green-600';
-                document.getElementById('rewardStatus').textContent = '৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে!';
+                document.getElementById('rewardStatus').textContent = '২০ টাকা আপনার একাউন্টে যোগ করা হয়েছে!';
                 document.getElementById('rewardStatus').className = 'text-sm text-green-600 font-semibold';
                 
                 const watchBtn = document.getElementById('watchAdBtn');
-                watchBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ৩০ টাকা যোগ হয়েছে';
+                watchBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ২০ টাকা যোগ হয়েছে';
                 watchBtn.classList.remove('ad-loading', 'bg-gradient-to-r', 'from-green-500', 'to-green-600', 'hover:from-green-600', 'hover:to-green-700');
                 watchBtn.classList.add('bg-green-500');
                 
-                showNotification('🎉 এড দেখা সম্পন্ন! ৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।', 'success');
+                showNotification('🎉 এড দেখা সম্পন্ন! ২০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।', 'success');
                 
                 // Reset button after 3 seconds
                 setTimeout(() => {
@@ -309,7 +309,7 @@
                 watchBtn.disabled = false;
                 document.getElementById('adStatus').textContent = 'এড প্রস্তুত';
                 document.getElementById('adStatus').className = 'text-xs text-green-600';
-                document.getElementById('rewardStatus').textContent = 'এড দেখার পর অটোমেটিক ৩০ টাকা যোগ হবে';
+                document.getElementById('rewardStatus').textContent = 'এড দেখার পর অটোমেটিক ২০ টাকা যোগ হবে';
                 document.getElementById('rewardStatus').className = 'text-gray-500 text-sm';
             }
         }

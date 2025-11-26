@@ -10,13 +10,13 @@ let db;
 try {
     if (!firebase.apps.length) {
         firebase.initializeApp({
-               apiKey: "AIzaSyD39QOod4Kms_Szzdw93yz3UDVF8OmiwFY",
-  authDomain: "dsgdfgsdg-749d2.firebaseapp.com",
-  projectId: "dsgdfgsdg-749d2",
-  storageBucket: "dsgdfgsdg-749d2.firebasestorage.app",
-  messagingSenderId: "708979846840",
-  appId: "1:708979846840:web:b15c4bb59df209f5c58e4d",
-  measurementId: "G-PEVV77MKDR"
+            apiKey: "AIzaSyD39QOod4Kms_Szzdw93yz3UDVF8OmiwFY",
+            authDomain: "dsgdfgsdg-749d2.firebaseapp.com",
+            projectId: "dsgdfgsdg-749d2",
+            storageBucket: "dsgdfgsdg-749d2.firebasestorage.app",
+            messagingSenderId: "708979846840",
+            appId: "1:708979846840:web:b15c4bb59df209f5c58e4d",
+            measurementId: "G-PEVV77MKDR"
         });
     }
     db = firebase.firestore();
@@ -633,6 +633,41 @@ function hideLoading() {
     if (overlay) overlay.style.display = 'none';
 }
 
+// NEW: Check withdraw eligibility function
+function checkWithdrawEligibility() {
+    const user = getUserData();
+    if (!user) return false;
+    
+    // Check minimum 30 main ADs requirement
+    if (user.total_ads < 30) {
+        return {
+            eligible: false,
+            message: `মেইন এড দেখার প্রয়োজন!\n\nআপনার দেখা মেইন এড: ${user.total_ads} টি\nপ্রয়োজন: ৩০ টি\n\nআরও ${30 - user.total_ads} টি মেইন এড দেখুন।`
+        };
+    }
+    
+    // Check minimum 15 referrals requirement - ADDED BACK
+    if (user.total_referrals < 15) {
+        return {
+            eligible: false,
+            message: `রেফারেল প্রয়োজন!\n\nআপনার রেফারেল: ${user.total_referrals} জন\nপ্রয়োজন: ১৫ জন\n\nআরও ${15 - user.total_referrals} জন রেফারেল প্রয়োজন।`
+        };
+    }
+    
+    // Check minimum balance
+    if (user.balance < 500) {
+        return {
+            eligible: false,
+            message: `ন্যূনতম ব্যালেন্স প্রয়োজন!\n\nআপনার ব্যালেন্স: ${user.balance.toFixed(2)} টাকা\nপ্রয়োজন: ৫০০ টাকা\n\nআরও ${(500 - user.balance).toFixed(2)} টাকা আয় করুন।`
+        };
+    }
+    
+    return {
+        eligible: true,
+        message: 'উইথড্র এর জন্য আপনি eligible!'
+    };
+}
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🚀 DOM loaded, initializing app...");
@@ -649,3 +684,4 @@ window.canWatchMoreBonusAds = canWatchMoreBonusAds;
 window.getTimeUntilNextBonusReset = getTimeUntilNextBonusReset;
 window.canWatchMoreBonusAds2 = canWatchMoreBonusAds2; // NEW: Export bonus ads 2 function
 window.getTimeUntilNextBonusReset2 = getTimeUntilNextBonusReset2; // NEW: Export bonus reset 2 function
+window.checkWithdrawEligibility = checkWithdrawEligibility; // NEW: Export withdraw eligibility function
