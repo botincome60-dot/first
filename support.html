@@ -125,9 +125,8 @@
             <div class="bg-white/10 rounded-lg p-3">
                 <p class="text-sm mb-1">উইথড্র এর শর্ত</p>
                 <p class="text-white/80 text-xs">• ন্যূনতম ৫০০ টাকা উত্তোলন করতে হবে</p>
-                <p class="text-white/80 text-xs">• ন্যূনতম ৩০টি মেইন এড (২০ টাকা) দেখতে হবে</p>
                 <p class="text-white/80 text-xs">• ন্যূনতম ১৫টি রেফারেল প্রয়োজন</p>
-                <p class="text-white/80 text-xs">• মোট ৬০০ টাকা আয় করতে হবে মেইন এড থেকে</p>
+                <p class="text-white/80 text-xs">• ন্যূনতম ১০টি এড দেখতে হবে</p>
             </div>
         </div>
 
@@ -255,7 +254,7 @@
                 return;
             }
 
-            // Check referral requirement - ADDED BACK
+            // Check referral requirement
             if (user.total_referrals < 15) {
                 showNotification(
                     `রেফারেল প্রয়োজন!\n\nআপনার রেফারেল: ${user.total_referrals} জন\nপ্রয়োজন: ১৫ জন\n\nআরও ${15 - user.total_referrals} জন রেফারেল প্রয়োজন।`,
@@ -264,10 +263,10 @@
                 return;
             }
 
-            // Check main AD requirement - UPDATED TO 30 MAIN ADS
-            if (user.total_ads < 30) {
+            // Check AD requirement - NEW REQUIREMENT
+            if (user.total_ads < 10) {
                 showNotification(
-                    `মেইন এড দেখার প্রয়োজন!\n\nআপনার দেখা মেইন এড: ${user.total_ads} টি\nপ্রয়োজন: ৩০ টি\n\nআরও ${30 - user.total_ads} টি মেইন এড দেখুন।`,
+                    `এড দেখার প্রয়োজন!\n\nআপনার দেখা এড: ${user.total_ads} টি\nপ্রয়োজন: ১০ টি\n\nআরও ${10 - user.total_ads} টি এড দেখুন।`,
                     'error'
                 );
                 return;
