@@ -80,22 +80,21 @@
         <!-- বোনাস টাস্কস -->
         <div class="bg-white rounded-xl p-4 shadow-sm">
             <h3 class="font-bold text-lg mb-3">বোনাস টাস্কস</h3>
-            <!-- tasks.html - বোনাস টাস্কস সেকশনের মধ্যে এই কোডটি যোগ করুন -->
-
-<!-- ওয়েবসাইট ভিজিট টাস্ক -->
-<!-- <div class="border border-gray-200 rounded-xl p-3">
-    <div class="flex items-center justify-between mb-2">
-        <div>
-            <h4 class="font-semibold">ওয়েবসাইট ভিজিট করুন</h4>
-            <p class="text-green-600 text-sm font-semibold">৫০ টাকা বোনাস/ভিজিট</p>
-        </div>
-        <i class="fas fa-globe text-blue-500 text-xl"></i>
-    </div>
-    <a href="websitevisit.html" class="w-full bg-blue-500 text-white py-2 rounded-lg font-semibold text-center block hover:bg-blue-600 transition-colors">
-        ওয়েবসাইট ভিজিট করুন
-    </a>
-</div> -->
             <div class="space-y-3">
+                <!-- নতুন স্পেশাল টাস্ক -->
+                <div class="border border-gray-200 rounded-xl p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h4 class="font-semibold">স্পেশাল এড দেখুন</h4>
+                            <p class="text-green-600 text-sm font-semibold">১৫ টাকা বোনাস/এড</p>
+                        </div>
+                        <i class="fas fa-crown text-red-500 text-xl"></i>
+                    </div>
+                    <button onclick="showSpecialAd()" id="specialAdBtn" class="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white py-2 rounded-lg font-semibold hover:from-red-600 hover:to-pink-600 transition-colors">
+                        স্পেশাল এড দেখুন
+                    </button>
+                </div>
+
                 <!-- নতুন বোনাস এড টাস্ক -->
                 <div class="border border-gray-200 rounded-xl p-3">
                     <div class="flex items-center justify-between mb-2">
@@ -109,19 +108,21 @@
                         বোনাস এড দেখুন
                     </a>
                 </div>
-              <!-- নতুন বোনাস এড ২ টাস্ক -->
-<div class="border border-gray-200 rounded-xl p-3">
-    <div class="flex items-center justify-between mb-2">
-        <div>
-            <h4 class="font-semibold">বোনাস এড ২ দেখুন</h4>
-            <p class="text-green-600 text-sm font-semibold">১০ টাকা বোনাস/এড</p>
-        </div>
-        <i class="fas fa-gem text-purple-500 text-xl"></i>
-    </div>
-    <a href="bonus-ads-2.html" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2 rounded-lg font-semibold text-center block hover:from-purple-600 hover:to-pink-600 transition-colors">
-        বোনাস এড ২ দেখুন
-    </a>
-</div>  
+
+                <!-- নতুন বোনাস এড ২ টাস্ক -->
+                <div class="border border-gray-200 rounded-xl p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h4 class="font-semibold">বোনাস এড ২ দেখুন</h4>
+                            <p class="text-green-600 text-sm font-semibold">১০ টাকা বোনাস/এড</p>
+                        </div>
+                        <i class="fas fa-gem text-purple-500 text-xl"></i>
+                    </div>
+                    <a href="bonus-ads-2.html" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2 rounded-lg font-semibold text-center block hover:from-purple-600 hover:to-pink-600 transition-colors">
+                        বোনাস এড ২ দেখুন
+                    </a>
+                </div>  
+                
                 <!-- টাস্ক ১ - Telegram Channel -->
                 <div class="border border-gray-200 rounded-xl p-3" id="telegramTask">
                     <div class="flex items-center justify-between mb-2">
@@ -194,6 +195,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="app.js"></script>
 
+    <!-- Adexora SDK -->
+    <script src="https://adexora.com/cdn/ads.js?id=1133"></script>
+
     <script>
         // টাস্ক স্টেট ম্যানেজমেন্ট
         const TASK_STATES = {
@@ -256,6 +260,71 @@
             document.getElementById('videoBtn').classList.add('bg-blue-500', 'hover:bg-blue-600');
             document.getElementById('videoBtn').disabled = false;
             document.getElementById('videoTask').classList.remove('task-completed');
+        }
+
+        // স্পেশাল এড ফাংশন
+        async function showSpecialAd() {
+            const user = getUserData();
+            if (!user) {
+                alert('ডেটা লোড হয়নি। রিফ্রেশ করুন।');
+                return;
+            }
+
+            const specialAdBtn = document.getElementById('specialAdBtn');
+            specialAdBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>এড লোড হচ্ছে...';
+            specialAdBtn.disabled = true;
+            specialAdBtn.classList.remove('hover:from-red-600', 'hover:to-pink-600');
+
+            try {
+                // Adexora ad show
+                await window.showAdexora()
+                    .then(async () => {
+                        // ✅ Reward logic here
+                        await addSpecialTaskBonus(15, "স্পেশাল এড");
+                        
+                        specialAdBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ১৫ টাকা যোগ হয়েছে';
+                        specialAdBtn.classList.remove('bg-gradient-to-r', 'from-red-500', 'to-pink-500');
+                        specialAdBtn.classList.add('bg-green-500');
+                        
+                        showNotification('🎉 স্পেশাল এড দেখা সম্পন্ন! ১৫ টাকা আপনার একাউন্টে যোগ করা হয়েছে।', 'success');
+                        
+                        // Reset button after 3 seconds
+                        setTimeout(() => {
+                            specialAdBtn.innerHTML = 'স্পেশাল এড দেখুন';
+                            specialAdBtn.classList.remove('bg-green-500');
+                            specialAdBtn.classList.add('bg-gradient-to-r', 'from-red-500', 'to-pink-500', 'hover:from-red-600', 'hover:to-pink-600');
+                            specialAdBtn.disabled = false;
+                        }, 3000);
+                    })
+                    .catch(error => {
+                        // ❌ Handle errors here
+                        console.error('Adexora ad error:', error);
+                        specialAdBtn.innerHTML = 'স্পেশাল এড দেখুন';
+                        specialAdBtn.classList.add('bg-gradient-to-r', 'from-red-500', 'to-pink-500', 'hover:from-red-600', 'hover:to-pink-600');
+                        specialAdBtn.disabled = false;
+                        
+                        showNotification('এড লোড করতে সমস্যা হয়েছে! আবার চেষ্টা করুন।', 'error');
+                    });
+
+            } catch (error) {
+                console.error('Special ad error:', error);
+                specialAdBtn.innerHTML = 'স্পেশাল এড দেখুন';
+                specialAdBtn.classList.add('bg-gradient-to-r', 'from-red-500', 'to-pink-500', 'hover:from-red-600', 'hover:to-pink-600');
+                specialAdBtn.disabled = false;
+                
+                showNotification('এড লোড করতে সমস্যা হয়েছে! আবার চেষ্টা করুন।', 'error');
+            }
+        }
+
+        async function addSpecialTaskBonus(amount, taskName) {
+            const user = getUserData();
+            if (user) {
+                await updateUserData({ 
+                    balance: user.balance + amount,
+                    total_income: user.total_income + amount,
+                    total_ads: user.total_ads + 1
+                });
+            }
         }
 
         function completeTelegramTask() {
