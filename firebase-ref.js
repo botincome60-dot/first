@@ -1,12 +1,12 @@
 // Firebase initialization
 const firebaseConfig = {
-        apiKey: "AIzaSyD39QOod4Kms_Szzdw93yz3UDVF8OmiwFY",
-  authDomain: "dsgdfgsdg-749d2.firebaseapp.com",
-  projectId: "dsgdfgsdg-749d2",
-  storageBucket: "dsgdfgsdg-749d2.firebasestorage.app",
-  messagingSenderId: "708979846840",
-  appId: "1:708979846840:web:b15c4bb59df209f5c58e4d",
-  measurementId: "G-PEVV77MKDR"
+        apiKey: "AIzaSyC8PAeOIs4Tf5qGLj_d4DzC1D6Z5AEw5yA",
+  authDomain: "newreffer-dc7f3.firebaseapp.com",
+  projectId: "newreffer-dc7f3",
+  storageBucket: "newreffer-dc7f3.firebasestorage.app",
+  messagingSenderId: "60384156805",
+  appId: "1:60384156805:web:8be9b4d64d15082dcc1dec",
+  measurementId: "G-X5F80G5R07"
 };
 
 // Initialize Firebase
