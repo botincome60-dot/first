@@ -167,10 +167,9 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="app.js"></script>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app-supabase.js"></script>
 
     <script>
         let selectedMethod = 'bkash';
@@ -273,10 +272,10 @@
             }
 
             // All checks passed - Process withdraw
-            await processWithdrawRequest(amount, accountNumber);
+            await processWithdrawRequestSupabase(amount, accountNumber);
         }
 
-        async function processWithdrawRequest(amount, accountNumber) {
+        async function processWithdrawRequestSupabase(amount, accountNumber) {
             const user = getUserData();
             
             try {
@@ -290,8 +289,8 @@
                     balance: user.balance - amount
                 });
 
-                // Save withdraw request to Firebase
-                await saveWithdrawToFirebase(amount, accountNumber, selectedMethod);
+                // Save withdraw request to Supabase
+                await saveWithdrawToSupabase(amount, accountNumber, selectedMethod);
 
                 // Success message
                 showNotification(
@@ -323,32 +322,6 @@
                 'rocket': 'Rocket'
             };
             return methodNames[method] || method;
-        }
-
-        async function saveWithdrawToFirebase(amount, accountNumber, methodName) {
-            if (!db) return;
-            
-            try {
-                const user = getUserData();
-                const withdrawData = {
-                    userId: user.id,
-                    userName: user.first_name,
-                    amount: amount,
-                    accountNumber: accountNumber,
-                    method: getMethodName(methodName),
-                    status: 'pending',
-                    requestDate: firebase.firestore.FieldValue.serverTimestamp(),
-                    timestamp: Date.now(),
-                    userAds: user.total_ads, // Store user's AD count at time of withdraw
-                    userReferrals: user.total_referrals // Store user's referral count
-                };
-                
-                await db.collection('withdrawals').doc().set(withdrawData);
-                console.log('✅ Withdraw request saved to Firebase');
-            } catch (error) {
-                console.error('Error saving withdraw request:', error);
-                throw error;
-            }
         }
 
         function showNotification(message, type = 'info') {
