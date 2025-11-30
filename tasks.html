@@ -82,6 +82,32 @@
         <div class="bg-white rounded-xl p-4 shadow-sm">
             <h3 class="font-bold text-lg mb-3">বোনাস টাস্কস</h3>
             <div class="space-y-3">
+                     <div class="border border-gray-200 rounded-xl p-3" id="telegramTask">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h4 class="font-semibold">টেলিগ্রাম চ্যানেল জয়েন করুন</h4>
+                            <p class="text-green-600 text-sm font-semibold">৫০ টাকা বোনাস</p>
+                        </div>
+                        <i class="fas fa-telegram text-blue-400 text-xl"></i>
+                    </div>
+                    <button onclick="completeTelegramTask()" id="telegramBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
+                        ক্লেইম করুন
+                    </button>
+                </div>
+                
+                <!-- টাস্ক ২ - YouTube Channel -->
+                <div class="border border-gray-200 rounded-xl p-3" id="youtubeTask">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h4 class="font-semibold">ইউটিউব চ্যানেল সাবস্ক্রাইব</h4>
+                            <p class="text-green-600 text-sm font-semibold">৫০ টাকা বোনাস</p>
+                        </div>
+                        <i class="fab fa-youtube text-red-500 text-xl"></i>
+                    </div>
+                    <button onclick="completeYoutubeTask()" id="youtubeBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
+                        ক্লেইম করুন
+                    </button>
+                </div>
                 <!-- নতুন স্পেশাল টাস্ক -->
                 <div class="border border-gray-200 rounded-xl p-3">
                     <div class="flex items-center justify-between mb-2">
@@ -125,32 +151,7 @@
                 </div>  
                 
                 <!-- টাস্ক ১ - Telegram Channel -->
-                <div class="border border-gray-200 rounded-xl p-3" id="telegramTask">
-                    <div class="flex items-center justify-between mb-2">
-                        <div>
-                            <h4 class="font-semibold">টেলিগ্রাম চ্যানেল জয়েন করুন</h4>
-                            <p class="text-green-600 text-sm font-semibold">৫০ টাকা বোনাস</p>
-                        </div>
-                        <i class="fas fa-telegram text-blue-400 text-xl"></i>
-                    </div>
-                    <button onclick="completeTelegramTask()" id="telegramBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
-                        ক্লেইম করুন
-                    </button>
-                </div>
-                
-                <!-- টাস্ক ২ - YouTube Channel -->
-                <div class="border border-gray-200 rounded-xl p-3" id="youtubeTask">
-                    <div class="flex items-center justify-between mb-2">
-                        <div>
-                            <h4 class="font-semibold">ইউটিউব চ্যানেল সাবস্ক্রাইব</h4>
-                            <p class="text-green-600 text-sm font-semibold">৫০ টাকা বোনাস</p>
-                        </div>
-                        <i class="fab fa-youtube text-red-500 text-xl"></i>
-                    </div>
-                    <button onclick="completeYoutubeTask()" id="youtubeBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
-                        ক্লেইম করুন
-                    </button>
-                </div>
+           
                 
                 <!-- টাস্ক ৩ - Video Task -->
                 <div class="border border-gray-200 rounded-xl p-3" id="videoTask">
