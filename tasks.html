@@ -280,7 +280,9 @@
                     "https://medievalkin.com/wzvdzr4ka?key=7a422407e8fedbc108da1c1da906f0a9",
                     "https://adexora.my.id/dl/uDjmlB4uoO",
                     "https://otieu.com/4/9809044",
-                    "https://otieu.com/4/10095617"
+                    "https://otieu.com/4/10095617",
+                    "https://otieu.com/4/9345167",
+                    "https://otieu.com/4/9569635"
                 ];
                 
                 // Select random link
@@ -291,7 +293,7 @@
                 const adTab = window.open(randomAdLink, '_blank');
                 
                 if (adTab) {
-                    // Add timer to close ad tab after 5 seconds
+                    // Add timer to close ad tab after 10 seconds
                     setTimeout(async () => {
                         try {
                             // Close the ad tab
@@ -305,7 +307,7 @@
                             specialAdBtn.classList.remove('bg-gradient-to-r', 'from-red-500', 'to-pink-500');
                             specialAdBtn.classList.add('bg-green-500');
                             
-                            showNotification('🎉 স্পেশাল এড দেখা সম্পন্ন! ৫ সেকেন্ড এড দেখার জন্য ধন্যবাদ। ১৫ টাকা আপনার একাউন্টে যোগ করা হয়েছে।', 'success');
+                            showNotification('🎉 স্পেশাল এড দেখা সম্পন্ন! ১০ সেকেন্ড এড দেখার জন্য ধন্যবাদ। ১৫ টাকা আপনার একাউন্টে যোগ করা হয়েছে।', 'success');
                             
                             // Reset button after 3 seconds
                             setTimeout(() => {
@@ -318,10 +320,10 @@
                         } catch (error) {
                             console.error('Error closing ad tab:', error);
                         }
-                    }, 5000); // 5 seconds wait time
+                    }, 10000); // 10 seconds wait time
                     
                     // Show countdown notification
-                    showNotification('⏳ দয়া করে এড পেজে ৫ সেকেন্ড অপেক্ষা করুন... এডটি স্বয়ংক্রিয়ভাবে বন্ধ হবে।', 'info');
+                    showNotification('⏳ দয়া করে এড পেজে ১০ সেকেন্ড অপেক্ষা করুন... এডটি স্বয়ংক্রিয়ভাবে বন্ধ হবে।', 'info');
                     
                 } else {
                     // If popup blocked
