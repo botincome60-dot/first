@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -8,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet"="style.css">
     <style>
         .bottom-nav {
             position: fixed;
@@ -197,8 +196,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app-supabase.js"></script>
 
-    <!-- libtl.com SDK -->
-    <script src='//libtl.com/sdk.js' data-zone='10166009' data-sdk='show_10166009'></script>
+    <!-- Adexora SDK -->
+    <script src="https://adexora.com/cdn/ads.js?id=1133"></script>
 
     <script>
         // টাস্ক স্টেট ম্যানেজমেন্ট
@@ -278,33 +277,35 @@
             specialAdBtn.classList.remove('hover:from-red-600', 'hover:to-pink-600');
 
             try {
-                // libtl.com rewarded interstitial ad
-                show_10166009().then(async () => {
-                    // You need to add your user reward function here, which will be executed after the user watches the ad.
-                    await addSpecialTaskBonus(15, "স্পেশাল এড");
-                    
-                    specialAdBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ১৫ টাকা যোগ হয়েছে';
-                    specialAdBtn.classList.remove('bg-gradient-to-r', 'from-red-500', 'to-pink-500');
-                    specialAdBtn.classList.add('bg-green-500');
-                    
-                    showNotification('🎉 স্পেশাল এড দেখা সম্পন্ন! ১৫ টাকা আপনার একাউন্টে যোগ করা হয়েছে।', 'success');
-                    
-                    // Reset button after 3 seconds
-                    setTimeout(() => {
+                // Adexora rewarded ad
+                window.showAdexora()
+                    .then(async () => {
+                        // ✅ Your reward logic here
+                        await addSpecialTaskBonus(15, "স্পেশাল এড");
+                        
+                        specialAdBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ১৫ টাকা যোগ হয়েছে';
+                        specialAdBtn.classList.remove('bg-gradient-to-r', 'from-red-500', 'to-pink-500');
+                        specialAdBtn.classList.add('bg-green-500');
+                        
+                        showNotification('🎉 স্পেশাল এড দেখা সম্পন্ন! ১৫ টাকা আপনার একাউন্টে যোগ করা হয়েছে।', 'success');
+                        
+                        // Reset button after 3 seconds
+                        setTimeout(() => {
+                            specialAdBtn.innerHTML = 'স্পেশাল এড দেখুন';
+                            specialAdBtn.classList.remove('bg-green-500');
+                            specialAdBtn.classList.add('bg-gradient-to-r', 'from-red-500', 'to-pink-500', 'hover:from-red-600', 'hover:to-pink-600');
+                            specialAdBtn.disabled = false;
+                        }, 3000);
+                    })
+                    .catch(e => {
+                        // ❌ Handle errors here
+                        console.error('Adexora ad error:', e);
                         specialAdBtn.innerHTML = 'স্পেশাল এড দেখুন';
-                        specialAdBtn.classList.remove('bg-green-500');
                         specialAdBtn.classList.add('bg-gradient-to-r', 'from-red-500', 'to-pink-500', 'hover:from-red-600', 'hover:to-pink-600');
                         specialAdBtn.disabled = false;
-                    }, 3000);
-                }).catch(error => {
-                    // Handle errors here
-                    console.error('libtl.com ad error:', error);
-                    specialAdBtn.innerHTML = 'স্পেশাল এড দেখুন';
-                    specialAdBtn.classList.add('bg-gradient-to-r', 'from-red-500', 'to-pink-500', 'hover:from-red-600', 'hover:to-pink-600');
-                    specialAdBtn.disabled = false;
-                    
-                    showNotification('এড লোড করতে সমস্যা হয়েছে! আবার চেষ্টা করুন।', 'error');
-                });
+                        
+                        showNotification('এড লোড করতে সমস্যা হয়েছে! আবার চেষ্টা করুন।', 'error');
+                    });
 
             } catch (error) {
                 console.error('Special ad error:', error);
