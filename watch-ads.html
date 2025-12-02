@@ -56,7 +56,7 @@
                 <div>
                     <h2 class="font-bold text-lg">এড দেখুন</h2>
                     <p class="text-white/80 text-sm">এড দেখে আয় করুন</p>
-                    <p class="text-xs text-white/60 mt-1" id="resetTime">রিসেট: ১ ঘন্টা পর</p>
+                    <p class="text-xs text-white/60 mt-1" id="resetTime">রিসেট: লোড হচ্ছে...</p>
                 </div>
                 <i class="fas fa-play-circle text-2xl"></i>
             </div>
@@ -141,29 +141,56 @@
         // লোকালস্টোরেজ থেকে ডেটা নিয়ে আসা
         function loadData() {
             const now = new Date().getTime();
-            const lastResetTime = localStorage.getItem('lastResetTime');
-            const lastReset = lastResetTime ? parseInt(lastResetTime) : now;
             
-            // ১ ঘন্টা পার হয়েছে কিনা চেক (১ ঘন্টা = 3600000 মিলিসেকেন্ড)
-            const oneHour = 3600000;
-            const timeSinceLastReset = now - lastReset;
+            // এড কাউন্টার
+            let adsWatchedToday = localStorage.getItem('adsWatchedToday') ? parseInt(localStorage.getItem('adsWatchedToday')) : 0;
             
-            if (timeSinceLastReset >= oneHour) {
-                // ১ ঘন্টা পার হয়ে গেলে রিসেট করো
-                localStorage.setItem('adsWatchedToday', '0');
-                localStorage.setItem('lastResetTime', now.toString());
+            // প্রথম এড দেখার সময় (যদি না থাকে তাহলে এখনকার সময়)
+            let firstAdTime = localStorage.getItem('firstAdTime');
+            
+            // প্রথম এড যদি এখনও না দেখে থাকে
+            if (!firstAdTime && adsWatchedToday === 0) {
+                // প্রথম এড দেখার আগে কোন টাইমার থাকবে না
                 return {
                     adsWatchedToday: 0,
                     totalBalance: localStorage.getItem('totalBalance') ? parseInt(localStorage.getItem('totalBalance')) : 0,
-                    lastResetTime: now
-                };
-            } else {
-                return {
-                    adsWatchedToday: localStorage.getItem('adsWatchedToday') ? parseInt(localStorage.getItem('adsWatchedToday')) : 0,
-                    totalBalance: localStorage.getItem('totalBalance') ? parseInt(localStorage.getItem('totalBalance')) : 0,
-                    lastResetTime: lastReset
+                    firstAdTime: null,
+                    resetTime: null
                 };
             }
+            
+            // যদি প্রথম এড দেখার সময় না থাকে কিন্তু এড কাউন্টার আছে
+            if (!firstAdTime && adsWatchedToday > 0) {
+                firstAdTime = now.toString();
+                localStorage.setItem('firstAdTime', firstAdTime);
+            }
+            
+            // প্রথম এড দেখার সময়
+            const firstAdTimestamp = parseInt(firstAdTime);
+            
+            // রিসেট টাইম (প্রথম এড দেখার সময় + ১ ঘন্টা)
+            const resetTime = firstAdTimestamp + 3600000; // ১ ঘন্টা = 3600000 মিলিসেকেন্ড
+            
+            // যদি রিসেট টাইম পার হয়ে যায়
+            if (now >= resetTime) {
+                // সব রিসেট করো
+                localStorage.setItem('adsWatchedToday', '0');
+                localStorage.removeItem('firstAdTime');
+                
+                return {
+                    adsWatchedToday: 0,
+                    totalBalance: localStorage.getItem('totalBalance') ? parseInt(localStorage.getItem('totalBalance')) : 0,
+                    firstAdTime: null,
+                    resetTime: null
+                };
+            }
+            
+            return {
+                adsWatchedToday: adsWatchedToday,
+                totalBalance: localStorage.getItem('totalBalance') ? parseInt(localStorage.getItem('totalBalance')) : 0,
+                firstAdTime: firstAdTimestamp,
+                resetTime: resetTime
+            };
         }
         
         let userData = loadData();
@@ -233,6 +260,14 @@
             userData.adsWatchedToday++;
             userData.totalBalance += 30;
             
+            // যদি প্রথম এড হয়
+            if (!userData.firstAdTime) {
+                const now = new Date().getTime();
+                userData.firstAdTime = now;
+                userData.resetTime = now + 3600000;
+                localStorage.setItem('firstAdTime', now.toString());
+            }
+            
             // লোকালস্টোরেজে সেভ করো
             localStorage.setItem('adsWatchedToday', userData.adsWatchedToday);
             localStorage.setItem('totalBalance', userData.totalBalance);
@@ -279,9 +314,17 @@
 
         function updateResetTimer() {
             const now = new Date().getTime();
-            const lastReset = userData.lastResetTime;
-            const nextReset = lastReset + 3600000; // ১ ঘন্টা পর
-            const timeLeft = nextReset - now;
+            
+            // যদি এখনও প্রথম এড না দেখে থাকে
+            if (!userData.firstAdTime) {
+                document.getElementById('resetTimer').textContent = 'প্রথম এড দেখার পর টাইমার শুরু হবে';
+                document.getElementById('resetTime').textContent = 'রিসেট: এখনও শুরু হয়নি';
+                return;
+            }
+            
+            // রিসেট টাইম
+            const resetTime = userData.resetTime;
+            const timeLeft = resetTime - now;
             
             if (timeLeft <= 0) {
                 document.getElementById('resetTimer').textContent = 'এখনই রিসেট হবে';
@@ -300,7 +343,7 @@
             const secondsLeft = Math.floor((timeLeft % 60000) / 1000);
             
             document.getElementById('resetTimer').textContent = `রিসেট: ${minutesLeft} মিনিট ${secondsLeft} সেকেন্ড পর`;
-            document.getElementById('resetTime').textContent = `রিসেট: ${minutesLeft} মিনিট পর`;
+            document.getElementById('resetTime').textContent = `রিসেট: ${minutesLeft} মিনিট ${secondsLeft} সেকেন্ড পর`;
         }
 
         function resetAdButton() {
