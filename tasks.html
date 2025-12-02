@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet"="style.css">
+    <link rel="stylesheet" href="style.css">
     <style>
         .bottom-nav {
             position: fixed;
@@ -196,9 +196,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app-supabase.js"></script>
 
-    <!-- Adexora SDK -->
-    <script src="https://adexora.com/cdn/ads.js?id=1133"></script>
-
     <script>
         // টাস্ক স্টেট ম্যানেজমেন্ট
         const TASK_STATES = {
@@ -277,35 +274,62 @@
             specialAdBtn.classList.remove('hover:from-red-600', 'hover:to-pink-600');
 
             try {
-                // Adexora rewarded ad
-                window.showAdexora()
-                    .then(async () => {
-                        // ✅ Your reward logic here
-                        await addSpecialTaskBonus(15, "স্পেশাল এড");
-                        
-                        specialAdBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ১৫ টাকা যোগ হয়েছে';
-                        specialAdBtn.classList.remove('bg-gradient-to-r', 'from-red-500', 'to-pink-500');
-                        specialAdBtn.classList.add('bg-green-500');
-                        
-                        showNotification('🎉 স্পেশাল এড দেখা সম্পন্ন! ১৫ টাকা আপনার একাউন্টে যোগ করা হয়েছে।', 'success');
-                        
-                        // Reset button after 3 seconds
-                        setTimeout(() => {
-                            specialAdBtn.innerHTML = 'স্পেশাল এড দেখুন';
-                            specialAdBtn.classList.remove('bg-green-500');
-                            specialAdBtn.classList.add('bg-gradient-to-r', 'from-red-500', 'to-pink-500', 'hover:from-red-600', 'hover:to-pink-600');
-                            specialAdBtn.disabled = false;
-                        }, 3000);
-                    })
-                    .catch(e => {
-                        // ❌ Handle errors here
-                        console.error('Adexora ad error:', e);
-                        specialAdBtn.innerHTML = 'স্পেশাল এড দেখুন';
-                        specialAdBtn.classList.add('bg-gradient-to-r', 'from-red-500', 'to-pink-500', 'hover:from-red-600', 'hover:to-pink-600');
-                        specialAdBtn.disabled = false;
-                        
-                        showNotification('এড লোড করতে সমস্যা হয়েছে! আবার চেষ্টা করুন।', 'error');
-                    });
+                // Random ad links array
+                const adLinks = [
+                    "https://medievalkin.com/q3gtdwtif0?key=8fab9c833a59630b50874801fba88f73",
+                    "https://medievalkin.com/wzvdzr4ka?key=7a422407e8fedbc108da1c1da906f0a9",
+                    "https://adexora.my.id/dl/uDjmlB4uoO",
+                    "https://otieu.com/4/9809044",
+                    "https://otieu.com/4/10095617"
+                ];
+                
+                // Select random link
+                const randomIndex = Math.floor(Math.random() * adLinks.length);
+                const randomAdLink = adLinks[randomIndex];
+                
+                // Create a new tab with the ad link
+                const adTab = window.open(randomAdLink, '_blank');
+                
+                if (adTab) {
+                    // Add timer to close ad tab after 5 seconds
+                    setTimeout(async () => {
+                        try {
+                            // Close the ad tab
+                            adTab.close();
+                            
+                            // Add reward
+                            await addSpecialTaskBonus(15, "স্পেশাল এড");
+                            
+                            // Update button to show success
+                            specialAdBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ১৫ টাকা যোগ হয়েছে';
+                            specialAdBtn.classList.remove('bg-gradient-to-r', 'from-red-500', 'to-pink-500');
+                            specialAdBtn.classList.add('bg-green-500');
+                            
+                            showNotification('🎉 স্পেশাল এড দেখা সম্পন্ন! ৫ সেকেন্ড এড দেখার জন্য ধন্যবাদ। ১৫ টাকা আপনার একাউন্টে যোগ করা হয়েছে।', 'success');
+                            
+                            // Reset button after 3 seconds
+                            setTimeout(() => {
+                                specialAdBtn.innerHTML = 'স্পেশাল এড দেখুন';
+                                specialAdBtn.classList.remove('bg-green-500');
+                                specialAdBtn.classList.add('bg-gradient-to-r', 'from-red-500', 'to-pink-500', 'hover:from-red-600', 'hover:to-pink-600');
+                                specialAdBtn.disabled = false;
+                            }, 3000);
+                            
+                        } catch (error) {
+                            console.error('Error closing ad tab:', error);
+                        }
+                    }, 5000); // 5 seconds wait time
+                    
+                    // Show countdown notification
+                    showNotification('⏳ দয়া করে এড পেজে ৫ সেকেন্ড অপেক্ষা করুন... এডটি স্বয়ংক্রিয়ভাবে বন্ধ হবে।', 'info');
+                    
+                } else {
+                    // If popup blocked
+                    specialAdBtn.innerHTML = 'স্পেশাল এড দেখুন';
+                    specialAdBtn.classList.add('bg-gradient-to-r', 'from-red-500', 'to-pink-500', 'hover:from-red-600', 'hover:to-pink-600');
+                    specialAdBtn.disabled = false;
+                    showNotification('পপআপ ব্লক করা হয়েছে! দয়া করে পপআপ অন করুন এবং আবার চেষ্টা করুন।', 'error');
+                }
 
             } catch (error) {
                 console.error('Special ad error:', error);
