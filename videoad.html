@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -132,7 +131,7 @@
         let countdownTimer;
         let countdownSeconds = 30;
         let isAdActive = false;
-        let adController = null;
+        let AdController = null;
         
         // লোকালস্টোরেজ থেকে ডেটা নিয়ে আসা
         function loadData() {
@@ -200,48 +199,60 @@
             updateCounter();
             updateResetTimer();
             
-            // AdsGram initialize করো
+            // AdsGram Controller initialize করো
             if (typeof window.Adsgram !== 'undefined') {
-                adController = window.Adsgram.init({
-                    blockId: BLOCK_ID
+                AdController = window.Adsgram.init({ 
+                    blockId: BLOCK_ID 
                 });
-                console.log("AdsGram initialized");
+                console.log("AdsGram Controller initialized");
             } else {
-                console.error("AdsGram script not loaded");
+                console.error("AdsGram SDK not loaded");
             }
         });
 
         // ভিডিও এড স্টার্ট করবে
-        function startVideoAd() {
+        async function startVideoAd() {
             if (userData.videoAdsWatchedToday >= 10) {
                 alert('আজকের ভিডিও এড লিমিট শেষ! ১ ঘন্টা পর আবার চেষ্টা করুন।');
                 return;
             }
 
-            // AdsGram ad show করো
-            if (adController) {
-                adController.show()
-                    .then(() => {
-                        // ভিডিও সম্পূর্ণ দেখেছে
-                        document.getElementById('watchAdBtn').disabled = true;
-                        document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>ভিডিও চলছে...';
-                        document.getElementById('adStatus').textContent = 'ভিডিও চলছে...';
-                        
-                        // টাইমার ওভারলে শো করো
-                        document.getElementById('timerOverlay').style.display = 'flex';
-                        
-                        // ৩০ সেকেন্ড টাইমার স্টার্ট করো
-                        startCountdown();
-                        isAdActive = true;
-                    })
-                    .catch((error) => {
-                        console.error("Ad error:", error);
-                        alert('ভিডিও লোড করতে সমস্যা হয়েছে! আবার চেষ্টা করুন।');
-                    });
-            } else {
-                // AdsGram না থাকলে fallback
-                document.getElementById('watchAdBtn').disabled = true;
-                document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>ভিডিও চলছে...';
+            if (isAdActive) {
+                return;
+            }
+
+            isAdActive = true;
+            
+            // Disable button and show loading
+            const watchBtn = document.getElementById('watchAdBtn');
+            watchBtn.disabled = true;
+            watchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>এড লোড হচ্ছে...';
+            document.getElementById('adStatus').textContent = 'এড লোড হচ্ছে...';
+            
+            try {
+                // AdsGram এর interstitial ad show করো
+                if (AdController) {
+                    await AdController.show();
+                    
+                    // AdsGram ad দেখানো হয়েছে
+                    watchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>ভিডিও চলছে...';
+                    document.getElementById('adStatus').textContent = 'ভিডিও চলছে...';
+                    
+                    // টাইমার ওভারলে শো করো
+                    document.getElementById('timerOverlay').style.display = 'flex';
+                    
+                    // ৩০ সেকেন্ড টাইমার স্টার্ট করো
+                    startCountdown();
+                } else {
+                    // AdsGram Controller না থাকলে error throw করো
+                    throw new Error("AdsGram Controller not initialized");
+                }
+                
+            } catch (error) {
+                // AdsGram ad দেখাতে সমস্যা হলে simulation use করো
+                console.error("AdsGram ad error:", error);
+                
+                watchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>ভিডিও চলছে...';
                 document.getElementById('adStatus').textContent = 'ভিডিও চলছে...';
                 
                 // টাইমার ওভারলে শো করো
@@ -249,7 +260,6 @@
                 
                 // ৩০ সেকেন্ড টাইমার স্টার্ট করো
                 startCountdown();
-                isAdActive = true;
             }
         }
 
@@ -308,9 +318,10 @@
             document.getElementById('rewardStatus').className = 'text-sm text-green-600 font-semibold';
             
             // বাটন আপডেট করো
-            document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ১০ টাকা যোগ হয়েছে';
-            document.getElementById('watchAdBtn').classList.remove('from-green-500', 'to-green-600');
-            document.getElementById('watchAdBtn').classList.add('bg-green-500');
+            const watchBtn = document.getElementById('watchAdBtn');
+            watchBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ১০ টাকা যোগ হয়েছে';
+            watchBtn.classList.remove('from-green-500', 'to-green-600');
+            watchBtn.classList.add('bg-green-500');
             
             alert('🎉 সফলভাবে ভিডিও এড দেখেছেন! ১০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।');
             
@@ -329,10 +340,11 @@
             
             // যদি লিমিট শেষ হয়
             if (userData.videoAdsWatchedToday >= 10) {
-                document.getElementById('watchAdBtn').disabled = true;
-                document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-clock mr-2"></i>লিমিট শেষ';
-                document.getElementById('watchAdBtn').classList.remove('from-green-500', 'to-green-600');
-                document.getElementById('watchAdBtn').classList.add('bg-gray-400');
+                const watchBtn = document.getElementById('watchAdBtn');
+                watchBtn.disabled = true;
+                watchBtn.innerHTML = '<i class="fas fa-clock mr-2"></i>লিমিট শেষ';
+                watchBtn.classList.remove('from-green-500', 'to-green-600');
+                watchBtn.classList.add('bg-gray-400');
                 document.getElementById('adStatus').textContent = 'আজকের লিমিট শেষ';
             }
         }
@@ -373,10 +385,11 @@
 
         function resetAdButton() {
             if (userData.videoAdsWatchedToday < 10) {
-                document.getElementById('watchAdBtn').disabled = false;
-                document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-play mr-2"></i>ভিডিও এড দেখুন';
-                document.getElementById('watchAdBtn').classList.remove('bg-green-500', 'bg-gray-400');
-                document.getElementById('watchAdBtn').classList.add('bg-gradient-to-r', 'from-green-500', 'to-green-600');
+                const watchBtn = document.getElementById('watchAdBtn');
+                watchBtn.disabled = false;
+                watchBtn.innerHTML = '<i class="fas fa-play mr-2"></i>ভিডিও এড দেখুন';
+                watchBtn.classList.remove('bg-green-500', 'bg-gray-400');
+                watchBtn.classList.add('bg-gradient-to-r', 'from-green-500', 'to-green-600');
                 document.getElementById('adStatus').textContent = 'ভিডিও এড প্রস্তুত';
                 document.getElementById('adStatus').className = 'text-xs text-gray-400';
                 document.getElementById('rewardStatus').textContent = 'ভিডিও দেখার পর ১০ টাকা যোগ হবে';
