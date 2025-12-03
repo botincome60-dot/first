@@ -25,6 +25,10 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .countdown-timer {
+            font-family: monospace;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -79,6 +83,12 @@
                         <i class="fas fa-video text-blue-500 text-3xl mb-2"></i>
                         <p class="text-sm text-gray-500 mb-3">একটি এড দেখুন এবং ৩০ টাকা পান</p>
                         <p class="text-xs text-gray-400" id="adStatus">এড প্রস্তুত</p>
+                        <!-- Timer Display -->
+                        <div id="timerContainer" class="hidden mt-2">
+                            <p class="text-sm text-red-600 font-semibold mb-1">এড দেখতে থাকুন</p>
+                            <div class="countdown-timer text-2xl text-blue-600" id="countdownTimer">১০</div>
+                            <p class="text-xs text-gray-500 mt-1">সেকেন্ড</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -104,6 +114,7 @@
                     <p class="text-yellow-600 text-sm">• প্রতি ঘন্টায় ১০টি এড দেখতে পারবেন</p>
                     <p class="text-yellow-600 text-sm">• এড লোড হতে ১০-১৫ সেকেন্ড সময় লাগতে পারে</p>
                     <p class="text-yellow-600 text-sm">• ইন্টারনেট কানেকশন চেক করুন</p>
+                    <p class="text-yellow-600 text-sm">• এড কমপক্ষে ১০ সেকেন্ড দেখতে হবে</p>
                 </div>
             </div>
         </div>
@@ -126,6 +137,9 @@
     <script>
         let isAdLoading = false;
         let monetagReady = false;
+        let adWatchTimer = null;
+        let secondsWatched = 0;
+        const REQUIRED_SECONDS = 10;
 
         function initWatchAdsPage() {
             updateCounter();
@@ -199,6 +213,7 @@
             }
 
             isAdLoading = true;
+            secondsWatched = 0;
             const watchBtn = document.getElementById('watchAdBtn');
             watchBtn.disabled = true;
             watchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>এড লোড হচ্ছে...';
@@ -224,6 +239,47 @@
                 
                 resetAdButton();
                 isAdLoading = false;
+                hideTimer();
+            }
+        }
+
+        // Start the 10-second countdown timer
+        function startAdTimer() {
+            const timerContainer = document.getElementById('timerContainer');
+            const countdownTimer = document.getElementById('countdownTimer');
+            
+            // Show timer
+            timerContainer.classList.remove('hidden');
+            
+            let secondsLeft = REQUIRED_SECONDS;
+            countdownTimer.textContent = secondsLeft;
+            
+            // Update timer every second
+            adWatchTimer = setInterval(() => {
+                secondsLeft--;
+                countdownTimer.textContent = secondsLeft;
+                secondsWatched++;
+                
+                if (secondsLeft <= 0) {
+                    clearInterval(adWatchTimer);
+                    document.getElementById('adStatus').textContent = 'সময় শেষ! রিওয়ার্ড প্রক্রিয়া চলছে...';
+                    document.getElementById('adStatus').className = 'text-xs text-green-600';
+                    
+                    // User has watched for required time, now they can get reward
+                    setTimeout(() => {
+                        hideTimer();
+                        rewardUserForWatchingAd();
+                    }, 1000);
+                }
+            }, 1000);
+        }
+
+        function hideTimer() {
+            const timerContainer = document.getElementById('timerContainer');
+            timerContainer.classList.add('hidden');
+            if (adWatchTimer) {
+                clearInterval(adWatchTimer);
+                adWatchTimer = null;
             }
         }
 
@@ -232,12 +288,22 @@
             return new Promise((resolve, reject) => {
                 show_10166009('pop').then(() => {
                     // User watched ad till the end or closed it in interstitial format
-                    rewardUserForWatchingAd();
+                    // Now start the 10-second timer to ensure minimum watch time
+                    document.getElementById('adStatus').textContent = 'এড শুরু হয়েছে! কমপক্ষে ১০ সেকেন্ড দেখুন';
+                    document.getElementById('adStatus').className = 'text-xs text-blue-600';
+                    
+                    const watchBtn = document.getElementById('watchAdBtn');
+                    watchBtn.innerHTML = '<i class="fas fa-eye mr-2"></i>এড চলছে...';
+                    
+                    // Start the timer
+                    startAdTimer();
+                    
                     resolve();
                 }).catch((error) => {
                     // User got error during playing ad
                     document.getElementById('adStatus').textContent = 'এড দেখা সম্পন্ন হয়নি - আবার চেষ্টা করুন';
                     document.getElementById('adStatus').className = 'text-xs text-red-600';
+                    hideTimer();
                     reject(error);
                 });
             });
@@ -246,17 +312,15 @@
         // Simulation ad function
         function showSimulationAd() {
             return new Promise((resolve) => {
-                document.getElementById('adStatus').textContent = 'এড দেখানো হচ্ছে... ১০ সেকেন্ড অপেক্ষা করুন';
+                document.getElementById('adStatus').textContent = 'এড দেখানো হচ্ছে... কমপক্ষে ১০ সেকেন্ড দেখুন';
                 document.getElementById('adStatus').className = 'text-xs text-blue-600';
                 
                 const watchBtn = document.getElementById('watchAdBtn');
                 watchBtn.innerHTML = '<i class="fas fa-eye mr-2"></i>এড চলছে...';
                 
-                // Simulate ad watching for 10 seconds
-                setTimeout(async () => {
-                    await rewardUserForWatchingAd();
-                    resolve();
-                }, 10000);
+                // Start the timer for simulation
+                startAdTimer();
+                resolve();
             });
         }
 
@@ -288,7 +352,7 @@
                 watchBtn.classList.remove('ad-loading', 'bg-gradient-to-r', 'from-green-500', 'to-green-600', 'hover:from-green-600', 'hover:to-green-700');
                 watchBtn.classList.add('bg-green-500');
                 
-                showNotification('🎉 এড দেখা সম্পন্ন! ৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।', 'success');
+                showNotification('🎉 এড দেখা সম্পন্ন! আপনি ১০ সেকেন্ড এড দেখেছেন এবং ৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।', 'success');
                 
                 // Reset button after 3 seconds
                 setTimeout(() => {
