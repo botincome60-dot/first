@@ -17,44 +17,11 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .success-message {
-            animation: slideIn 0.5s ease-out;
-        }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .error-banner {
-            background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%);
-            color: white;
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            text-align: center;
-            display: none;
-        }
     </style>
 </head>
 <body class="bg-gray-50">
     
-    <!-- Error Banner -->
-    <div id="errorBanner" class="error-banner">
-        <i class="fas fa-exclamation-triangle mr-2"></i>
-        <span id="errorMessage">AdsGram ad লোড হয়নি। Simulation Mode চলছে।</span>
-    </div>
-
     <div class="container mx-auto px-4 py-4 fade-in">
-        <!-- Success Message (Hidden by default) -->
-        <div id="successMessage" class="hidden bg-gradient-to-r from-green-400 to-green-600 text-white p-4 rounded-xl mb-4 success-message">
-            <div class="flex items-center">
-                <i class="fas fa-check-circle text-2xl mr-3"></i>
-                <div>
-                    <h3 class="font-bold text-lg">🎉 সফল!</h3>
-                    <p id="successText">১০ টাকা আপনার একাউন্টে যোগ করা হয়েছে</p>
-                </div>
-            </div>
-        </div>
-
         <!-- হেডার -->
         <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 text-white mb-4">
             <div class="flex items-center justify-between">
@@ -89,9 +56,9 @@
             </div>
             
             <div class="bg-gray-100 rounded-lg p-4 text-center mb-4">
-                <h4 class="font-bold text-lg mb-2">🎬  ভিডিও এড</h4>
-                <p class="text-gray-600 mb-3">বাটনে ক্লিক করুন, ভিডিও দেখুন এবং ১০ টাকা পান</p>
-                <p class="text-xs" id="adStatus">ভিডিও এড প্রস্তুত</p>
+                <h4 class="font-bold text-lg mb-2">🎬 ভিডিও এড</h4>
+                <p class="text-gray-600 mb-3">বাটনে ক্লিক করুন, ভিডিও এড দেখুন এবং ১০ টাকা পান</p>
+                <p class="text-xs text-gray-400" id="adStatus">ভিডিও এড প্রস্তুত</p>
             </div>
             
             <!-- বাটন -->
@@ -102,6 +69,20 @@
             
             <div class="text-center">
                 <p class="text-gray-500 text-sm" id="rewardStatus">এড সম্পূর্ণ দেখার পর ১০ টাকা অটো যোগ হবে</p>
+            </div>
+        </div>
+
+        <!-- তথ্য -->
+        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <div class="flex items-start">
+                <i class="fas fa-info-circle text-yellow-500 mt-1 mr-2"></i>
+                <div>
+                    <h4 class="font-semibold text-yellow-700">গুরুত্বপূর্ণ তথ্য</h4>
+                    <p class="text-yellow-600 text-sm">• ভিডিও দেখার পর ১০ টাকা অটো যোগ হবে</p>
+                    <p class="text-yellow-600 text-sm">• প্রতি ঘন্টায় ১০টি ভিডিও এড দেখতে পারবেন</p>
+                    <p class="text-yellow-600 text-sm">• ভিডিও এড লোড হতে কিছু সময় লাগতে পারে</p>
+                    <p class="text-yellow-600 text-sm">• ১ ঘন্টা পর ভিডিও কাউন্টার রিসেট হবে</p>
+                </div>
             </div>
         </div>
 
@@ -121,7 +102,7 @@
         
         let isAdActive = false;
         let AdController = null;
-        let isAdsGramWorking = false;
+        let isAdsGramAvailable = false;
         
         // লোকালস্টোরেজ থেকে ডেটা নিয়ে আসা
         function loadData() {
@@ -188,15 +169,13 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateCounter();
             updateResetTimer();
-            initializeAdsGram();
+            checkAdsGram();
         });
 
-        // AdsGram Initialize করো
-        function initializeAdsGram() {
+        // AdsGram চেক করো
+        function checkAdsGram() {
             if (typeof window.Adsgram === 'undefined') {
-                console.error("AdsGram SDK not loaded");
-                document.getElementById('modeInfo').textContent = "Mode: Simulation (SDK not loaded)";
-                document.getElementById('modeInfo').className = "text-xs text-red-600";
+                console.log("AdsGram SDK not loaded");
                 return;
             }
             
@@ -204,16 +183,10 @@
                 AdController = window.Adsgram.init({ 
                     blockId: BLOCK_ID 
                 });
-                isAdsGramWorking = true;
-                console.log(`✅ AdsGram initialized with Block ID: ${BLOCK_ID}`);
-                document.getElementById('modeInfo').textContent = `Mode: AdsGram Active (ID: ${BLOCK_ID})`;
-                document.getElementById('modeInfo').className = "text-xs text-green-600";
+                isAdsGramAvailable = true;
+                console.log("AdsGram available");
             } catch (error) {
-                console.log(`❌ AdsGram initialization failed:`, error);
-                document.getElementById('modeInfo').textContent = "Mode: Simulation (AdsGram failed)";
-                document.getElementById('modeInfo').className = "text-xs text-yellow-600";
-                document.getElementById('errorBanner').style.display = 'block';
-                document.getElementById('errorMessage').textContent = "AdsGram initialization failed. Simulation Mode চলছে।";
+                console.log("AdsGram initialization failed:", error);
             }
         }
 
@@ -237,48 +210,48 @@
             document.getElementById('adStatus').textContent = 'এড লোড হচ্ছে...';
             document.getElementById('adStatus').className = 'text-xs text-blue-600';
             
-            // Hide previous messages
-            document.getElementById('successMessage').classList.add('hidden');
-            document.getElementById('errorBanner').style.display = 'none';
-            
             try {
-                // AdsGram কাজ করলে AdsGram ad show করো
-                if (isAdsGramWorking && AdController) {
-                    console.log("Showing AdsGram ad...");
-                    
+                // AdsGram available থাকলে ad show করো
+                if (isAdsGramAvailable && AdController) {
                     await AdController.show();
                     
-                    console.log("✅ AdsGram ad shown successfully");
-                    
                     // AdsGram ad সম্পূর্ণ হয়েছে, এখন রিওয়ার্ড দিন
-                    giveReward("AdsGram");
+                    giveReward();
                     
                 } else {
-                    // AdsGram না কাজ করলে simulation use করো
-                    throw new Error("AdsGram not working");
+                    // AdsGram না থাকলে error throw করো
+                    throw new Error("ভিডিও এড লোড হয়নি");
                 }
                 
             } catch (error) {
-                // AdsGram ad দেখাতে সমস্যা হলে simulation use করো
-                console.error("AdsGram ad error:", error);
+                // AdsGram ad লোড না হলে error show করো এবং count/tk add হবে না
+                console.error("Video ad error:", error);
                 
-                // Error banner show করো
-                document.getElementById('errorBanner').style.display = 'block';
-                document.getElementById('errorMessage').textContent = "AdsGram ad লোড হয়নি। Simulation Mode চলছে।";
+                // Error message show করো
+                document.getElementById('adStatus').textContent = 'এড লোড হয়নি! আবার চেষ্টা করুন';
+                document.getElementById('adStatus').className = 'text-xs text-red-600';
+                document.getElementById('rewardStatus').textContent = 'এড লোড হয়নি। আবার চেষ্টা করুন';
+                document.getElementById('rewardStatus').className = 'text-sm text-red-600 font-semibold';
                 
-                watchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Simulation চলছে...';
-                document.getElementById('adStatus').textContent = 'Simulation ভিডিও চলছে...';
-                document.getElementById('adStatus').className = 'text-xs text-yellow-600';
+                watchBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>এড লোড হয়নি';
+                watchBtn.classList.remove('from-green-500', 'to-green-600');
+                watchBtn.classList.add('bg-red-500');
                 
-                // Simulation এর জন্য 2 সেকেন্ড অপেক্ষা করো
+                // Alert message
+                alert('❌ ভিডিও এড লোড হয়নি! ইন্টারনেট চেক করুন এবং আবার চেষ্টা করুন।');
+                
+                // ৩ সেকেন্ড পর রিসেট করো
                 setTimeout(() => {
-                    giveReward("Simulation");
-                }, 2000);
+                    resetAdButton();
+                }, 3000);
+                
+                isAdActive = false;
+                return; // এখানে return করো যাতে reward না দেয়
             }
         }
 
         // রিওয়ার্ড দিন
-        function giveReward(mode) {
+        function giveReward() {
             // ভিডিও এড কাউন্টার বাড়াও
             userData.videoAdsWatchedToday++;
             userData.totalBalance += 10;
@@ -311,18 +284,12 @@
             watchBtn.classList.remove('from-green-500', 'to-green-600');
             watchBtn.classList.add('bg-green-500');
             
-            // Success message show করো
-            document.getElementById('successText').textContent = 
-                `${mode === "AdsGram" ? "AdsGram" : "Simulation"} ভিডিও সম্পূর্ণ! ১০ টাকা যোগ করা হয়েছে।`;
-            document.getElementById('successMessage').classList.remove('hidden');
-            
-            // Error banner hide করো
-            document.getElementById('errorBanner').style.display = 'none';
+            // Alert message
+            alert('🎉 সফল! ভিডিও এড সম্পূর্ণ। ১০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।');
             
             // ৩ সেকেন্ড পর রিসেট করো
             setTimeout(() => {
                 resetAdButton();
-                document.getElementById('successMessage').classList.add('hidden');
             }, 3000);
             
             isAdActive = false;
@@ -383,16 +350,13 @@
             if (userData.videoAdsWatchedToday < 10) {
                 const watchBtn = document.getElementById('watchAdBtn');
                 watchBtn.disabled = false;
-                watchBtn.innerHTML = '<i class="fas fa-play mr-2"></i>AdsGram ভিডিও এড দেখুন';
-                watchBtn.classList.remove('bg-green-500', 'bg-gray-400');
+                watchBtn.innerHTML = '<i class="fas fa-play mr-2"></i>ভিডিও এড দেখুন';
+                watchBtn.classList.remove('bg-green-500', 'bg-red-500', 'bg-gray-400');
                 watchBtn.classList.add('bg-gradient-to-r', 'from-green-500', 'to-green-600');
                 document.getElementById('adStatus').textContent = 'ভিডিও এড প্রস্তুত';
                 document.getElementById('adStatus').className = 'text-xs text-gray-400';
                 document.getElementById('rewardStatus').textContent = 'এড সম্পূর্ণ দেখার পর ১০ টাকা অটো যোগ হবে';
                 document.getElementById('rewardStatus').className = 'text-gray-500 text-sm';
-                
-                // Error banner hide করো
-                document.getElementById('errorBanner').style.display = 'none';
             }
         }
 
