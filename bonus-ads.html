@@ -4,19 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>সহজ ইনকাম - বোনাস এড</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
             padding-bottom: 20px;
-        }
-        .ad-loading {
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
         }
         .fade-in {
             animation: fadeIn 0.5s ease-in;
@@ -102,7 +94,7 @@
                     <h4 class="font-semibold text-orange-700">গুরুত্বপূর্ণ তথ্য</h4>
                     <p class="text-orange-600 text-sm">• বোনাস এড দেখার পর ১০ টাকা বোনাস অটো যোগ হবে</p>
                     <p class="text-orange-600 text-sm">• প্রতি ঘন্টায় ১০টি বোনাস এড দেখতে পারবেন</p>
-                    <p class="text-orange-600 text-sm">• বোনাস এড লোড হতে ১০-১৫ সেকেন্ড সময় লাগতে পারে</p>
+                    <p class="text-orange-600 text-sm">• বোনাস এড লোড হতে কিছু সময় লাগতে পারে</p>
                     <p class="text-orange-600 text-sm">• ইন্টারনেট কানেকশন চেক করুন</p>
                 </div>
             </div>
@@ -115,61 +107,107 @@
         </a>
     </div>
 
-    <!-- Firebase SDK -->
-  <!-- Firebase SDK-এর পরিবর্তে -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app-supabase.js"></script>
-
-    <!-- Monetag SDK -->
-    <script src='https://libtl.com/sdk.js' data-zone='10166009' data-sdk='show_10166009'></script>
+    <!-- AdsGram Script -->
+    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
     <script>
+        // AdsGram Block ID
+        const BLOCK_ID = "18607";
+        
         let isBonusAdLoading = false;
-        let monetagBonusReady = false;
-        let userBonusAdsData = {
-            today_bonus_ads: 0,
-            last_bonus_ad_reset: null
-        };
-
-        function initBonusAdsPage() {
-            loadBonusAdsData();
-            checkBonusMonetagReady();
-            updateBonusResetTimer();
-            hideLoading();
+        let AdController = null;
+        let isAdsGramAvailable = false;
+        
+        // লোকালস্টোরেজ থেকে ডেটা নিয়ে আসা
+        function loadData() {
+            const now = new Date().getTime();
+            
+            // বোনাস এড কাউন্টার
+            let bonusAdsWatchedToday = localStorage.getItem('bonusAdsWatchedToday') ? 
+                parseInt(localStorage.getItem('bonusAdsWatchedToday')) : 0;
+            
+            // প্রথম বোনাস এড দেখার সময়
+            let firstBonusAdTime = localStorage.getItem('firstBonusAdTime');
+            
+            // ব্যালেন্স
+            let totalBalance = localStorage.getItem('totalBalance') ? 
+                parseInt(localStorage.getItem('totalBalance')) : 0;
+            
+            // যদি প্রথম বোনাস এড না দেখে থাকে
+            if (!firstBonusAdTime && bonusAdsWatchedToday === 0) {
+                return {
+                    bonusAdsWatchedToday: 0,
+                    totalBalance: totalBalance,
+                    firstBonusAdTime: null,
+                    resetTime: null
+                };
+            }
+            
+            // যদি প্রথম বোনাস এড দেখার সময় না থাকে কিন্তু কাউন্টার আছে
+            if (!firstBonusAdTime && bonusAdsWatchedToday > 0) {
+                firstBonusAdTime = now.toString();
+                localStorage.setItem('firstBonusAdTime', firstBonusAdTime);
+            }
+            
+            // প্রথম বোনাস এড দেখার সময়
+            const firstAdTimestamp = parseInt(firstBonusAdTime);
+            
+            // রিসেট টাইম (প্রথম বোনাস এড দেখার সময় + ১ ঘন্টা)
+            const resetTime = firstAdTimestamp + 3600000;
+            
+            // যদি রিসেট টাইম পার হয়ে যায়
+            if (now >= resetTime) {
+                // সব রিসেট করো
+                localStorage.setItem('bonusAdsWatchedToday', '0');
+                localStorage.removeItem('firstBonusAdTime');
+                
+                return {
+                    bonusAdsWatchedToday: 0,
+                    totalBalance: totalBalance,
+                    firstBonusAdTime: null,
+                    resetTime: null
+                };
+            }
+            
+            return {
+                bonusAdsWatchedToday: bonusAdsWatchedToday,
+                totalBalance: totalBalance,
+                firstBonusAdTime: firstAdTimestamp,
+                resetTime: resetTime
+            };
         }
+        
+        let userData = loadData();
 
-        function loadBonusAdsData() {
-            const user = getUserData();
-            if (user) {
-                userBonusAdsData.today_bonus_ads = user.today_bonus_ads || 0;
-                userBonusAdsData.last_bonus_ad_reset = user.last_bonus_ad_reset || user.join_date;
-                updateBonusCounter();
+        // পেজ লোড হলে
+        document.addEventListener('DOMContentLoaded', function() {
+            updateBonusCounter();
+            updateBonusResetTimer();
+            checkAdsGram();
+            hideLoading();
+        });
+
+        // AdsGram চেক করো
+        function checkAdsGram() {
+            if (typeof window.Adsgram === 'undefined') {
+                console.log("AdsGram SDK not loaded");
+                return;
+            }
+            
+            try {
+                AdController = window.Adsgram.init({ 
+                    blockId: BLOCK_ID 
+                });
+                isAdsGramAvailable = true;
+                console.log("AdsGram available");
+            } catch (error) {
+                console.log("AdsGram initialization failed:", error);
             }
         }
 
-        function checkBonusMonetagReady() {
-            let checkCount = 0;
-            const maxChecks = 20;
-            
-            const checkInterval = setInterval(() => {
-                checkCount++;
-                
-                if (typeof show_10166009 !== 'undefined') {
-                    clearInterval(checkInterval);
-                    monetagBonusReady = true;
-                    document.getElementById('bonusAdStatus').textContent = 'বোনাস এড প্রস্তুত';
-                    document.getElementById('bonusAdStatus').className = 'text-xs text-green-600';
-                } else if (checkCount >= maxChecks) {
-                    clearInterval(checkInterval);
-                    document.getElementById('bonusAdStatus').textContent = 'বোনাস এড সিস্টেম লোড হয়নি - সিমুলেশন মোড';
-                    document.getElementById('bonusAdStatus').className = 'text-xs text-yellow-600';
-                }
-            }, 500);
-        }
-
         function updateBonusCounter() {
-            document.getElementById('bonusAdsCounter').textContent = `${userBonusAdsData.today_bonus_ads}/১০`;
-            const progress = (userBonusAdsData.today_bonus_ads / 10) * 100;
+            document.getElementById('bonusAdsCounter').textContent = `${userData.bonusAdsWatchedToday}/১০`;
+            const progress = (userData.bonusAdsWatchedToday / 10) * 100;
             document.getElementById('bonusProgressBar').style.width = `${progress}%`;
             
             // Check if user can watch more bonus ads
@@ -193,7 +231,11 @@
         }
 
         function canWatchMoreBonusAds() {
-            const lastReset = new Date(userBonusAdsData.last_bonus_ad_reset);
+            if (!userData.firstBonusAdTime) {
+                return true;
+            }
+            
+            const lastReset = new Date(userData.firstBonusAdTime);
             const now = new Date();
             const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
             
@@ -203,13 +245,17 @@
             }
             
             // Check if user hasn't reached the hourly limit
-            return userBonusAdsData.today_bonus_ads < 10;
+            return userData.bonusAdsWatchedToday < 10;
         }
 
         function getTimeUntilNextBonusReset() {
-            const lastReset = new Date(userBonusAdsData.last_bonus_ad_reset);
+            if (!userData.firstBonusAdTime) {
+                return 'এখনই শুরু করুন';
+            }
+            
+            const lastReset = new Date(userData.firstBonusAdTime);
             const now = new Date();
-            const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000)); // 1 hour later
+            const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000));
             const timeDiff = nextReset - now;
             
             if (timeDiff <= 0) {
@@ -228,12 +274,6 @@
         }
 
         async function showBonusAd() {
-            const user = getUserData();
-            if (!user) {
-                alert('ডেটা লোড হয়নি। পেজ রিফ্রেশ করুন।');
-                return;
-            }
-
             if (!canWatchMoreBonusAds()) {
                 alert(`আপনার বোনাস এড লিমিট শেষ! ${getTimeUntilNextBonusReset()} পর আবার চেষ্টা করুন।`);
                 return;
@@ -247,145 +287,101 @@
             const watchBtn = document.getElementById('watchBonusAdBtn');
             watchBtn.disabled = true;
             watchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>বোনাস এড লোড হচ্ছে...';
-            watchBtn.classList.add('ad-loading');
-            document.getElementById('bonusAdStatus').textContent = 'বোনাস এড লোড হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন';
-            document.getElementById('bonusAdStatus').className = 'text-xs text-yellow-600';
+            document.getElementById('bonusAdStatus').textContent = 'বোনাস এড লোড হচ্ছে...';
+            document.getElementById('bonusAdStatus').className = 'text-xs text-blue-600';
 
             try {
-                if (monetagBonusReady && typeof show_10166009 !== 'undefined') {
-                    // Real Monetag ad (same as watch ads)
-                    await showRealBonusAd();
+                // AdsGram available থাকলে ad show করো
+                if (isAdsGramAvailable && AdController) {
+                    await AdController.show();
+                    
+                    // AdsGram ad সম্পূর্ণ হয়েছে, এখন রিওয়ার্ড দিন
+                    rewardUserForBonusAd();
+                    
                 } else {
-                    // Fallback to simulation
-                    await showBonusSimulationAd();
+                    // AdsGram না থাকলে error throw করো
+                    throw new Error("বোনাস এড লোড হয়নি");
                 }
                 
             } catch (error) {
-                console.error('❌ Bonus ad error:', error);
-                document.getElementById('bonusAdStatus').textContent = 'বোনাস এড লোড করতে সমস্যা - আবার চেষ্টা করুন';
+                // AdsGram ad লোড না হলে error show করো এবং count/tk add হবে না
+                console.error("Bonus ad error:", error);
+                
+                document.getElementById('bonusAdStatus').textContent = 'বোনাস এড লোড হয়নি! আবার চেষ্টা করুন';
                 document.getElementById('bonusAdStatus').className = 'text-xs text-red-600';
+                document.getElementById('bonusRewardStatus').textContent = 'বোনাস এড লোড হয়নি। আবার চেষ্টা করুন';
+                document.getElementById('bonusRewardStatus').className = 'text-sm text-red-600 font-semibold';
                 
-                alert('বোনাস এড লোড করতে সমস্যা হয়েছে! ইন্টারনেট চেক করুন এবং আবার চেষ্টা করুন।');
+                watchBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>এড লোড হয়নি';
+                watchBtn.classList.remove('ad-loading', 'bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'hover:from-orange-600', 'hover:to-orange-700');
+                watchBtn.classList.add('bg-red-500');
                 
-                resetBonusAdButton();
+                alert('❌ বোনাস এড লোড হয়নি! ইন্টারনেট চেক করুন এবং আবার চেষ্টা করুন।');
+                
+                // ৩ সেকেন্ড পর রিসেট করো
+                setTimeout(() => {
+                    resetBonusAdButton();
+                }, 3000);
+                
                 isBonusAdLoading = false;
+                return; // এখানে return করো যাতে reward না দেয়
             }
-        }
-
-        // Real Monetag bonus ad function (same as watch ads)
-        function showRealBonusAd() {
-            return new Promise((resolve, reject) => {
-                show_10166009().then(() => {
-                    rewardUserForBonusAd();
-                    resolve();
-                }).catch((error) => {
-                    reject(error);
-                });
-            });
-        }
-
-        // Simulation bonus ad function
-        function showBonusSimulationAd() {
-            return new Promise((resolve) => {
-                document.getElementById('bonusAdStatus').textContent = 'বোনাস এড দেখানো হচ্ছে... ১০ সেকেন্ড অপেক্ষা করুন';
-                document.getElementById('bonusAdStatus').className = 'text-xs text-blue-600';
-                
-                const watchBtn = document.getElementById('watchBonusAdBtn');
-                watchBtn.innerHTML = '<i class="fas fa-eye mr-2"></i>বোনাস এড চলছে...';
-                
-                // Simulate ad watching for 10 seconds
-                setTimeout(async () => {
-                    await rewardUserForBonusAd();
-                    resolve();
-                }, 10000);
-            });
         }
 
         async function rewardUserForBonusAd() {
-            const user = getUserData();
-            if (!user) return;
+            // বোনাস এড কাউন্টার বাড়াও
+            userData.bonusAdsWatchedToday++;
+            userData.totalBalance += 10;
             
-            try {
-                // Check if we need to reset bonus ads counter
-                const lastReset = new Date(userBonusAdsData.last_bonus_ad_reset);
-                const now = new Date();
-                const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
-                
-                let todayBonusAds = userBonusAdsData.today_bonus_ads;
-                let lastBonusAdReset = userBonusAdsData.last_bonus_ad_reset;
-                
-                // Reset if 1 hour has passed since last reset
-                if (hoursDiff >= 1) {
-                    todayBonusAds = 0;
-                    lastBonusAdReset = now.toISOString();
-                }
-                
-                // Add reward and update bonus ads count
-                await updateUserData({ 
-                    balance: user.balance + 10,
-                    total_income: user.total_income + 10,
-                    today_bonus_ads: todayBonusAds + 1,
-                    last_bonus_ad_reset: lastBonusAdReset
-                });
-                
-                // Update local data
-                userBonusAdsData.today_bonus_ads = todayBonusAds + 1;
-                userBonusAdsData.last_bonus_ad_reset = lastBonusAdReset;
-                
-                // Update UI
-                updateBonusCounter();
-                updateBonusResetTimer();
-                
-                // Success message
-                document.getElementById('bonusAdStatus').textContent = 'বোনাস এড দেখা সম্পন্ন! ১০ টাকা বোনাস যোগ হয়েছে';
-                document.getElementById('bonusAdStatus').className = 'text-xs text-green-600';
-                document.getElementById('bonusRewardStatus').textContent = '১০ টাকা বোনাস আপনার একাউন্টে যোগ করা হয়েছে!';
-                document.getElementById('bonusRewardStatus').className = 'text-sm text-green-600 font-semibold';
-                
-                const watchBtn = document.getElementById('watchBonusAdBtn');
-                watchBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ১০ টাকা বোনাস যোগ হয়েছে';
-                watchBtn.classList.remove('ad-loading', 'bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'hover:from-orange-600', 'hover:to-orange-700');
-                watchBtn.classList.add('bg-green-500');
-                
-                showNotification('🎉 বোনাস এড দেখা সম্পন্ন! ১০ টাকা বোনাস আপনার একাউন্টে যোগ করা হয়েছে।', 'success');
-                
-                // Reset button after 3 seconds
-                setTimeout(() => {
-                    if (canWatchMoreBonusAds()) {
-                        resetBonusAdButton();
-                    }
-                    isBonusAdLoading = false;
-                }, 3000);
-                
-            } catch (error) {
-                console.error('❌ Error rewarding user for bonus ad:', error);
-                throw error;
+            // যদি প্রথম বোনাস এড হয়
+            if (!userData.firstBonusAdTime) {
+                const now = new Date().getTime();
+                userData.firstBonusAdTime = now;
+                userData.resetTime = now + 3600000;
+                localStorage.setItem('firstBonusAdTime', now.toString());
             }
+            
+            // লোকালস্টোরেজে সেভ করো
+            localStorage.setItem('bonusAdsWatchedToday', userData.bonusAdsWatchedToday);
+            localStorage.setItem('totalBalance', userData.totalBalance);
+            
+            // UI আপডেট করো
+            updateBonusCounter();
+            updateBonusResetTimer();
+            
+            // Success message
+            document.getElementById('bonusAdStatus').textContent = 'বোনাস এড দেখা সম্পন্ন! ১০ টাকা বোনাস যোগ হয়েছে';
+            document.getElementById('bonusAdStatus').className = 'text-xs text-green-600';
+            document.getElementById('bonusRewardStatus').textContent = '১০ টাকা বোনাস আপনার একাউন্টে যোগ করা হয়েছে!';
+            document.getElementById('bonusRewardStatus').className = 'text-sm text-green-600 font-semibold';
+            
+            const watchBtn = document.getElementById('watchBonusAdBtn');
+            watchBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ১০ টাকা বোনাস যোগ হয়েছে';
+            watchBtn.classList.remove('ad-loading', 'bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'hover:from-orange-600', 'hover:to-orange-700');
+            watchBtn.classList.add('bg-green-500');
+            
+            alert('🎉 বোনাস এড দেখা সম্পন্ন! ১০ টাকা বোনাস আপনার একাউন্টে যোগ করা হয়েছে।');
+            
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                if (canWatchMoreBonusAds()) {
+                    resetBonusAdButton();
+                }
+                isBonusAdLoading = false;
+            }, 3000);
         }
 
         function resetBonusAdButton() {
             if (canWatchMoreBonusAds()) {
                 const watchBtn = document.getElementById('watchBonusAdBtn');
                 watchBtn.innerHTML = '<i class="fas fa-play mr-2"></i>বোনাস এড দেখুন';
-                watchBtn.classList.remove('bg-green-500', 'ad-loading');
+                watchBtn.classList.remove('bg-green-500', 'bg-red-500', 'ad-loading');
                 watchBtn.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'hover:from-orange-600', 'hover:to-orange-700');
                 watchBtn.disabled = false;
                 document.getElementById('bonusAdStatus').textContent = 'বোনাস এড প্রস্তুত';
-                document.getElementById('bonusAdStatus').className = 'text-xs text-green-600';
+                document.getElementById('bonusAdStatus').className = 'text-xs text-gray-400';
                 document.getElementById('bonusRewardStatus').textContent = 'এড দেখার পর অটোমেটিক ১০ টাকা বোনাস যোগ হবে';
                 document.getElementById('bonusRewardStatus').className = 'text-gray-500 text-sm';
-            }
-        }
-
-        function showNotification(message, type = 'info') {
-            if (window.Telegram && Telegram.WebApp) {
-                Telegram.WebApp.showPopup({
-                    title: type === 'success' ? 'সফল!' : 'মেসেজ',
-                    message: message,
-                    buttons: [{ type: 'close' }]
-                });
-            } else {
-                alert(message);
             }
         }
 
@@ -398,10 +394,6 @@
 
         // Update reset timer every minute
         setInterval(updateBonusResetTimer, 60000);
-
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(initBonusAdsPage, 1000);
-        });
     </script>
 </body>
 </html>
