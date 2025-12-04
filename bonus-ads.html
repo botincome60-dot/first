@@ -17,14 +17,35 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .timer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
-        <div class="text-center">
-            <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="text-gray-600">লোড হচ্ছে...</p>
+    
+    <!-- Ad Watching Overlay -->
+    <div id="adOverlay" class="timer-overlay">
+        <div class="text-center p-6 bg-gray-900 rounded-2xl max-w-sm">
+            <i class="fas fa-play-circle text-green-400 text-5xl mb-4"></i>
+            <h2 class="text-2xl font-bold mb-2">বোনাস এড দেখছেন</h2>
+            <p class="text-gray-300 mb-4">ভিডিওটি সম্পূর্ণ দেখুন</p>
+            <p class="text-green-300 text-sm mb-4">এড শেষ হওয়ার পর ১০ টাকা অটো যোগ হবে</p>
+            <div class="bg-gray-800 rounded-lg p-4">
+                <p class="text-yellow-300 text-sm">⚠️ দয়া করে এডটি স্কিপ করবেন না</p>
+                <p class="text-gray-400 text-xs mt-2">এড সম্পূর্ণ দেখলেই ১০ টাকা পাবেন</p>
+            </div>
         </div>
     </div>
 
@@ -64,12 +85,12 @@
             <!-- এড কন্টেন্ট এরিয়া -->
             <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center mb-4">
                 <div id="bonusAdContent">
-                    <h4 class="font-bold text-lg mb-2">🎬 বোনাস রিওয়ার্ডেড এড</h4>
-                    <p class="text-gray-600 mb-3">নিচের বাটনে ক্লিক করে বোনাস এড দেখুন এবং ১০ টাকা বোনাস পান</p>
+                    <h4 class="font-bold text-lg mb-2">🎬 রিওয়ার্ডেড এড</h4>
+                    <p class="text-gray-600 mb-3">এই এডটি সম্পূর্ণ দেখলেই ১০ টাকা বোনাস পাবেন</p>
                     
                     <div class="bg-white p-4 rounded-lg border border-orange-300">
-                        <i class="fas fa-ad text-orange-500 text-3xl mb-2"></i>
-                        <p class="text-sm text-gray-500 mb-3">একটি বোনাস এড দেখুন এবং ১০ টাকা বোনাস পান</p>
+                        <i class="fas fa-gift text-orange-500 text-3xl mb-2"></i>
+                        <p class="text-sm text-gray-500 mb-3">এড শেষ হওয়ার পর অটো ১০ টাকা যোগ হবে</p>
                         <p class="text-xs text-gray-400" id="bonusAdStatus">বোনাস এড প্রস্তুত</p>
                     </div>
                 </div>
@@ -82,7 +103,8 @@
             </button>
             
             <div class="text-center">
-                <p class="text-gray-500 text-sm" id="bonusRewardStatus">এড দেখার পর অটোমেটিক ১০ টাকা বোনাস যোগ হবে</p>
+                <p class="text-gray-500 text-sm" id="bonusRewardStatus">এড সম্পূর্ণ দেখার পর অটোমেটিক ১০ টাকা বোনাস যোগ হবে</p>
+                <p class="text-xs text-red-500 mt-1" id="errorMessage"></p>
             </div>
         </div>
 
@@ -92,10 +114,10 @@
                 <i class="fas fa-info-circle text-orange-500 mt-1 mr-2"></i>
                 <div>
                     <h4 class="font-semibold text-orange-700">গুরুত্বপূর্ণ তথ্য</h4>
-                    <p class="text-orange-600 text-sm">• বোনাস এড দেখার পর ১০ টাকা বোনাস অটো যোগ হবে</p>
+                    <p class="text-orange-600 text-sm">• এডটি সম্পূর্ণ দেখলেই ১০ টাকা পাবেন</p>
                     <p class="text-orange-600 text-sm">• প্রতি ঘন্টায় ১০টি বোনাস এড দেখতে পারবেন</p>
-                    <p class="text-orange-600 text-sm">• বোনাস এড লোড হতে কিছু সময় লাগতে পারে</p>
-                    <p class="text-orange-600 text-sm">• ইন্টারনেট কানেকশন চেক করুন</p>
+                    <p class="text-orange-600 text-sm">• এডটি স্কিপ করা যাবে না</p>
+                    <p class="text-orange-600 text-sm">• এড শেষ হওয়ার সাথে সাথে টাকা যোগ হবে</p>
                 </div>
             </div>
         </div>
@@ -183,14 +205,14 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateBonusCounter();
             updateBonusResetTimer();
-            checkAdsGram();
-            hideLoading();
+            initializeAdsGram();
         });
 
-        // AdsGram চেক করো
-        function checkAdsGram() {
+        // AdsGram Initialize করো
+        function initializeAdsGram() {
             if (typeof window.Adsgram === 'undefined') {
                 console.log("AdsGram SDK not loaded");
+                showError("এড সিস্টেম লোড হয়নি। পেজ রিফ্রেশ করুন।");
                 return;
             }
             
@@ -199,9 +221,10 @@
                     blockId: BLOCK_ID 
                 });
                 isAdsGramAvailable = true;
-                console.log("AdsGram available");
+                console.log("✅ AdsGram Reward Ad Initialized");
             } catch (error) {
-                console.log("AdsGram initialization failed:", error);
+                console.log("❌ AdsGram initialization failed:", error);
+                showError("বোনাস এড সিস্টেম লোড হয়নি।");
             }
         }
 
@@ -273,6 +296,7 @@
             }
         }
 
+        // বোনাস এড দেখাও
         async function showBonusAd() {
             if (!canWatchMoreBonusAds()) {
                 alert(`আপনার বোনাস এড লিমিট শেষ! ${getTimeUntilNextBonusReset()} পর আবার চেষ্টা করুন।`);
@@ -284,39 +308,53 @@
             }
 
             isBonusAdLoading = true;
+            
+            // Clear previous error
+            document.getElementById('errorMessage').textContent = '';
+            
+            // Disable button and show loading
             const watchBtn = document.getElementById('watchBonusAdBtn');
             watchBtn.disabled = true;
-            watchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>বোনাস এড লোড হচ্ছে...';
-            document.getElementById('bonusAdStatus').textContent = 'বোনাস এড লোড হচ্ছে...';
+            watchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>এড লোড হচ্ছে...';
+            document.getElementById('bonusAdStatus').textContent = 'এড লোড হচ্ছে...';
             document.getElementById('bonusAdStatus').className = 'text-xs text-blue-600';
+            
+            // Show overlay
+            document.getElementById('adOverlay').style.display = 'flex';
 
             try {
-                // AdsGram available থাকলে ad show করো
+                // AdsGram Reward Ad show করো
                 if (isAdsGramAvailable && AdController) {
+                    console.log("Showing AdsGram Reward Ad...");
+                    
+                    // AdsGram Reward Ad show করো
                     await AdController.show();
                     
-                    // AdsGram ad সম্পূর্ণ হয়েছে, এখন রিওয়ার্ড দিন
-                    rewardUserForBonusAd();
+                    console.log("✅ AdsGram Reward Ad shown successfully");
+                    
+                    // AdsGram ad সম্পূর্ণ হয়েছে (ইউজার পুরো এডটি দেখেছে)
+                    // এখন রিওয়ার্ড দিন
+                    giveRewardForBonusAd();
                     
                 } else {
-                    // AdsGram না থাকলে error throw করো
-                    throw new Error("বোনাস এড লোড হয়নি");
+                    throw new Error("AdsGram not available");
                 }
                 
             } catch (error) {
-                // AdsGram ad লোড না হলে error show করো এবং count/tk add হবে না
-                console.error("Bonus ad error:", error);
+                // AdsGram ad লোড না হলে error show করো
+                console.error("❌ AdsGram Reward Ad error:", error);
                 
-                document.getElementById('bonusAdStatus').textContent = 'বোনাস এড লোড হয়নি! আবার চেষ্টা করুন';
+                // Hide overlay
+                document.getElementById('adOverlay').style.display = 'none';
+                
+                // Error message show করো
+                document.getElementById('bonusAdStatus').textContent = 'বোনাস এড লোড হয়নি!';
                 document.getElementById('bonusAdStatus').className = 'text-xs text-red-600';
-                document.getElementById('bonusRewardStatus').textContent = 'বোনাস এড লোড হয়নি। আবার চেষ্টা করুন';
-                document.getElementById('bonusRewardStatus').className = 'text-sm text-red-600 font-semibold';
+                document.getElementById('errorMessage').textContent = 'দয়া করে ইন্টারনেট চেক করুন এবং আবার চেষ্টা করুন।';
                 
                 watchBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>এড লোড হয়নি';
-                watchBtn.classList.remove('ad-loading', 'bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'hover:from-orange-600', 'hover:to-orange-700');
+                watchBtn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-orange-600');
                 watchBtn.classList.add('bg-red-500');
-                
-                alert('❌ বোনাস এড লোড হয়নি! ইন্টারনেট চেক করুন এবং আবার চেষ্টা করুন।');
                 
                 // ৩ সেকেন্ড পর রিসেট করো
                 setTimeout(() => {
@@ -324,11 +362,14 @@
                 }, 3000);
                 
                 isBonusAdLoading = false;
-                return; // এখানে return করো যাতে reward না দেয়
             }
         }
 
-        async function rewardUserForBonusAd() {
+        // বোনাস এডের জন্য রিওয়ার্ড দিন
+        function giveRewardForBonusAd() {
+            // Hide overlay
+            document.getElementById('adOverlay').style.display = 'none';
+            
             // বোনাস এড কাউন্টার বাড়াও
             userData.bonusAdsWatchedToday++;
             userData.totalBalance += 10;
@@ -357,10 +398,10 @@
             
             const watchBtn = document.getElementById('watchBonusAdBtn');
             watchBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ১০ টাকা বোনাস যোগ হয়েছে';
-            watchBtn.classList.remove('ad-loading', 'bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'hover:from-orange-600', 'hover:to-orange-700');
+            watchBtn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-orange-600');
             watchBtn.classList.add('bg-green-500');
             
-            alert('🎉 বোনাস এড দেখা সম্পন্ন! ১০ টাকা বোনাস আপনার একাউন্টে যোগ করা হয়েছে।');
+            alert('🎉 বোনাস এড সম্পূর্ণ দেখা হয়েছে! ১০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।');
             
             // Reset button after 3 seconds
             setTimeout(() => {
@@ -375,21 +416,20 @@
             if (canWatchMoreBonusAds()) {
                 const watchBtn = document.getElementById('watchBonusAdBtn');
                 watchBtn.innerHTML = '<i class="fas fa-play mr-2"></i>বোনাস এড দেখুন';
-                watchBtn.classList.remove('bg-green-500', 'bg-red-500', 'ad-loading');
+                watchBtn.classList.remove('bg-green-500', 'bg-red-500');
                 watchBtn.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'hover:from-orange-600', 'hover:to-orange-700');
                 watchBtn.disabled = false;
                 document.getElementById('bonusAdStatus').textContent = 'বোনাস এড প্রস্তুত';
                 document.getElementById('bonusAdStatus').className = 'text-xs text-gray-400';
-                document.getElementById('bonusRewardStatus').textContent = 'এড দেখার পর অটোমেটিক ১০ টাকা বোনাস যোগ হবে';
+                document.getElementById('bonusRewardStatus').textContent = 'এড সম্পূর্ণ দেখার পর অটোমেটিক ১০ টাকা বোনাস যোগ হবে';
                 document.getElementById('bonusRewardStatus').className = 'text-gray-500 text-sm';
+                document.getElementById('errorMessage').textContent = '';
             }
         }
 
-        function hideLoading() {
-            const overlay = document.getElementById('loadingOverlay');
-            if (overlay) {
-                overlay.style.display = 'none';
-            }
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorMessage').className = 'text-xs text-red-500 mt-1';
         }
 
         // Update reset timer every minute
