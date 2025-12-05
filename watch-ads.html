@@ -150,9 +150,43 @@
         function loadAdsData() {
             const user = getUserData();
             if (user) {
+                // Check if reset is needed
+                checkAndResetAdsCounter(user);
+                
                 userAdsData.today_ads = user.today_ads || 0;
                 userAdsData.last_ad_reset = user.last_ad_reset || user.join_date;
                 updateCounter();
+            } else {
+                console.log("User data not found");
+                hideLoading();
+            }
+        }
+
+        async function checkAndResetAdsCounter(user) {
+            try {
+                const lastReset = new Date(user.last_ad_reset || user.join_date);
+                const now = new Date();
+                const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
+                
+                // If 1 hour has passed, reset counter
+                if (hoursDiff >= 1) {
+                    console.log("Resetting ads counter, time passed:", hoursDiff, "hours");
+                    
+                    await updateUserData({ 
+                        today_ads: 0,
+                        last_ad_reset: now.toISOString()
+                    });
+                    
+                    // Reload user data
+                    const updatedUser = getUserData();
+                    if (updatedUser) {
+                        userAdsData.today_ads = 0;
+                        userAdsData.last_ad_reset = now.toISOString();
+                        updateCounter();
+                    }
+                }
+            } catch (error) {
+                console.error("Error resetting ads counter:", error);
             }
         }
 
@@ -182,9 +216,15 @@
         }
 
         function canWatchMoreAds() {
+            if (!userAdsData.last_ad_reset) {
+                return true;
+            }
+            
             const lastReset = new Date(userAdsData.last_ad_reset);
             const now = new Date();
             const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
+            
+            console.log("Hours since last reset:", hoursDiff);
             
             // If 1 hour has passed, user can watch ads again
             if (hoursDiff >= 1) {
@@ -196,6 +236,10 @@
         }
 
         function getTimeUntilNextReset() {
+            if (!userAdsData.last_ad_reset) {
+                return 'রিসেট হয়নি';
+            }
+            
             const lastReset = new Date(userAdsData.last_ad_reset);
             const now = new Date();
             const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000)); // 1 hour later
@@ -265,16 +309,29 @@
                 watchBtn.innerHTML = '<i class="fas fa-eye mr-2"></i>এড চলছে...';
                 
                 // Randomly select a link
-                const randomIndex = Math.floor(Math.random() * AD_LINKS.length);
+                const randomIndex = Math.floor(Math.random() % AD_LINKS.length);
                 const selectedLink = AD_LINKS[randomIndex];
                 
                 // Open the link in new tab
-                window.open(selectedLink, '_blank');
+                const newWindow = window.open(selectedLink, '_blank');
+                
+                // Focus back to main window after a short delay
+                setTimeout(() => {
+                    if (window.focus) window.focus();
+                }, 500);
                 
                 // Simulate ad watching for 10 seconds
                 setTimeout(async () => {
-                    await rewardUserForAd();
-                    resolve();
+                    try {
+                        await rewardUserForAd();
+                        
+                        // Close the ad window if it's still open
+                        if (newWindow && !newWindow.closed) {
+                            newWindow.close();
+                        }
+                    } finally {
+                        resolve();
+                    }
                 }, 10000);
             });
         }
@@ -284,30 +341,49 @@
             if (!user) return;
             
             try {
-                // Check if we need to reset ads counter
-                const lastReset = new Date(userAdsData.last_ad_reset);
-                const now = new Date();
-                const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
+                // Check if we need to reset ads counter first
+                await checkAndResetAdsCounter(user);
                 
-                let todayAds = userAdsData.today_ads;
-                let lastAdReset = userAdsData.last_ad_reset;
+                // Get current user data again
+                const currentUser = getUserData();
+                if (!currentUser) return;
+                
+                let todayAds = currentUser.today_ads || 0;
+                let lastAdReset = currentUser.last_ad_reset || currentUser.join_date;
+                const lastResetTime = new Date(lastAdReset);
+                const now = new Date();
+                const hoursDiff = (now - lastResetTime) / (1000 * 60 * 60);
+                
+                console.log("Current ads:", todayAds, "Hours diff:", hoursDiff);
                 
                 // Reset if 1 hour has passed since last reset
                 if (hoursDiff >= 1) {
                     todayAds = 0;
                     lastAdReset = now.toISOString();
+                    console.log("Resetting counter due to time passed");
+                }
+                
+                // Check if user has reached limit
+                if (todayAds >= 10) {
+                    alert('আপনার এড লিমিট শেষ হয়েছে! ১ ঘন্টা পর আবার চেষ্টা করুন।');
+                    resetAdButton();
+                    isAdLoading = false;
+                    return;
                 }
                 
                 // Add reward and update ads count
+                const newAdCount = todayAds + 1;
+                console.log("Updating ads count to:", newAdCount);
+                
                 await updateUserData({ 
-                    balance: user.balance + 30,
-                    total_income: user.total_income + 30,
-                    today_ads: todayAds + 1,
+                    balance: currentUser.balance + 30,
+                    total_income: (currentUser.total_income || 0) + 30,
+                    today_ads: newAdCount,
                     last_ad_reset: lastAdReset
                 });
                 
                 // Update local data
-                userAdsData.today_ads = todayAds + 1;
+                userAdsData.today_ads = newAdCount;
                 userAdsData.last_ad_reset = lastAdReset;
                 
                 // Update UI
@@ -337,6 +413,8 @@
                 
             } catch (error) {
                 console.error('❌ Error rewarding user for ad:', error);
+                document.getElementById('adStatus').textContent = 'টাকা যোগ করতে সমস্যা হয়েছে';
+                document.getElementById('adStatus').className = 'text-xs text-red-600';
                 throw error;
             }
         }
@@ -374,11 +452,26 @@
             }
         }
 
-        // Update reset timer every minute
-        setInterval(updateResetTimer, 60000);
+        // Update reset timer every 30 seconds
+        setInterval(updateResetTimer, 30000);
+        
+        // Check for reset every minute
+        setInterval(() => {
+            const user = getUserData();
+            if (user) {
+                checkAndResetAdsCounter(user);
+            }
+        }, 60000);
 
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(initAdsPage, 1000);
+            // Check if supabase is loaded
+            if (typeof getUserData === 'function') {
+                setTimeout(initAdsPage, 1000);
+            } else {
+                console.error("Supabase functions not loaded");
+                document.getElementById('loadingOverlay').style.display = 'none';
+                alert("অ্যাপ লোড করতে সমস্যা হয়েছে। পেজ রিফ্রেশ করুন।");
+            }
         });
     </script>
 </body>
