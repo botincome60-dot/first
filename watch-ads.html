@@ -6,6 +6,9 @@
     <title>সহজ ইনকাম - এড দেখুন</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app-supabase.js"></script>
     <style>
         body {
             padding-bottom: 20px;
@@ -140,74 +143,37 @@
         let countdownTimer;
         let countdownSeconds = 10;
         let isAdActive = false;
+        let currentUser = null;
         
-        // লোকালস্টোরেজ থেকে ডেটা নিয়ে আসা
-        function loadData() {
-            const now = new Date().getTime();
-            
-            // এড কাউন্টার
-            let adsWatchedToday = localStorage.getItem('adsWatchedToday') ? parseInt(localStorage.getItem('adsWatchedToday')) : 0;
-            
-            // প্রথম এড দেখার সময় (যদি না থাকে তাহলে এখনকার সময়)
-            let firstAdTime = localStorage.getItem('firstAdTime');
-            
-            // প্রথম এড যদি এখনও না দেখে থাকে
-            if (!firstAdTime && adsWatchedToday === 0) {
-                // প্রথম এড দেখার আগে কোন টাইমার থাকবে না
-                return {
-                    adsWatchedToday: 0,
-                    totalBalance: localStorage.getItem('totalBalance') ? parseInt(localStorage.getItem('totalBalance')) : 0,
-                    firstAdTime: null,
-                    resetTime: null
-                };
-            }
-            
-            // যদি প্রথম এড দেখার সময় না থাকে কিন্তু এড কাউন্টার আছে
-            if (!firstAdTime && adsWatchedToday > 0) {
-                firstAdTime = now.toString();
-                localStorage.setItem('firstAdTime', firstAdTime);
-            }
-            
-            // প্রথম এড দেখার সময়
-            const firstAdTimestamp = parseInt(firstAdTime);
-            
-            // রিসেট টাইম (প্রথম এড দেখার সময় + ১ ঘন্টা)
-            const resetTime = firstAdTimestamp + 3600000; // ১ ঘন্টা = 3600000 মিলিসেকেন্ড
-            
-            // যদি রিসেট টাইম পার হয়ে যায়
-            if (now >= resetTime) {
-                // সব রিসেট করো
-                localStorage.setItem('adsWatchedToday', '0');
-                localStorage.removeItem('firstAdTime');
-                
-                return {
-                    adsWatchedToday: 0,
-                    totalBalance: localStorage.getItem('totalBalance') ? parseInt(localStorage.getItem('totalBalance')) : 0,
-                    firstAdTime: null,
-                    resetTime: null
-                };
-            }
-            
-            return {
-                adsWatchedToday: adsWatchedToday,
-                totalBalance: localStorage.getItem('totalBalance') ? parseInt(localStorage.getItem('totalBalance')) : 0,
-                firstAdTime: firstAdTimestamp,
-                resetTime: resetTime
-            };
-        }
-        
-        let userData = loadData();
-
         // পেজ লোড হলে
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            // ইউজার ডেটা লোড করি
+            await loadUserData();
             updateCounter();
             updateResetTimer();
         });
 
+        // ইউজার ডেটা লোড করি
+        async function loadUserData() {
+            currentUser = getUserData();
+            if (!currentUser) {
+                // ২ সেকেন্ড পর আবার চেষ্টা করি
+                setTimeout(async () => {
+                    await loadUserData();
+                }, 2000);
+            }
+        }
+
         // এড স্টার্ট করবে
-        function startAd() {
-            if (userData.adsWatchedToday >= 10) {
-                alert('আজকের এড লিমিট শেষ! ১ ঘন্টা পর আবার চেষ্টা করুন।');
+        async function startAd() {
+            if (!currentUser) {
+                alert('ডেটা লোড হয়নি। দয়া করে পেজ রিফ্রেশ করুন।');
+                return;
+            }
+
+            // চেক করি ব্যবহারকারী আরো এড দেখতে পারে কিনা
+            if (!canWatchMoreAds()) {
+                alert('আজকের এড লিমিট শেষ! ' + getTimeUntilNextReset() + ' পর আবার চেষ্টা করুন।');
                 return;
             }
 
@@ -247,7 +213,12 @@
             }, 1000);
         }
 
-        function completeAd() {
+        async function completeAd() {
+            if (!currentUser) {
+                alert('ডেটা লোড হয়নি। দয়া করে পেজ রিফ্রেশ করুন।');
+                return;
+            }
+
             if (countdownSeconds > 0) {
                 alert(`দয়া করে ${countdownSeconds} সেকেন্ড অপেক্ষা করুন!`);
                 return;
@@ -259,54 +230,56 @@
             // টাইমার ওভারলে হাইড করো
             document.getElementById('timerOverlay').style.display = 'none';
             
-            // এড কাউন্টার বাড়াও
-            userData.adsWatchedToday++;
-            userData.totalBalance += 30;
-            
-            // যদি প্রথম এড হয়
-            if (!userData.firstAdTime) {
-                const now = new Date().getTime();
-                userData.firstAdTime = now;
-                userData.resetTime = now + 3600000;
-                localStorage.setItem('firstAdTime', now.toString());
-            }
-            
-            // লোকালস্টোরেজে সেভ করো
-            localStorage.setItem('adsWatchedToday', userData.adsWatchedToday);
-            localStorage.setItem('totalBalance', userData.totalBalance);
-            
-            // UI আপডেট করো
-            updateCounter();
-            updateResetTimer();
-            
-            // সফল মেসেজ
-            document.getElementById('adStatus').textContent = 'এড সম্পূর্ণ হয়েছে! ৩০ টাকা যোগ হয়েছে';
-            document.getElementById('adStatus').className = 'text-xs text-green-600';
-            document.getElementById('rewardStatus').textContent = '৩০ টাকা যোগ করা হয়েছে!';
-            document.getElementById('rewardStatus').className = 'text-sm text-green-600 font-semibold';
-            
-            // বাটন আপডেট করো
-            document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ৩০ টাকা যোগ হয়েছে';
-            document.getElementById('watchAdBtn').classList.remove('from-green-500', 'to-green-600');
-            document.getElementById('watchAdBtn').classList.add('bg-green-500');
-            
-            alert('🎉 সফলভাবে এড দেখেছেন! ৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।');
-            
-            // ৩ সেকেন্ড পর রিসেট করো
-            setTimeout(() => {
+            try {
+                // Supabase এ ডেটা আপডেট করি
+                await updateUserData({ 
+                    balance: currentUser.balance + 30,
+                    total_income: currentUser.total_income + 30,
+                    today_ads: currentUser.today_ads + 1,
+                    total_ads: currentUser.total_ads + 1
+                });
+                
+                // UI আপডেট করো
+                await loadUserData();
+                updateCounter();
+                updateResetTimer();
+                
+                // সফল মেসেজ
+                document.getElementById('adStatus').textContent = 'এড সম্পূর্ণ হয়েছে! ৩০ টাকা যোগ হয়েছে';
+                document.getElementById('adStatus').className = 'text-xs text-green-600';
+                document.getElementById('rewardStatus').textContent = '৩০ টাকা যোগ করা হয়েছে!';
+                document.getElementById('rewardStatus').className = 'text-sm text-green-600 font-semibold';
+                
+                // বাটন আপডেট করো
+                document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ৩০ টাকা যোগ হয়েছে';
+                document.getElementById('watchAdBtn').classList.remove('from-green-500', 'to-green-600');
+                document.getElementById('watchAdBtn').classList.add('bg-green-500');
+                
+                alert('🎉 সফলভাবে এড দেখেছেন! ৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।');
+                
+                // ৩ সেকেন্ড পর রিসেট করো
+                setTimeout(() => {
+                    resetAdButton();
+                }, 3000);
+                
+                isAdActive = false;
+                
+            } catch (error) {
+                console.error('Error updating user data:', error);
+                alert('ডেটা আপডেট করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
                 resetAdButton();
-            }, 3000);
-            
-            isAdActive = false;
+            }
         }
 
         function updateCounter() {
-            document.getElementById('adsCounter').textContent = `${userData.adsWatchedToday}/১০`;
-            const progress = (userData.adsWatchedToday / 10) * 100;
+            if (!currentUser) return;
+            
+            document.getElementById('adsCounter').textContent = `${currentUser.today_ads}/১০`;
+            const progress = (currentUser.today_ads / 10) * 100;
             document.getElementById('progressBar').style.width = `${progress}%`;
             
             // যদি লিমিট শেষ হয়
-            if (userData.adsWatchedToday >= 10) {
+            if (!canWatchMoreAds()) {
                 document.getElementById('watchAdBtn').disabled = true;
                 document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-clock mr-2"></i>লিমিট শেষ';
                 document.getElementById('watchAdBtn').classList.remove('from-green-500', 'to-green-600');
@@ -316,41 +289,19 @@
         }
 
         function updateResetTimer() {
-            const now = new Date().getTime();
-            
-            // যদি এখনও প্রথম এড না দেখে থাকে
-            if (!userData.firstAdTime) {
-                document.getElementById('resetTimer').textContent = 'প্রথম এড দেখার পর টাইমার শুরু হবে';
-                document.getElementById('resetTime').textContent = 'রিসেট: এখনও শুরু হয়নি';
+            if (!currentUser) {
+                document.getElementById('resetTimer').textContent = 'ডেটা লোড হচ্ছে...';
+                document.getElementById('resetTime').textContent = 'রিসেট: লোড হচ্ছে...';
                 return;
             }
             
-            // রিসেট টাইম
-            const resetTime = userData.resetTime;
-            const timeLeft = resetTime - now;
-            
-            if (timeLeft <= 0) {
-                document.getElementById('resetTimer').textContent = 'এখনই রিসেট হবে';
-                document.getElementById('resetTime').textContent = 'রিসেট: এখনই';
-                
-                // অটো রিসেট
-                setTimeout(() => {
-                    userData = loadData();
-                    updateCounter();
-                    updateResetTimer();
-                }, 1000);
-                return;
-            }
-            
-            const minutesLeft = Math.floor(timeLeft / 60000);
-            const secondsLeft = Math.floor((timeLeft % 60000) / 1000);
-            
-            document.getElementById('resetTimer').textContent = `রিসেট: ${minutesLeft} মিনিট ${secondsLeft} সেকেন্ড পর`;
-            document.getElementById('resetTime').textContent = `রিসেট: ${minutesLeft} মিনিট ${secondsLeft} সেকেন্ড পর`;
+            const timeUntilReset = getTimeUntilNextReset();
+            document.getElementById('resetTimer').textContent = `প্রতি ঘন্টায় ১০টি এড দেখতে পারবেন (রিসেট: ${timeUntilReset})`;
+            document.getElementById('resetTime').textContent = `রিসেট: ${timeUntilReset}`;
         }
 
         function resetAdButton() {
-            if (userData.adsWatchedToday < 10) {
+            if (currentUser && canWatchMoreAds()) {
                 document.getElementById('watchAdBtn').disabled = false;
                 document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-play mr-2"></i>এড দেখুন';
                 document.getElementById('watchAdBtn').classList.remove('bg-green-500', 'bg-gray-400');
@@ -362,8 +313,8 @@
             }
         }
 
-        // প্রতি সেকেন্ডে রিসেট টাইমার আপডেট করো
-        setInterval(updateResetTimer, 1000);
+        // প্রতি মিনিটে রিসেট টাইমার আপডেট করো
+        setInterval(updateResetTimer, 60000);
     </script>
 </body>
 </html>

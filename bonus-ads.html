@@ -6,6 +6,9 @@
     <title>সহজ ইনকাম - বোনাস এড</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app-supabase.js"></script>
     <style>
         body {
             padding-bottom: 20px;
@@ -170,78 +173,37 @@
         let countdownInterval;
         let currentCountdown = 10;
         let openedTab = null;
+        let currentUser = null;
         
-        // লোকালস্টোরেজ থেকে ডেটা নিয়ে আসা
-        function loadData() {
-            const now = new Date().getTime();
-            
-            // বোনাস এড কাউন্টার
-            let bonusAdsWatchedToday = localStorage.getItem('bonusAdsWatchedToday') ? 
-                parseInt(localStorage.getItem('bonusAdsWatchedToday')) : 0;
-            
-            // প্রথম বোনাস এড দেখার সময়
-            let firstBonusAdTime = localStorage.getItem('firstBonusAdTime');
-            
-            // ব্যালেন্স
-            let totalBalance = localStorage.getItem('totalBalance') ? 
-                parseInt(localStorage.getItem('totalBalance')) : 0;
-            
-            // যদি প্রথম বোনাস এড না দেখে থাকে
-            if (!firstBonusAdTime && bonusAdsWatchedToday === 0) {
-                return {
-                    bonusAdsWatchedToday: 0,
-                    totalBalance: totalBalance,
-                    firstBonusAdTime: null,
-                    resetTime: null
-                };
-            }
-            
-            // যদি প্রথম বোনাস এড দেখার সময় না থাকে কিন্তু কাউন্টার আছে
-            if (!firstBonusAdTime && bonusAdsWatchedToday > 0) {
-                firstBonusAdTime = now.toString();
-                localStorage.setItem('firstBonusAdTime', firstBonusAdTime);
-            }
-            
-            // প্রথম বোনাস এড দেখার সময়
-            const firstAdTimestamp = parseInt(firstBonusAdTime);
-            
-            // রিসেট টাইম (প্রথম বোনাস এড দেখার সময় + ১ ঘন্টা)
-            const resetTime = firstAdTimestamp + 3600000;
-            
-            // যদি রিসেট টাইম পার হয়ে যায়
-            if (now >= resetTime) {
-                // সব রিসেট করো
-                localStorage.setItem('bonusAdsWatchedToday', '0');
-                localStorage.removeItem('firstBonusAdTime');
-                
-                return {
-                    bonusAdsWatchedToday: 0,
-                    totalBalance: totalBalance,
-                    firstBonusAdTime: null,
-                    resetTime: null
-                };
-            }
-            
-            return {
-                bonusAdsWatchedToday: bonusAdsWatchedToday,
-                totalBalance: totalBalance,
-                firstBonusAdTime: firstAdTimestamp,
-                resetTime: resetTime
-            };
-        }
-        
-        let userData = loadData();
-
         // পেজ লোড হলে
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            // ইউজার ডেটা লোড করি
+            await loadUserData();
             updateBonusCounter();
             updateBonusResetTimer();
         });
 
+        // ইউজার ডেটা লোড করি
+        async function loadUserData() {
+            currentUser = getUserData();
+            if (!currentUser) {
+                // ২ সেকেন্ড পর আবার চেষ্টা করি
+                setTimeout(async () => {
+                    await loadUserData();
+                }, 2000);
+            }
+        }
+
         // বোনাস এড দেখাও
         async function showBonusAd() {
-            if (userData.bonusAdsWatchedToday >= 10) {
-                alert('আজকের বোনাস এড লিমিট শেষ! ১ ঘন্টা পর আবার চেষ্টা করুন।');
+            if (!currentUser) {
+                alert('ডেটা লোড হয়নি। দয়া করে পেজ রিফ্রেশ করুন।');
+                return;
+            }
+
+            // চেক করি ব্যবহারকারী আরো বোনাস এড দেখতে পারে কিনা
+            if (!canWatchMoreBonusAds()) {
+                alert('আজকের বোনাস এড লিমিট শেষ! ' + getTimeUntilNextBonusReset() + ' পর আবার চেষ্টা করুন।');
                 return;
             }
 
@@ -305,7 +267,12 @@
         }
 
         // এড ভিউইং সম্পূর্ণ করো
-        function finishAdViewing() {
+        async function finishAdViewing() {
+            if (!currentUser) {
+                alert('ডেটা লোড হয়নি। দয়া করে পেজ রিফ্রেশ করুন।');
+                return;
+            }
+            
             // ওভারলে আপডেট করো
             const countdownNumber = document.getElementById('countdown-number');
             const countdownText = document.getElementById('countdown-text');
@@ -315,68 +282,78 @@
             countdownNumber.style.color = '#10B981';
             
             // ১.৫ সেকেন্ড পর ওভারলে বন্ধ করো
-            setTimeout(() => {
+            setTimeout(async () => {
                 const overlay = document.getElementById('countdown-overlay');
                 overlay.style.display = 'none';
                 
-                // রিওয়ার্ড দিন
-                giveBonusReward();
+                try {
+                    // রিওয়ার্ড দিন
+                    await giveBonusReward();
+                } catch (error) {
+                    console.error('Error giving reward:', error);
+                    alert('রিওয়ার্ড দিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+                }
             }, 1500);
         }
 
         // বোনাস রিওয়ার্ড দিন
-        function giveBonusReward() {
-            // বোনাস এড কাউন্টার বাড়াও
-            userData.bonusAdsWatchedToday++;
-            userData.totalBalance += 10;
-            
-            // যদি প্রথম বোনাস এড হয়
-            if (!userData.firstBonusAdTime) {
-                const now = new Date().getTime();
-                userData.firstBonusAdTime = now;
-                userData.resetTime = now + 3600000;
-                localStorage.setItem('firstBonusAdTime', now.toString());
+        async function giveBonusReward() {
+            try {
+                // চেক করি কতটি বোনাস এড দেখেছে
+                let todayBonusAds = currentUser.today_bonus_ads || 0;
+                
+                // Supabase এ ডেটা আপডেট করি
+                await updateUserData({ 
+                    balance: currentUser.balance + 10,
+                    total_income: currentUser.total_income + 10,
+                    today_bonus_ads: todayBonusAds + 1,
+                    total_ads: currentUser.total_ads + 1
+                });
+                
+                // UI আপডেট করো
+                await loadUserData();
+                updateBonusCounter();
+                updateBonusResetTimer();
+                
+                // সফল মেসেজ
+                document.getElementById('bonusAdStatus').textContent = 'বোনাস এড সম্পূর্ণ হয়েছে! ১০ টাকা যোগ হয়েছে';
+                document.getElementById('bonusAdStatus').className = 'text-xs text-green-600';
+                document.getElementById('bonusRewardStatus').textContent = '১০ টাকা যোগ করা হয়েছে!';
+                document.getElementById('bonusRewardStatus').className = 'text-sm text-green-600 font-semibold';
+                document.getElementById('countdownInfo').textContent = 'রিওয়ার্ড যোগ করা হয়েছে!';
+                document.getElementById('countdownInfo').className = 'text-xs text-green-600';
+                
+                // বাটন আপডেট করো
+                const watchBtn = document.getElementById('watchBonusAdBtn');
+                watchBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ১০ টাকা যোগ হয়েছে';
+                watchBtn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-orange-600');
+                watchBtn.classList.add('bg-green-500');
+                
+                alert('🎉 সফল! বোনাস এড সম্পূর্ণ। ১০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।');
+                
+                // ৪ সেকেন্ড পর রিসেট করো
+                setTimeout(() => {
+                    resetBonusAdButton();
+                }, 4000);
+                
+                isBonusAdActive = false;
+                
+            } catch (error) {
+                console.error('Error updating bonus reward:', error);
+                throw error;
             }
-            
-            // লোকালস্টোরেজে সেভ করো
-            localStorage.setItem('bonusAdsWatchedToday', userData.bonusAdsWatchedToday);
-            localStorage.setItem('totalBalance', userData.totalBalance);
-            
-            // UI আপডেট করো
-            updateBonusCounter();
-            updateBonusResetTimer();
-            
-            // সফল মেসেজ
-            document.getElementById('bonusAdStatus').textContent = 'বোনাস এড সম্পূর্ণ হয়েছে! ১০ টাকা যোগ হয়েছে';
-            document.getElementById('bonusAdStatus').className = 'text-xs text-green-600';
-            document.getElementById('bonusRewardStatus').textContent = '১০ টাকা যোগ করা হয়েছে!';
-            document.getElementById('bonusRewardStatus').className = 'text-sm text-green-600 font-semibold';
-            document.getElementById('countdownInfo').textContent = 'রিওয়ার্ড যোগ করা হয়েছে!';
-            document.getElementById('countdownInfo').className = 'text-xs text-green-600';
-            
-            // বাটন আপডেট করো
-            const watchBtn = document.getElementById('watchBonusAdBtn');
-            watchBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ১০ টাকা যোগ হয়েছে';
-            watchBtn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-orange-600');
-            watchBtn.classList.add('bg-green-500');
-            
-            alert('🎉 সফল! বোনাস এড সম্পূর্ণ। ১০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।');
-            
-            // ৪ সেকেন্ড পর রিসেট করো
-            setTimeout(() => {
-                resetBonusAdButton();
-            }, 4000);
-            
-            isBonusAdActive = false;
         }
 
         function updateBonusCounter() {
-            document.getElementById('bonusAdsCounter').textContent = `${userData.bonusAdsWatchedToday}/১০`;
-            const progress = (userData.bonusAdsWatchedToday / 10) * 100;
+            if (!currentUser) return;
+            
+            const bonusAdsWatched = currentUser.today_bonus_ads || 0;
+            document.getElementById('bonusAdsCounter').textContent = `${bonusAdsWatched}/১০`;
+            const progress = (bonusAdsWatched / 10) * 100;
             document.getElementById('bonusProgressBar').style.width = `${progress}%`;
             
             // যদি লিমিট শেষ হয়
-            if (userData.bonusAdsWatchedToday >= 10) {
+            if (!canWatchMoreBonusAds()) {
                 const watchBtn = document.getElementById('watchBonusAdBtn');
                 watchBtn.disabled = true;
                 watchBtn.innerHTML = '<i class="fas fa-clock mr-2"></i>লিমিট শেষ';
@@ -388,41 +365,19 @@
         }
 
         function updateBonusResetTimer() {
-            const now = new Date().getTime();
-            
-            // যদি এখনও প্রথম বোনাস এড না দেখে থাকে
-            if (!userData.firstBonusAdTime) {
-                document.getElementById('bonusResetTimer').textContent = 'প্রথম বোনাস এড দেখার পর টাইমার শুরু হবে';
-                document.getElementById('resetTime').textContent = 'রিসেট: এখনও শুরু হয়নি';
+            if (!currentUser) {
+                document.getElementById('bonusResetTimer').textContent = 'ডেটা লোড হচ্ছে...';
+                document.getElementById('resetTime').textContent = 'রিসেট: লোড হচ্ছে...';
                 return;
             }
             
-            // রিসেট টাইম
-            const resetTime = userData.resetTime;
-            const timeLeft = resetTime - now;
-            
-            if (timeLeft <= 0) {
-                document.getElementById('bonusResetTimer').textContent = 'এখনই রিসেট হবে';
-                document.getElementById('resetTime').textContent = 'রিসেট: এখনই';
-                
-                // অটো রিসেট
-                setTimeout(() => {
-                    userData = loadData();
-                    updateBonusCounter();
-                    updateBonusResetTimer();
-                }, 1000);
-                return;
-            }
-            
-            const minutesLeft = Math.floor(timeLeft / 60000);
-            const secondsLeft = Math.floor((timeLeft % 60000) / 1000);
-            
-            document.getElementById('bonusResetTimer').textContent = `রিসেট: ${minutesLeft} মিনিট ${secondsLeft} সেকেন্ড পর`;
-            document.getElementById('resetTime').textContent = `রিসেট: ${minutesLeft} মিনিট ${secondsLeft} সেকেন্ড পর`;
+            const timeUntilReset = getTimeUntilNextBonusReset();
+            document.getElementById('bonusResetTimer').textContent = `প্রতি ঘন্টায় ১০টি বোনাস এড দেখতে পারবেন (রিসেট: ${timeUntilReset})`;
+            document.getElementById('resetTime').textContent = `রিসেট: ${timeUntilReset}`;
         }
 
         function resetBonusAdButton() {
-            if (userData.bonusAdsWatchedToday < 10) {
+            if (currentUser && canWatchMoreBonusAds()) {
                 const watchBtn = document.getElementById('watchBonusAdBtn');
                 watchBtn.disabled = false;
                 watchBtn.innerHTML = '<i class="fas fa-play mr-2"></i>বোনাস এড দেখুন';
@@ -436,8 +391,8 @@
             }
         }
 
-        // প্রতি সেকেন্ডে রিসেট টাইমার আপডেট করো
-        setInterval(updateBonusResetTimer, 1000);
+        // প্রতি মিনিটে রিসেট টাইমার আপডেট করো
+        setInterval(updateBonusResetTimer, 60000);
     </script>
 </body>
 </html>
