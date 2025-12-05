@@ -84,7 +84,7 @@
             </div>
             
             <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
-                <div id="bonusProgressBar" class="bg-orange-500 h-3 rounded-full" style="width: 0%"></div>
+                <div id="bonusProgressBar" class="bg-orange-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
             </div>
         </div>
 
@@ -174,28 +174,123 @@
         let currentCountdown = 10;
         let openedTab = null;
         let currentUser = null;
+        let userBonusAdsData = {
+            today_bonus_ads: 0,
+            last_bonus_ad_reset: null
+        };
         
         // পেজ লোড হলে
         document.addEventListener('DOMContentLoaded', function() {
             // ইউজার ডেটা লোড করি
-            loadUserData();
-            updateBonusCounter();
-            updateBonusResetTimer();
+            initBonusAdsPage();
         });
 
-        // ইউজার ডেটা লোড করি
-        function loadUserData() {
-            currentUser = getUserData();
-            if (!currentUser) {
-                // ২ সেকেন্ড পর আবার চেষ্টা করি
-                setTimeout(() => {
-                    loadUserData();
-                }, 2000);
+        // বোনাস এড পেজ ইনিশিয়ালাইজেশন
+        function initBonusAdsPage() {
+            loadBonusAdsData();
+            updateBonusResetTimer();
+            updateBonusCounter();
+        }
+
+        // বোনাস এড ডেটা লোড করি
+        function loadBonusAdsData() {
+            const user = getUserData();
+            if (user) {
+                currentUser = user;
+                userBonusAdsData.today_bonus_ads = user.today_bonus_ads || 0;
+                userBonusAdsData.last_bonus_ad_reset = user.last_bonus_ad_reset || user.join_date;
+                
+                // চেক করি রিসেট প্রয়োজন কিনা
+                checkAndResetBonusAdsCounter();
+            } else {
+                console.log("User data not found, retrying...");
+                setTimeout(loadBonusAdsData, 2000);
+            }
+        }
+
+        // রিসেট প্রয়োজন কিনা চেক করি
+        async function checkAndResetBonusAdsCounter() {
+            try {
+                if (!userBonusAdsData.last_bonus_ad_reset) return;
+                
+                const lastReset = new Date(userBonusAdsData.last_bonus_ad_reset);
+                const now = new Date();
+                const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
+                
+                console.log("Hours since last bonus ad reset:", hoursDiff);
+                
+                // যদি ১ ঘন্টা পার হয়ে যায়
+                if (hoursDiff >= 1) {
+                    console.log("Resetting bonus ads counter");
+                    
+                    await updateUserData({ 
+                        today_bonus_ads: 0,
+                        last_bonus_ad_reset: now.toISOString()
+                    });
+                    
+                    // লোকাল ডেটা আপডেট করি
+                    userBonusAdsData.today_bonus_ads = 0;
+                    userBonusAdsData.last_bonus_ad_reset = now.toISOString();
+                    
+                    // UI আপডেট করি
+                    updateBonusCounter();
+                    updateBonusResetTimer();
+                }
+            } catch (error) {
+                console.error("Error resetting bonus ads counter:", error);
+            }
+        }
+
+        // আরো বোনাস এড দেখা যাবে কিনা
+        function canWatchMoreBonusAds() {
+            if (!userBonusAdsData.last_bonus_ad_reset) {
+                return true;
+            }
+            
+            const lastReset = new Date(userBonusAdsData.last_bonus_ad_reset);
+            const now = new Date();
+            const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
+            
+            // যদি ১ ঘন্টা পার হয়ে যায়
+            if (hoursDiff >= 1) {
+                return true;
+            }
+            
+            // দেখি লিমিট অতিক্রম করেছে কিনা
+            return userBonusAdsData.today_bonus_ads < 10;
+        }
+
+        // পরবর্তী রিসেটের সময় বের করি
+        function getTimeUntilNextBonusReset() {
+            if (!userBonusAdsData.last_bonus_ad_reset) {
+                return 'রিসেট হয়নি';
+            }
+            
+            const lastReset = new Date(userBonusAdsData.last_bonus_ad_reset);
+            const now = new Date();
+            const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000)); // ১ ঘন্টা পর
+            const timeDiff = nextReset - now;
+            
+            if (timeDiff <= 0) {
+                return 'এখনই রিসেট হবে';
+            }
+            
+            const minutes = Math.ceil(timeDiff / (1000 * 60));
+            const hours = Math.floor(minutes / 60);
+            const remainingMinutes = minutes % 60;
+            
+            if (hours > 0) {
+                return `${hours} ঘন্টা ${remainingMinutes} মিনিট`;
+            } else {
+                return `${minutes} মিনিট`;
             }
         }
 
         // বোনাস এড দেখাও
-        function showBonusAd() {
+        async function showBonusAd() {
+            // আগে রিসেট প্রয়োজন কিনা চেক করি
+            await checkAndResetBonusAdsCounter();
+            
             if (!currentUser) {
                 alert('ডেটা লোড হয়নি। দয়া করে পেজ রিফ্রেশ করুন।');
                 return;
@@ -267,7 +362,7 @@
         }
 
         // এড ভিউইং সম্পূর্ণ করো
-        function finishAdViewing() {
+        async function finishAdViewing() {
             if (!currentUser) {
                 alert('ডেটা লোড হয়নি। দয়া করে পেজ রিফ্রেশ করুন।');
                 return;
@@ -301,16 +396,31 @@
         // বোনাস রিওয়ার্ড দিন
         async function giveBonusReward() {
             try {
-                // চেক করি কতটি বোনাস এড দেখেছে
-                let todayBonusAds = currentUser.today_bonus_ads || 0;
+                // রিসেট প্রয়োজন কিনা আবার চেক করি
+                await checkAndResetBonusAdsCounter();
+                
+                // নতুন বোনাস এড কাউন্ট
+                const newBonusAdCount = (userBonusAdsData.today_bonus_ads || 0) + 1;
+                
+                // চেক করি লিমিট অতিক্রম করছে কিনা
+                if (newBonusAdCount > 10) {
+                    alert('আপনার বোনাস এড লিমিট শেষ হয়েছে! ১ ঘন্টা পর আবার চেষ্টা করুন।');
+                    resetBonusAdButton();
+                    isBonusAdActive = false;
+                    return;
+                }
                 
                 // Supabase এ ডেটা আপডেট করি
                 await updateUserData({ 
-                    balance: currentUser.balance + 10,
-                    total_income: currentUser.total_income + 10,
-                    today_bonus_ads: todayBonusAds + 1,
-                    total_ads: currentUser.total_ads + 1
+                    balance: (currentUser.balance || 0) + 10,
+                    total_income: (currentUser.total_income || 0) + 10,
+                    today_bonus_ads: newBonusAdCount,
+                    last_bonus_ad_reset: userBonusAdsData.last_bonus_ad_reset,
+                    total_ads: (currentUser.total_ads || 0) + 1
                 });
+                
+                // লোকাল ডেটা আপডেট করি
+                userBonusAdsData.today_bonus_ads = newBonusAdCount;
                 
                 // ইউজার ডেটা রিফ্রেশ করি
                 currentUser = getUserData();
@@ -337,21 +447,23 @@
                 
                 // ৪ সেকেন্ড পর রিসেট করো
                 setTimeout(() => {
-                    resetBonusAdButton();
+                    if (canWatchMoreBonusAds()) {
+                        resetBonusAdButton();
+                    }
+                    isBonusAdActive = false;
                 }, 4000);
-                
-                isBonusAdActive = false;
                 
             } catch (error) {
                 console.error('Error updating bonus reward:', error);
+                alert('রিওয়ার্ড দিতে সমস্যা হয়েছে: ' + error.message);
+                resetBonusAdButton();
+                isBonusAdActive = false;
                 throw error;
             }
         }
 
         function updateBonusCounter() {
-            if (!currentUser) return;
-            
-            const bonusAdsWatched = currentUser.today_bonus_ads || 0;
+            const bonusAdsWatched = userBonusAdsData.today_bonus_ads || 0;
             document.getElementById('bonusAdsCounter').textContent = `${bonusAdsWatched}/১০`;
             const progress = (bonusAdsWatched / 10) * 100;
             document.getElementById('bonusProgressBar').style.width = `${progress}%`;
@@ -360,37 +472,33 @@
             const watchBtn = document.getElementById('watchBonusAdBtn');
             if (!canWatchMoreBonusAds()) {
                 watchBtn.disabled = true;
-                watchBtn.innerHTML = '<i class="fas fa-clock mr-2"></i>লিমিট শেষ';
-                watchBtn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-orange-600');
-                watchBtn.classList.add('bg-gray-400');
+                watchBtn.innerHTML = '<i class="fas fa-clock mr-2"></i>লিমিট শেষ - ' + getTimeUntilNextBonusReset() + ' পর';
+                watchBtn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'hover:from-orange-600', 'hover:to-orange-700');
+                watchBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
                 document.getElementById('bonusAdStatus').textContent = 'আজকের লিমিট শেষ';
                 document.getElementById('bonusAdStatus').className = 'text-xs text-red-600';
             } else {
                 watchBtn.disabled = false;
+                watchBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                watchBtn.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'hover:from-orange-600', 'hover:to-orange-700');
             }
         }
 
         function updateBonusResetTimer() {
-            if (!currentUser) {
-                document.getElementById('bonusResetTimer').textContent = 'ডেটা লোড হচ্ছে...';
-                document.getElementById('resetTime').textContent = 'রিসেট: লোড হচ্ছে...';
-                return;
-            }
-            
             const timeUntilReset = getTimeUntilNextBonusReset();
             document.getElementById('bonusResetTimer').textContent = `প্রতি ঘন্টায় ১০টি বোনাস এড দেখতে পারবেন (রিসেট: ${timeUntilReset})`;
             document.getElementById('resetTime').textContent = `রিসেট: ${timeUntilReset}`;
         }
 
         function resetBonusAdButton() {
-            if (currentUser && canWatchMoreBonusAds()) {
+            if (canWatchMoreBonusAds()) {
                 const watchBtn = document.getElementById('watchBonusAdBtn');
                 watchBtn.disabled = false;
                 watchBtn.innerHTML = '<i class="fas fa-play mr-2"></i>বোনাস এড দেখুন';
                 watchBtn.classList.remove('bg-green-500', 'bg-red-500', 'bg-gray-400');
-                watchBtn.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-orange-600');
+                watchBtn.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'hover:from-orange-600', 'hover:to-orange-700');
                 document.getElementById('bonusAdStatus').textContent = 'বোনাস এড প্রস্তুত';
-                document.getElementById('bonusAdStatus').className = 'text-xs text-gray-400';
+                document.getElementById('bonusAdStatus').className = 'text-xs text-green-600';
                 document.getElementById('bonusRewardStatus').textContent = 'এড দেখার পর ১০ টাকা যোগ হবে';
                 document.getElementById('bonusRewardStatus').className = 'text-gray-500 text-sm';
                 document.getElementById('countdownInfo').textContent = '';
@@ -398,7 +506,14 @@
         }
 
         // প্রতি মিনিটে রিসেট টাইমার আপডেট করো
-        setInterval(updateBonusResetTimer, 60000);
+        setInterval(updateBonusResetTimer, 30000);
+        
+        // প্রতি মিনিটে রিসেট চেক করো
+        setInterval(async () => {
+            await checkAndResetBonusAdsCounter();
+            updateBonusCounter();
+            updateBonusResetTimer();
+        }, 60000);
     </script>
 </body>
 </html>
