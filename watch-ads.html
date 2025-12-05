@@ -118,7 +118,7 @@
 
     <!-- Firebase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app-supabase.js"></script>
+    <script src="app-supabase.js"></script>
 
     <script>
         let isWatchAdLoading = false;
@@ -295,15 +295,32 @@
                     lastWatchAdReset = now.toISOString();
                 }
                 
-                // Add reward and update watch ads count
-                await updateUserData({ 
-                    balance: user.balance + 30,
-                    total_income: user.total_income + 30,
-                    today_watch_ads: todayWatchAds + 1,
-                    last_watch_ad_reset: lastWatchAdReset
-                });
+                // Calculate new balance
+                const newBalance = user.balance + 30;
+                const newTotalIncome = user.total_income + 30;
                 
-                // Update local data
+                // Add reward and update watch ads count
+                const { data, error } = await supabase
+                    .from('users')
+                    .update({ 
+                        balance: newBalance,
+                        total_income: newTotalIncome,
+                        today_watch_ads: todayWatchAds + 1,
+                        last_watch_ad_reset: lastWatchAdReset
+                    })
+                    .eq('user_id', user.user_id);
+                
+                if (error) {
+                    console.error('❌ Database update error:', error);
+                    throw error;
+                }
+                
+                // Update local user data
+                user.balance = newBalance;
+                user.total_income = newTotalIncome;
+                saveUserData(user);
+                
+                // Update local watch ads data
                 userWatchAdsData.today_watch_ads = todayWatchAds + 1;
                 userWatchAdsData.last_watch_ad_reset = lastWatchAdReset;
                 
@@ -334,6 +351,8 @@
                 
             } catch (error) {
                 console.error('❌ Error rewarding user for watch ad:', error);
+                document.getElementById('watchAdStatus').textContent = 'টাকা যোগ করতে সমস্যা - আবার চেষ্টা করুন';
+                document.getElementById('watchAdStatus').className = 'text-xs text-red-600';
                 throw error;
             }
         }
