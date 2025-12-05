@@ -528,11 +528,20 @@ async function copyReferralLink() {
 
 // Update user data in Supabase
 async function updateUserData(updates) {
-    if (!userData) return;
+    if (!userData) return null;
     
     try {
+        // Merge updates with existing user data
         Object.assign(userData, updates);
         userData.last_active = new Date().toISOString();
+        
+        // Convert balance to number if it's a string
+        if (typeof userData.balance === 'string') {
+            userData.balance = parseFloat(userData.balance);
+        }
+        if (typeof userData.total_income === 'string') {
+            userData.total_income = parseFloat(userData.total_income);
+        }
         
         const { error } = await supabase
             .from('users')
@@ -544,10 +553,12 @@ async function updateUserData(updates) {
             throw error;
         }
         
+        console.log("✅ User data updated successfully:", updates);
         updateUI();
         return userData;
     } catch (error) {
         console.error("❌ Error updating user data:", error);
+        return null;
     }
 }
 

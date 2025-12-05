@@ -146,26 +146,26 @@
         let currentUser = null;
         
         // পেজ লোড হলে
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', function() {
             // ইউজার ডেটা লোড করি
-            await loadUserData();
+            loadUserData();
             updateCounter();
             updateResetTimer();
         });
 
         // ইউজার ডেটা লোড করি
-        async function loadUserData() {
+        function loadUserData() {
             currentUser = getUserData();
             if (!currentUser) {
                 // ২ সেকেন্ড পর আবার চেষ্টা করি
-                setTimeout(async () => {
-                    await loadUserData();
+                setTimeout(() => {
+                    loadUserData();
                 }, 2000);
             }
         }
 
         // এড স্টার্ট করবে
-        async function startAd() {
+        function startAd() {
             if (!currentUser) {
                 alert('ডেটা লোড হয়নি। দয়া করে পেজ রিফ্রেশ করুন।');
                 return;
@@ -185,8 +185,9 @@
             window.open(adLink, '_blank');
             
             // বাটন ডিজেবল করো
-            document.getElementById('watchAdBtn').disabled = true;
-            document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>এড চলছে...';
+            const watchBtn = document.getElementById('watchAdBtn');
+            watchBtn.disabled = true;
+            watchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>এড চলছে...';
             document.getElementById('adStatus').textContent = 'এড চলছে...';
             
             // টাইমার ওভারলে শো করো
@@ -239,8 +240,10 @@
                     total_ads: currentUser.total_ads + 1
                 });
                 
+                // ইউজার ডেটা রিফ্রেশ করি
+                currentUser = getUserData();
+                
                 // UI আপডেট করো
-                await loadUserData();
                 updateCounter();
                 updateResetTimer();
                 
@@ -251,9 +254,10 @@
                 document.getElementById('rewardStatus').className = 'text-sm text-green-600 font-semibold';
                 
                 // বাটন আপডেট করো
-                document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ৩০ টাকা যোগ হয়েছে';
-                document.getElementById('watchAdBtn').classList.remove('from-green-500', 'to-green-600');
-                document.getElementById('watchAdBtn').classList.add('bg-green-500');
+                const watchBtn = document.getElementById('watchAdBtn');
+                watchBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ৩০ টাকা যোগ হয়েছে';
+                watchBtn.classList.remove('bg-gradient-to-r', 'from-green-500', 'to-green-600');
+                watchBtn.classList.add('bg-green-500');
                 
                 alert('🎉 সফলভাবে এড দেখেছেন! ৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।');
                 
@@ -279,12 +283,15 @@
             document.getElementById('progressBar').style.width = `${progress}%`;
             
             // যদি লিমিট শেষ হয়
+            const watchBtn = document.getElementById('watchAdBtn');
             if (!canWatchMoreAds()) {
-                document.getElementById('watchAdBtn').disabled = true;
-                document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-clock mr-2"></i>লিমিট শেষ';
-                document.getElementById('watchAdBtn').classList.remove('from-green-500', 'to-green-600');
-                document.getElementById('watchAdBtn').classList.add('bg-gray-400');
+                watchBtn.disabled = true;
+                watchBtn.innerHTML = '<i class="fas fa-clock mr-2"></i>লিমিট শেষ';
+                watchBtn.classList.remove('bg-gradient-to-r', 'from-green-500', 'to-green-600');
+                watchBtn.classList.add('bg-gray-400');
                 document.getElementById('adStatus').textContent = 'আজকের লিমিট শেষ';
+            } else {
+                watchBtn.disabled = false;
             }
         }
 
@@ -302,10 +309,11 @@
 
         function resetAdButton() {
             if (currentUser && canWatchMoreAds()) {
-                document.getElementById('watchAdBtn').disabled = false;
-                document.getElementById('watchAdBtn').innerHTML = '<i class="fas fa-play mr-2"></i>এড দেখুন';
-                document.getElementById('watchAdBtn').classList.remove('bg-green-500', 'bg-gray-400');
-                document.getElementById('watchAdBtn').classList.add('bg-gradient-to-r', 'from-green-500', 'to-green-600');
+                const watchBtn = document.getElementById('watchAdBtn');
+                watchBtn.disabled = false;
+                watchBtn.innerHTML = '<i class="fas fa-play mr-2"></i>এড দেখুন';
+                watchBtn.classList.remove('bg-green-500', 'bg-gray-400');
+                watchBtn.classList.add('bg-gradient-to-r', 'from-green-500', 'to-green-600');
                 document.getElementById('adStatus').textContent = 'এড প্রস্তুত';
                 document.getElementById('adStatus').className = 'text-xs text-gray-400';
                 document.getElementById('rewardStatus').textContent = 'এড দেখার পর ৩০ টাকা যোগ হবে';

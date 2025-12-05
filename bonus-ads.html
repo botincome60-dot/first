@@ -176,26 +176,26 @@
         let currentUser = null;
         
         // পেজ লোড হলে
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', function() {
             // ইউজার ডেটা লোড করি
-            await loadUserData();
+            loadUserData();
             updateBonusCounter();
             updateBonusResetTimer();
         });
 
         // ইউজার ডেটা লোড করি
-        async function loadUserData() {
+        function loadUserData() {
             currentUser = getUserData();
             if (!currentUser) {
                 // ২ সেকেন্ড পর আবার চেষ্টা করি
-                setTimeout(async () => {
-                    await loadUserData();
+                setTimeout(() => {
+                    loadUserData();
                 }, 2000);
             }
         }
 
         // বোনাস এড দেখাও
-        async function showBonusAd() {
+        function showBonusAd() {
             if (!currentUser) {
                 alert('ডেটা লোড হয়নি। দয়া করে পেজ রিফ্রেশ করুন।');
                 return;
@@ -267,7 +267,7 @@
         }
 
         // এড ভিউইং সম্পূর্ণ করো
-        async function finishAdViewing() {
+        function finishAdViewing() {
             if (!currentUser) {
                 alert('ডেটা লোড হয়নি। দয়া করে পেজ রিফ্রেশ করুন।');
                 return;
@@ -292,6 +292,8 @@
                 } catch (error) {
                     console.error('Error giving reward:', error);
                     alert('রিওয়ার্ড দিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+                    resetBonusAdButton();
+                    isBonusAdActive = false;
                 }
             }, 1500);
         }
@@ -310,8 +312,10 @@
                     total_ads: currentUser.total_ads + 1
                 });
                 
+                // ইউজার ডেটা রিফ্রেশ করি
+                currentUser = getUserData();
+                
                 // UI আপডেট করো
-                await loadUserData();
                 updateBonusCounter();
                 updateBonusResetTimer();
                 
@@ -353,14 +357,16 @@
             document.getElementById('bonusProgressBar').style.width = `${progress}%`;
             
             // যদি লিমিট শেষ হয়
+            const watchBtn = document.getElementById('watchBonusAdBtn');
             if (!canWatchMoreBonusAds()) {
-                const watchBtn = document.getElementById('watchBonusAdBtn');
                 watchBtn.disabled = true;
                 watchBtn.innerHTML = '<i class="fas fa-clock mr-2"></i>লিমিট শেষ';
                 watchBtn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-orange-600');
                 watchBtn.classList.add('bg-gray-400');
                 document.getElementById('bonusAdStatus').textContent = 'আজকের লিমিট শেষ';
                 document.getElementById('bonusAdStatus').className = 'text-xs text-red-600';
+            } else {
+                watchBtn.disabled = false;
             }
         }
 
