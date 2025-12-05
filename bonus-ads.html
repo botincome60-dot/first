@@ -17,6 +17,44 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        #countdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        #countdown-text {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #countdown-number {
+            font-size: 72px;
+            font-weight: bold;
+            color: #FF6B35;
+        }
+        #redirect-notice {
+            color: #ccc;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .ad-info {
+            background: rgba(255, 107, 53, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            border-left: 4px solid #FF6B35;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -61,6 +99,12 @@
                 <p class="text-xs text-gray-400" id="bonusAdStatus">বোনাস এড প্রস্তুত</p>
             </div>
             
+            <!-- গুরুত্বপূর্ণ নির্দেশনা -->
+            <div class="ad-info mb-4">
+                <i class="fas fa-exclamation-circle text-orange-500 text-lg mr-2"></i>
+                <span class="font-semibold">গুরুত্বপূর্ণ:</span> এড দেখার পর <span class="font-bold">১০ সেকেন্ড</span> এই পেজে অপেক্ষা করুন
+            </div>
+            
             <!-- বাটন -->
             <button onclick="showBonusAd()" id="watchBonusAdBtn" class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-4 rounded-xl font-bold text-lg mb-3 hover:from-orange-600 hover:to-orange-700 transition-colors">
                 <i class="fas fa-play mr-2"></i>
@@ -69,6 +113,7 @@
             
             <div class="text-center">
                 <p class="text-gray-500 text-sm" id="bonusRewardStatus">এড দেখার পর ১০ টাকা যোগ হবে</p>
+                <p class="text-xs text-gray-400 mt-1" id="countdownInfo"></p>
             </div>
         </div>
 
@@ -80,8 +125,9 @@
                     <h4 class="font-semibold text-orange-700">গুরুত্বপূর্ণ তথ্য</h4>
                     <p class="text-orange-600 text-sm">• এড দেখার পর ১০ টাকা অটো যোগ হবে</p>
                     <p class="text-orange-600 text-sm">• প্রতি ঘন্টায় ১০টি বোনাস এড দেখতে পারবেন</p>
-                    <p class="text-orange-600 text-sm">• এড লোড হতে কিছু সময় লাগতে পারে</p>
+                    <p class="text-orange-600 text-sm">• এড দেখার পর ১০ সেকেন্ড এই পেজে অপেক্ষা করুন</p>
                     <p class="text-orange-600 text-sm">• ১ ঘন্টা পর এড কাউন্টার রিসেট হবে</p>
+                    <p class="text-orange-600 text-sm">• এড ট্যাব বন্ধ করবেন না, রিওয়ার্ড পেতে অপেক্ষা করুন</p>
                 </div>
             </div>
         </div>
@@ -93,16 +139,37 @@
         </a>
     </div>
 
-    <!-- AdsGram Script -->
-    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    <!-- কাউন্টডাউন ওভারলে -->
+    <div id="countdown-overlay">
+        <div id="countdown-text">দয়া করে অপেক্ষা করুন</div>
+        <div id="countdown-number">১০</div>
+        <div id="redirect-notice">এডটি খোলা হয়েছে। ১০ সেকেন্ড পর রিওয়ার্ড দেওয়া হবে</div>
+        <div class="text-yellow-400 mt-4 text-sm">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            দয়া করে এড ট্যাব বন্ধ করবেন না
+        </div>
+    </div>
 
     <script>
-        // AdsGram Block ID
-        const BLOCK_ID = "int-18609";
+        // Direct link এর লিস্ট
+        const adLinks = [
+            "https://ferocitysuperintend.com/q3gtdwtif0?key=8fab9c833a59630b50874801fba88f73",
+            "https://ferocitysuperintend.com/wzvdzr4ka?key=7a422407e8fedbc108da1c1da906f0a9",
+            "https://adexora.my.id/dl/uDjmlB4uoO",
+            "https://otieu.com/4/9809044",
+            "https://otieu.com/4/10095617",
+            "https://otieu.com/4/9345167",
+            "https://otieu.com/4/9569635",
+            "https://otieu.com/4/10155431",
+            "https://adexora.my.id/dl/FroDWns7Gj",
+            "https://otieu.com/4/9550427",
+            "https://ferocitysuperintend.com/img7n81xh8?key=60effca0c228e66afd204784027d8b16"
+        ];
         
         let isBonusAdActive = false;
-        let AdController = null;
-        let isAdsGramAvailable = false;
+        let countdownInterval;
+        let currentCountdown = 10;
+        let openedTab = null;
         
         // লোকালস্টোরেজ থেকে ডেটা নিয়ে আসা
         function loadData() {
@@ -169,26 +236,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateBonusCounter();
             updateBonusResetTimer();
-            checkAdsGram();
         });
-
-        // AdsGram চেক করো
-        function checkAdsGram() {
-            if (typeof window.Adsgram === 'undefined') {
-                console.log("AdsGram SDK not loaded");
-                return;
-            }
-            
-            try {
-                AdController = window.Adsgram.init({ 
-                    blockId: BLOCK_ID 
-                });
-                isAdsGramAvailable = true;
-                console.log("AdsGram available");
-            } catch (error) {
-                console.log("AdsGram initialization failed:", error);
-            }
-        }
 
         // বোনাস এড দেখাও
         async function showBonusAd() {
@@ -206,46 +254,74 @@
             // Disable button and show loading
             const watchBtn = document.getElementById('watchBonusAdBtn');
             watchBtn.disabled = true;
-            watchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>এড লোড হচ্ছে...';
-            document.getElementById('bonusAdStatus').textContent = 'এড লোড হচ্ছে...';
+            watchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>এড খোলা হচ্ছে...';
+            document.getElementById('bonusAdStatus').textContent = 'এড খোলা হচ্ছে...';
             document.getElementById('bonusAdStatus').className = 'text-xs text-blue-600';
             
-            try {
-                // AdsGram available থাকলে ad show করো
-                if (isAdsGramAvailable && AdController) {
-                    await AdController.show();
-                    
-                    // AdsGram ad সম্পূর্ণ হয়েছে, এখন রিওয়ার্ড দিন
-                    giveBonusReward();
-                    
-                } else {
-                    // AdsGram না থাকলে error throw করো
-                    throw new Error("বোনাস এড লোড হয়নি");
+            // ১ সেকেন্ড পরে লিঙ্ক ওপেন করো এবং কাউন্টডাউন শুরু করো
+            setTimeout(() => {
+                openRandomAdAndStartCountdown();
+            }, 1000);
+        }
+
+        // র‍্যান্ডম এড ওপেন করো এবং কাউন্টডাউন শুরু করো
+        function openRandomAdAndStartCountdown() {
+            // র‍্যান্ডম একটি লিঙ্ক নির্বাচন করো
+            const randomIndex = Math.floor(Math.random() * adLinks.length);
+            const selectedLink = adLinks[randomIndex];
+            
+            // ট্যাব খুলো
+            openedTab = window.open(selectedLink, '_blank');
+            
+            // বাটন আপডেট করো
+            const watchBtn = document.getElementById('watchBonusAdBtn');
+            watchBtn.innerHTML = '<i class="fas fa-clock mr-2"></i>দয়া করে অপেক্ষা করুন...';
+            
+            // কাউন্টডাউন ওভারলে দেখাও
+            const overlay = document.getElementById('countdown-overlay');
+            const countdownNumber = document.getElementById('countdown-number');
+            const countdownText = document.getElementById('countdown-text');
+            
+            overlay.style.display = 'flex';
+            currentCountdown = 10;
+            countdownNumber.textContent = currentCountdown;
+            countdownText.textContent = 'এডটি খোলা হয়েছে!';
+            
+            // পেজের নিচে কাউন্টডাউন দেখাও
+            document.getElementById('countdownInfo').textContent = '১০ সেকেন্ড অপেক্ষা করুন...';
+            document.getElementById('countdownInfo').className = 'text-xs text-orange-600';
+            
+            // কাউন্টডাউন শুরু করো
+            countdownInterval = setInterval(() => {
+                currentCountdown--;
+                countdownNumber.textContent = currentCountdown;
+                document.getElementById('countdownInfo').textContent = `${currentCountdown} সেকেন্ড বাকি...`;
+                
+                if (currentCountdown <= 0) {
+                    clearInterval(countdownInterval);
+                    finishAdViewing();
                 }
+            }, 1000);
+        }
+
+        // এড ভিউইং সম্পূর্ণ করো
+        function finishAdViewing() {
+            // ওভারলে আপডেট করো
+            const countdownNumber = document.getElementById('countdown-number');
+            const countdownText = document.getElementById('countdown-text');
+            
+            countdownText.textContent = 'এড সম্পূর্ণ হয়েছে!';
+            countdownNumber.textContent = '✓';
+            countdownNumber.style.color = '#10B981';
+            
+            // ১.৫ সেকেন্ড পর ওভারলে বন্ধ করো
+            setTimeout(() => {
+                const overlay = document.getElementById('countdown-overlay');
+                overlay.style.display = 'none';
                 
-            } catch (error) {
-                // AdsGram ad লোড না হলে error show করো এবং count/tk add হবে না
-                console.error("Bonus ad error:", error);
-                
-                document.getElementById('bonusAdStatus').textContent = 'বোনাস এড লোড হয়নি! আবার চেষ্টা করুন';
-                document.getElementById('bonusAdStatus').className = 'text-xs text-red-600';
-                document.getElementById('bonusRewardStatus').textContent = 'বোনাস এড লোড হয়নি। আবার চেষ্টা করুন';
-                document.getElementById('bonusRewardStatus').className = 'text-sm text-red-600 font-semibold';
-                
-                watchBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>এড লোড হয়নি';
-                watchBtn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-orange-600');
-                watchBtn.classList.add('bg-red-500');
-                
-                alert('❌ বোনাস এড লোড হয়নি! ইন্টারনেট চেক করুন এবং আবার চেষ্টা করুন।');
-                
-                // ৩ সেকেন্ড পর রিসেট করো
-                setTimeout(() => {
-                    resetBonusAdButton();
-                }, 3000);
-                
-                isBonusAdActive = false;
-                return; // এখানে return করো যাতে reward না দেয়
-            }
+                // রিওয়ার্ড দিন
+                giveBonusReward();
+            }, 1500);
         }
 
         // বোনাস রিওয়ার্ড দিন
@@ -275,6 +351,8 @@
             document.getElementById('bonusAdStatus').className = 'text-xs text-green-600';
             document.getElementById('bonusRewardStatus').textContent = '১০ টাকা যোগ করা হয়েছে!';
             document.getElementById('bonusRewardStatus').className = 'text-sm text-green-600 font-semibold';
+            document.getElementById('countdownInfo').textContent = 'রিওয়ার্ড যোগ করা হয়েছে!';
+            document.getElementById('countdownInfo').className = 'text-xs text-green-600';
             
             // বাটন আপডেট করো
             const watchBtn = document.getElementById('watchBonusAdBtn');
@@ -284,10 +362,10 @@
             
             alert('🎉 সফল! বোনাস এড সম্পূর্ণ। ১০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।');
             
-            // ৩ সেকেন্ড পর রিসেট করো
+            // ৪ সেকেন্ড পর রিসেট করো
             setTimeout(() => {
                 resetBonusAdButton();
-            }, 3000);
+            }, 4000);
             
             isBonusAdActive = false;
         }
@@ -354,6 +432,7 @@
                 document.getElementById('bonusAdStatus').className = 'text-xs text-gray-400';
                 document.getElementById('bonusRewardStatus').textContent = 'এড দেখার পর ১০ টাকা যোগ হবে';
                 document.getElementById('bonusRewardStatus').className = 'text-gray-500 text-sm';
+                document.getElementById('countdownInfo').textContent = '';
             }
         }
 
