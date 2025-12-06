@@ -300,41 +300,43 @@
         }
 
         // Random ad link function
-        function showAdLink() {
-            return new Promise((resolve) => {
-                document.getElementById('adStatus').textContent = 'এড দেখানো হচ্ছে... ১০ সেকেন্ড অপেক্ষা করুন';
-                document.getElementById('adStatus').className = 'text-xs text-blue-600';
+function showAdLink() {
+    return new Promise((resolve) => {
+        document.getElementById('adStatus').textContent = 'এড দেখানো হচ্ছে... ১০ সেকেন্ড অপেক্ষা করুন';
+        document.getElementById('adStatus').className = 'text-xs text-blue-600';
+        
+        const watchBtn = document.getElementById('watchAdBtn');
+        watchBtn.innerHTML = '<i class="fas fa-eye mr-2"></i>এড চলছে...';
+        
+        // Randomly select a link - CORRECTED
+        const randomIndex = Math.floor(Math.random() * AD_LINKS.length);
+        const selectedLink = AD_LINKS[randomIndex];
+        
+        console.log(`Selected ad index: ${randomIndex}, Link: ${selectedLink}`);
+        
+        // Open the link in new tab
+        const newWindow = window.open(selectedLink, '_blank');
+        
+        // Focus back to main window after a short delay
+        setTimeout(() => {
+            if (window.focus) window.focus();
+        }, 500);
+        
+        // Simulate ad watching for 10 seconds
+        setTimeout(async () => {
+            try {
+                await rewardUserForAd();
                 
-                const watchBtn = document.getElementById('watchAdBtn');
-                watchBtn.innerHTML = '<i class="fas fa-eye mr-2"></i>এড চলছে...';
-                
-                // Randomly select a link
-                const randomIndex = Math.floor(Math.random() % AD_LINKS.length);
-                const selectedLink = AD_LINKS[randomIndex];
-                
-                // Open the link in new tab
-                const newWindow = window.open(selectedLink, '_blank');
-                
-                // Focus back to main window after a short delay
-                setTimeout(() => {
-                    if (window.focus) window.focus();
-                }, 500);
-                
-                // Simulate ad watching for 10 seconds
-                setTimeout(async () => {
-                    try {
-                        await rewardUserForAd();
-                        
-                        // Close the ad window if it's still open
-                        if (newWindow && !newWindow.closed) {
-                            newWindow.close();
-                        }
-                    } finally {
-                        resolve();
-                    }
-                }, 10000);
-            });
-        }
+                // Close the ad window if it's still open
+                if (newWindow && !newWindow.closed) {
+                    newWindow.close();
+                }
+            } finally {
+                resolve();
+            }
+        }, 10000);
+    });
+}
 
         async function rewardUserForAd() {
             const user = getUserData();
