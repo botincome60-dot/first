@@ -9,7 +9,6 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ALL CSS HERE */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -17,15 +16,19 @@
             right: 0;
             background: white;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            z-index: 1000;
         }
-        
         body {
-            padding-top: 20px !important;
             padding-bottom: 70px;
         }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         
-        /* PROMO BANNER CSS */
+        /* Banner Animations */
         @keyframes slideInUp {
             from {
                 opacity: 0;
@@ -37,28 +40,10 @@
             }
         }
         
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(255, 100, 100, 0.5); }
-            50% { box-shadow: 0 0 40px rgba(255, 100, 100, 0.8); }
-        }
-        
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 100, 100, 0.5); }
+            50% { transform: scale(1.02); box-shadow: 0 0 30px rgba(255, 100, 100, 0.8); }
+            100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 100, 100, 0.5); }
         }
     </style>
 </head>
@@ -71,35 +56,35 @@
         </div>
     </div>
 
-    <!-- Promotional Offer Banner (Shows every time app opens) -->
-    <div id="promoBanner" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" style="display: none;">
-        <div class="w-full max-w-md relative">
+    <!-- Promotional Offer Banner (Centered with smaller width) -->
+    <div id="promoBanner" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" style="display: none;">
+        <div class="w-full max-w-sm mx-auto"> <!-- Changed from max-w-md to max-w-sm -->
             <!-- Close Button (Top Right) -->
             <button onclick="closePromoBanner()" 
-                    class="absolute -top-10 right-0 text-white/90 hover:text-white text-2xl bg-black/30 rounded-full w-8 h-8 flex items-center justify-center">
+                    class="absolute top-6 right-4 text-white/80 hover:text-white text-2xl z-10">
                 <i class="fas fa-times"></i>
             </button>
             
             <!-- Banner Card -->
-            <div class="bg-gradient-to-br from-red-600 via-orange-500 to-yellow-500 rounded-2xl p-6 text-white shadow-2xl relative overflow-hidden">
+            <div class="bg-gradient-to-br from-red-600 via-orange-500 to-yellow-500 rounded-2xl p-5 text-white shadow-2xl overflow-hidden relative">
                 <!-- Shine Effect -->
                 <div class="absolute top-0 left-0 w-full h-1 bg-white/30"></div>
                 
                 <!-- Content -->
                 <div class="relative">
                     <!-- Icon & Title -->
-                    <div class="text-center mb-6">
-                        <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white/30">
-                            <i class="fas fa-money-bill-wave text-3xl"></i>
+                    <div class="text-center mb-4">
+                        <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 border-3 border-white/30">
+                            <i class="fas fa-gift text-2xl"></i>
                         </div>
-                        <h2 class="text-3xl font-bold mb-2">💰 ডাবল টাকা!</h2>
-                        <p class="text-white/90">বিশেষ রেফার অফার</p>
+                        <h2 class="text-2xl font-bold mb-1">💰 ডাবল টাকা!</h2>
+                        <p class="text-white/90 text-sm">বিশেষ রেফার অফার</p>
                     </div>
                     
                     <!-- Offer Details -->
-                    <div class="bg-white/15 backdrop-blur-sm rounded-xl p-4 mb-6 border border-white/20">
-                        <h3 class="font-bold text-xl mb-3 text-center">২× পেমেন্ট অফার</h3>
-                        <ul class="space-y-2 text-sm">
+                    <div class="bg-white/15 backdrop-blur-sm rounded-xl p-3 mb-4 border border-white/20">
+                        <h3 class="font-bold text-lg mb-2 text-center">২× পেমেন্ট অফার</h3>
+                        <ul class="space-y-1 text-xs">
                             <li class="flex items-center">
                                 <i class="fas fa-check-circle text-green-300 mr-2"></i>
                                 <span>১০০ রেফার করুন</span>
@@ -115,37 +100,37 @@
                         </ul>
                         
                         <!-- Example -->
-                        <div class="mt-4 p-3 bg-white/10 rounded-lg">
-                            <p class="text-center font-bold">📊 উদাহরণ</p>
-                            <p class="text-center text-sm">৫০০ টাকা উইথড্র = ১০০০ টাকা পাবেন</p>
+                        <div class="mt-3 p-2 bg-white/10 rounded-lg">
+                            <p class="text-center font-bold text-sm">📊 উদাহরণ</p>
+                            <p class="text-center text-xs">৫০০ টাকা উইথড্র = ১০০০ টাকা পাবেন</p>
                         </div>
                     </div>
                     
                     <!-- Timer -->
-                    <div class="text-center mb-6">
-                        <div class="text-sm opacity-90 mb-2">⏰ অফার শেষ হতে বাকি:</div>
-                        <div class="text-3xl font-mono font-bold bg-black/30 py-2 px-4 rounded-lg inline-block" id="promoTimer">
+                    <div class="text-center mb-4">
+                        <div class="text-xs opacity-90 mb-1">⏰ অফার শেষ হতে বাকি:</div>
+                        <div class="text-xl font-mono font-bold bg-black/30 py-1 px-3 rounded-lg inline-block" id="promoTimer">
                             12:00:00
                         </div>
-                        <p class="text-xs mt-2 opacity-80">আজ রাত ১২টা পর্যন্ত</p>
+                        <p class="text-xs mt-1 opacity-80">আজ রাত ১২টা পর্যন্ত</p>
                     </div>
                     
                     <!-- Action Buttons -->
-                    <div class="grid grid-cols-1 gap-3">
+                    <div class="grid grid-cols-1 gap-2">
                         <button onclick="goToReferralSection()" 
-                                class="bg-white text-red-600 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 active:scale-95 transition-all duration-200 shadow-lg">
+                                class="bg-white text-red-600 py-3 rounded-lg font-bold hover:bg-gray-100 active:scale-95 transition-all duration-200 shadow-lg">
                             <i class="fas fa-rocket mr-2"></i>
                             এখনই শুরু করুন
                         </button>
                         
                         <button onclick="closePromoBanner()" 
-                                class="bg-white/20 text-white py-3 rounded-lg font-semibold hover:bg-white/30 transition-colors">
+                                class="bg-white/20 text-white py-2 rounded-lg font-semibold hover:bg-white/30 transition-colors text-sm">
                             পরে দেখব
                         </button>
                     </div>
                     
                     <!-- Note -->
-                    <p class="text-center text-xs opacity-70 mt-4">
+                    <p class="text-center text-xs opacity-70 mt-3">
                         <i class="fas fa-info-circle mr-1"></i>
                         এই অফার শুধুমাত্র আজকের জন্য
                     </p>
@@ -153,8 +138,8 @@
             </div>
             
             <!-- Hint Text -->
-            <div class="text-center mt-4">
-                <p class="text-white/60 text-sm animate-bounce">
+            <div class="text-center mt-3">
+                <p class="text-white/60 text-xs">
                     <i class="fas fa-arrow-down mr-1"></i>
                     Offer দেখার জন্য উপরের বাটনে ক্লিক করুন
                 </p>
@@ -320,17 +305,24 @@
             const sessionClosed = sessionStorage.getItem('promoBannerSessionClosed');
             
             if (sessionClosed === 'true') {
-                return; // Don't show if closed in this session
+                return;
             }
             
             const banner = document.getElementById('promoBanner');
             if (banner) {
-                // Show banner after 1 second delay
                 setTimeout(() => {
                     banner.style.display = 'flex';
                     banner.style.animation = 'slideInUp 0.5s ease-out';
                     startPromoTimer();
-                }, 1000);
+                    
+                    // Add pulse animation
+                    const bannerCard = banner.querySelector('.bg-gradient-to-br');
+                    if (bannerCard) {
+                        setTimeout(() => {
+                            bannerCard.style.animation = 'pulse 2s infinite';
+                        }, 1000);
+                    }
+                }, 800);
             }
         }
 
@@ -338,7 +330,6 @@
             const banner = document.getElementById('promoBanner');
             if (banner) {
                 banner.style.display = 'none';
-                // Store in SESSION storage (not local storage)
                 sessionStorage.setItem('promoBannerSessionClosed', 'true');
             }
         }
@@ -346,7 +337,6 @@
         function goToReferralSection() {
             closePromoBanner();
             
-            // Scroll to referral section
             setTimeout(() => {
                 const referralSection = document.getElementById('referral-section');
                 if (referralSection) {
@@ -356,7 +346,6 @@
                     });
                 }
                 
-                // Show offer details
                 showOfferPopup();
             }, 300);
         }
@@ -388,10 +377,9 @@
         }
 
         function startPromoTimer() {
-            // Calculate time until midnight (12 AM)
             const now = new Date();
             const midnight = new Date();
-            midnight.setHours(24, 0, 0, 0); // Set to 12:00 AM
+            midnight.setHours(24, 0, 0, 0);
             
             const diff = midnight - now;
             
@@ -403,7 +391,6 @@
             const timerElement = document.getElementById('promoTimer');
             if (!timerElement) return;
             
-            // Update timer every second
             const timerInterval = setInterval(() => {
                 const now = new Date();
                 const diff = midnight - now;
@@ -412,20 +399,17 @@
                     clearInterval(timerInterval);
                     timerElement.textContent = "অফার শেষ!";
                     
-                    // Auto-hide banner when offer expires
                     setTimeout(() => {
                         closePromoBanner();
-                    }, 2000);
+                    }, 3000);
                     return;
                 }
                 
-                // Calculate hours, minutes, seconds
                 const totalSeconds = Math.floor(diff / 1000);
                 const hours = Math.floor(totalSeconds / 3600);
                 const minutes = Math.floor((totalSeconds % 3600) / 60);
                 const seconds = totalSeconds % 60;
                 
-                // Format as HH:MM:SS
                 const formattedTime = 
                     `${hours.toString().padStart(2, '0')}:` +
                     `${minutes.toString().padStart(2, '0')}:` +
@@ -433,10 +417,9 @@
                 
                 timerElement.textContent = formattedTime;
                 
-                // Change color when less than 1 hour remaining
                 if (hours === 0 && minutes < 60) {
-                    timerElement.style.color = '#FF0000';
-                    timerElement.classList.add('animate-pulse');
+                    timerElement.style.color = '#FFEB3B';
+                    timerElement.style.fontWeight = 'bold';
                 }
             }, 1000);
         }
@@ -466,23 +449,8 @@
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            // Show promo banner on EVERY page load (unless closed in this session)
-            setTimeout(showPromoBanner, 800);
-            
-            // Hide loading overlay
-            setTimeout(hideLoading, 500);
-            
-            // Add bounce animation to hint text
-            const hintText = document.querySelector('.animate-bounce');
-            if (hintText) {
-                hintText.style.animation = 'bounce 2s infinite';
-            }
-            
-            // Add float and glow animation to banner card
-            const bannerCard = document.querySelector('#promoBanner > div > div');
-            if (bannerCard) {
-                bannerCard.style.animation = 'float 3s ease-in-out infinite, glow 2s ease-in-out infinite';
-            }
+            setTimeout(showPromoBanner, 500);
+            setTimeout(hideLoading, 800);
         });
     </script>
 </body>
