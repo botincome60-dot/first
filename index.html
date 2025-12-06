@@ -27,13 +27,6 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .card-hover {
-            transition: all 0.3s ease;
-        }
-        .card-hover:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -46,10 +39,10 @@
     </div>
 
     <div class="container mx-auto px-4 py-4 fade-in">
-        <!-- হেডার - ডিজাইন আপডেট -->
-        <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 text-white mb-4 shadow-lg">
+        <!-- হেডার -->
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 text-white mb-4">
             <div class="flex items-center space-x-3 mb-3">
-                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border-2 border-white/30">
+                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                     <i class="fas fa-user text-xl"></i>
                 </div>
                 <div>
@@ -58,214 +51,146 @@
                 </div>
             </div>
             
-            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+            <div class="bg-white/10 rounded-xl p-3">
                 <p class="text-sm">মেইন ব্যালেন্স</p>
-                <div class="flex items-center justify-between">
-                    <h1 class="text-2xl font-bold" id="mainBalance">০.০০ টাকা</h1>
-                    <i class="fas fa-wallet text-xl opacity-80"></i>
-                </div>
+                <h1 class="text-2xl font-bold" id="mainBalance">০.০০ টাকা</h1>
             </div>
         </div>
 
-        <!-- আজকের স্ট্যাটাস - ডিজাইন আপডেট -->
+        <!-- আজকের স্ট্যাটাস -->
         <div class="grid grid-cols-2 gap-3 mb-4">
-            <div class="bg-white rounded-xl p-3 shadow-sm card-hover border border-gray-100">
+            <div class="bg-white rounded-xl p-3 shadow-sm">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-500 text-sm">আজকের এডস</p>
-                        <h3 class="font-bold text-lg text-blue-600" id="todayAds">০/১০</h3>
+                        <h3 class="font-bold text-lg" id="todayAds">০/১০</h3>
                     </div>
-                    <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
-                        <i class="fas fa-eye text-blue-500"></i>
-                    </div>
+                    <i class="fas fa-eye text-blue-500"></i>
                 </div>
             </div>
             
-            <div class="bg-white rounded-xl p-3 shadow-sm card-hover border border-gray-100">
+            <div class="bg-white rounded-xl p-3 shadow-sm">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-500 text-sm">মোট রেফারেল</p>
-                        <h3 class="font-bold text-lg text-green-600" id="totalReferrals">০</h3>
+                        <h3 class="font-bold text-lg" id="totalReferrals">০</h3>
                     </div>
-                    <div class="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center">
-                        <i class="fas fa-users text-green-500"></i>
-                    </div>
+                    <i class="fas fa-users text-green-500"></i>
                 </div>
             </div>
             
-            <div class="bg-white rounded-xl p-3 shadow-sm card-hover border border-gray-100">
+            <div class="bg-white rounded-xl p-3 shadow-sm">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-500 text-sm">মোট এডস</p>
-                        <h3 class="font-bold text-lg text-purple-600" id="totalAds">০</h3>
+                        <h3 class="font-bold text-lg" id="totalAds">০</h3>
                     </div>
-                    <div class="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center">
-                        <i class="fas fa-chart-line text-purple-500"></i>
-                    </div>
+                    <i class="fas fa-chart-line text-purple-500"></i>
                 </div>
             </div>
             
-            <div class="bg-white rounded-xl p-3 shadow-sm card-hover border border-gray-100">
+            <div class="bg-white rounded-xl p-3 shadow-sm">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-500 text-sm">মোট ইনকাম</p>
-                        <h3 class="font-bold text-lg text-yellow-600" id="totalIncome">০.০০ টাকা</h3>
+                        <h3 class="font-bold text-lg" id="totalIncome">০.০০ টাকা</h3>
                     </div>
-                    <div class="w-10 h-10 bg-yellow-50 rounded-full flex items-center justify-center">
-                        <i class="fas fa-wallet text-yellow-500"></i>
-                    </div>
+                    <i class="fas fa-wallet text-yellow-500"></i>
                 </div>
             </div>
         </div>
 
-        <!-- দ্রুত একশন - ডিজাইন আপডেট -->
-        <div class="bg-white rounded-xl p-4 shadow-sm mb-4 border border-gray-100">
-            <h3 class="font-bold text-lg mb-3 text-gray-800">দ্রুত একশন</h3>
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <a href="tasks.html" class="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3 text-center hover:from-blue-100 hover:to-blue-200 transition-all duration-300 card-hover">
-                    <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <i class="fas fa-tasks text-white text-lg"></i>
-                    </div>
-                    <p class="font-semibold text-blue-700">টাস্ক করুন</p>
-                    <p class="text-blue-600 text-xs mt-1">আয় করুন এখনই</p>
-                </a>
-                <a href="support.html" class="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-3 text-center hover:from-green-100 hover:to-green-200 transition-all duration-300 card-hover">
-                    <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                        <i class="fas fa-hand-holding-usd text-white text-lg"></i>
-                    </div>
-                    <p class="font-semibold text-green-700">উইথড্র</p>
-                    <p class="text-green-600 text-xs mt-1">টাকা তুলুন</p>
-                </a>
+        <!-- দ্রুত একশন -->
+        <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
+    <h3 class="font-bold text-lg mb-3">দ্রুত একশন</h3>
+    <div class="grid grid-cols-2 gap-3">
+        <a href="tasks.html" class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center hover:bg-blue-100 transition-colors">
+            <i class="fas fa-tasks text-blue-500 text-xl mb-1"></i>
+            <p class="font-semibold text-blue-700">টাস্ক করুন</p>
+        </a>
+        <a href="support.html" class="bg-green-50 border border-green-200 rounded-lg p-3 text-center hover:bg-green-100 transition-colors">
+            <i class="fas fa-hand-holding-usd text-green-500 text-xl mb-1"></i>
+            <p class="font-semibold text-green-700">উইথড্র</p>
+        </a>
+    </div>
+    <div class="border rounded-xl p-3 mt-3" id="videoTask">
+        <div class="flex items-center justify-between mb-2">
+            <div>
+                <h4 class="font-semibold">কাজের ভিডিও দেখুন</h4>
+                <p class="text-gray-600 text-sm">কাজের নিয়ম শিখুন</p>
             </div>
-
-            <!-- কাজের ভিডিও - ডিজাইন আপডেট -->
-            <div class="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-3 mb-3 card-hover">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                            <i class="fas fa-video text-white text-sm"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-gray-800">কাজের ভিডিও দেখুন</h4>
-                            <p class="text-gray-600 text-sm">কাজের নিয়ম শিখুন</p>
-                        </div>
-                    </div>
-                    <i class="fas fa-play-circle text-purple-500 text-xl"></i>
-                </div>
-                <button onclick="watchVideo()" id="videoBtn" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-300">
-                    <i class="fas fa-play mr-2"></i>কাজের ভিডিও দেখুন
-                </button>
-            </div>
-            
-            <!-- পেমেন্ট প্রুফ চ্যানেল - ডিজাইন আপডেট -->
-            <div class="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-3 card-hover">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                            <i class="fas fa-paper-plane text-white text-sm"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-gray-800">পেমেন্ট প্রুফ চ্যানেল</h4>
-                            <p class="text-gray-600 text-sm">আমাদের টেলিগ্রাম প্রুফ চ্যানেল</p>
-                        </div>
-                    </div>
-                    <i class="fas fa-external-link-alt text-blue-500 text-lg"></i>
-                </div>
-                <a href="https://t.me/sohojincome629" target="_blank"
-                   class="w-full block bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-center py-2 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all duration-300">
-                    <i class="fab fa-telegram-plane mr-2"></i>চ্যানেলটি ভিজিট করুন
-                </a>
-            </div>
+            <i class="fas fa-video text-purple-500 text-xl"></i>
         </div>
+        <button onclick="watchVideo()" id="videoBtn" class="w-full bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
+            কাজের ভিডিও দেখুন
+        </button>
+    </div>
+</div>
+<script>  function watchVideo() {
+            const videoLink = "https://youtu.be/XLXw5o1uU3E?si=HmuoguPxrQY4PmkH";
+            window.open(videoLink, '_blank');
+            showNotification("ভিডিওটি দেখুন এবং কাজের নিয়ম শিখুন!", "info");
+        }</script>
+<div class="border rounded-xl p-3 mt-3">
+    <div class="flex items-center justify-between mb-2">
+        <div>
+            <h4 class="font-semibold">পেমেন্ট প্রুফ চ্যানেল</h4>
+            <p class="text-gray-600 text-sm">আমাদের টেলিগ্রাম প্রুফ চ্যানেল</p>
+        </div>
+        <i class="fas fa-paper-plane text-blue-500 text-xl"></i>
+    </div>
+    <a href="https://t.me/sohojincome629" target="_blank"
+       class="w-full block bg-green-500 text-white text-center py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
+        চ্যানেলটি ভিজিট করুন
+    </a>
+</div>
 
-        <!-- রেফারেল সেকশন - ডিজাইন আপডেট -->
-        <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 text-white shadow-lg">
-            <div class="flex items-center justify-between mb-3">
-                <div>
-                    <h3 class="font-bold text-lg mb-1">বন্ধুকে রেফার করুন</h3>
-                    <p class="text-white/90 text-sm">প্রতি রেফারেলে পাবেন ১০০ টাকা</p>
-                </div>
-                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                    <i class="fas fa-share-alt"></i>
-                </div>
-            </div>
+        <!-- রেফারেল সেকশন -->
+        <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 text-white">
+            <h3 class="font-bold text-lg mb-2">বন্ধুকে রেফার করুন</h3>
+            <p class="text-white/90 text-sm mb-3">প্রতি রেফারেলে পাবেন ১০০ টাকা</p>
             
-            <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3 mb-3 border border-white/20">
-                <p class="text-xs mb-1 opacity-90">আপনার রেফারেল লিঙ্ক</p>
+            <div class="bg-white/10 rounded-lg p-3 mb-3">
+                <p class="text-xs mb-1">আপনার রেফারেল লিঙ্ক</p>
                 <div class="flex items-center justify-between">
-                    <code class="text-sm font-mono break-all bg-white/5 p-2 rounded" id="referralLink">লোড হচ্ছে...</code>
-                    <button onclick="copyReferralLink()" class="bg-white text-green-600 px-3 py-2 rounded-lg text-sm font-semibold ml-2 whitespace-nowrap hover:bg-gray-100 transition-colors flex items-center">
-                        <i class="fas fa-copy mr-1"></i> কপি
+                    <code class="text-sm font-mono break-all" id="referralLink">লোড হচ্ছে...</code>
+                    <button onclick="copyReferralLink()" class="bg-white text-green-600 px-3 py-1 rounded text-sm font-semibold ml-2 whitespace-nowrap hover:bg-gray-100 transition-colors">
+                        কপি
                     </button>
                 </div>
             </div>
             
-            <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <p class="text-sm">আপনার মোট রেফারেল</p>
-                        <h4 class="font-bold text-lg" id="totalReferrals2">০ জন</h4>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-sm">রেফারেল আয়</p>
-                        <h4 class="font-bold text-lg" id="referralIncome">০ টাকা</h4>
-                    </div>
-                </div>
+            <div class="bg-white/10 rounded-lg p-3">
+                <p class="text-sm">আপনার মোট রেফারেল: <span class="font-bold" id="totalReferrals2">০</span> জন</p>
             </div>
         </div>
     </div>
 
-    <!-- বটম নেভিগেশন - ডিজাইন আপডেট -->
+    <!-- বটম নেভিগেশন -->
     <div class="bottom-nav">
         <div class="grid grid-cols-4 gap-1 p-2">
             <a href="index.html" class="flex flex-col items-center p-2 text-blue-600">
-                <div class="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center mb-1">
-                    <i class="fas fa-home"></i>
-                </div>
-                <span class="text-xs font-medium">হোম</span>
+                <i class="fas fa-home mb-1"></i>
+                <span class="text-xs">হোম</span>
             </a>
-            <a href="tasks.html" class="flex flex-col items-center p-2 text-gray-500 hover:text-blue-500 transition-colors">
-                <div class="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center mb-1">
-                    <i class="fas fa-tasks"></i>
-                </div>
-                <span class="text-xs font-medium">টাস্ক</span>
+            <a href="tasks.html" class="flex flex-col items-center p-2 text-gray-500">
+                <i class="fas fa-tasks mb-1"></i>
+                <span class="text-xs">টাস্ক</span>
             </a>
-            <a href="support.html" class="flex flex-col items-center p-2 text-gray-500 hover:text-blue-500 transition-colors">
-                <div class="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center mb-1">
-                    <i class="fas fa-headset"></i>
-                </div>
-                <span class="text-xs font-medium">সাপোর্ট</span>
+            <a href="support.html" class="flex flex-col items-center p-2 text-gray-500">
+                <i class="fas fa-headset mb-1"></i>
+                <span class="text-xs">সাপোর্ট</span>
             </a>
-            <a href="profile.html" class="flex flex-col items-center p-2 text-gray-500 hover:text-blue-500 transition-colors">
-                <div class="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center mb-1">
-                    <i class="fas fa-user"></i>
-                </div>
-                <span class="text-xs font-medium">প্রোফাইল</span>
+            <a href="profile.html" class="flex flex-col items-center p-2 text-gray-500">
+                <i class="fas fa-user mb-1"></i>
+                <span class="text-xs">প্রোফাইল</span>
             </a>
         </div>
     </div>
 
     <!-- Firebase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app-supabase.js"></script>
-    
-    <script>
-        // আপনার আগের app-supabase.js ফাংশন এখানে কাজ করবে
-        // শুধু ডিজাইন আপডেট করেছি
-        
-        function watchVideo() {
-            const videoLink = "https://youtu.be/XLXw5o1uU3E?si=HmuoguPxrQY4PmkH";
-            window.open(videoLink, '_blank');
-            showNotification("ভিডিওটি দেখুন এবং কাজের নিয়ম শিখুন!", "info");
-        }
-        
-        function copyReferralLink() {
-            // আপনার আগের কোড এখানে থাকবে
-        }
-        
-        function showNotification(message, type = "info") {
-            // আপনার আগের নোটিফিকেশন কোড
-        }
-    </script>
+    <!-- Firebase-এর পরিবর্তে এই scripts ব্যবহার করুন -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app-supabase.js"></script>
 </body>
 </html>
