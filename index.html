@@ -7,7 +7,9 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* ALL CSS HERE */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -17,12 +19,43 @@
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             z-index: 1000;
         }
+        
         body {
+            padding-top: 20px !important;
             padding-bottom: 70px;
         }
+        
+        /* PROMO BANNER CSS */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 100, 100, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(255, 100, 100, 0.8); }
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
         .fade-in {
             animation: fadeIn 0.5s ease-in;
         }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -38,6 +71,98 @@
         </div>
     </div>
 
+    <!-- Promotional Offer Banner (Shows every time app opens) -->
+    <div id="promoBanner" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" style="display: none;">
+        <div class="w-full max-w-md relative">
+            <!-- Close Button (Top Right) -->
+            <button onclick="closePromoBanner()" 
+                    class="absolute -top-10 right-0 text-white/90 hover:text-white text-2xl bg-black/30 rounded-full w-8 h-8 flex items-center justify-center">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <!-- Banner Card -->
+            <div class="bg-gradient-to-br from-red-600 via-orange-500 to-yellow-500 rounded-2xl p-6 text-white shadow-2xl relative overflow-hidden">
+                <!-- Shine Effect -->
+                <div class="absolute top-0 left-0 w-full h-1 bg-white/30"></div>
+                
+                <!-- Content -->
+                <div class="relative">
+                    <!-- Icon & Title -->
+                    <div class="text-center mb-6">
+                        <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white/30">
+                            <i class="fas fa-money-bill-wave text-3xl"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold mb-2">💰 ডাবল টাকা!</h2>
+                        <p class="text-white/90">বিশেষ রেফার অফার</p>
+                    </div>
+                    
+                    <!-- Offer Details -->
+                    <div class="bg-white/15 backdrop-blur-sm rounded-xl p-4 mb-6 border border-white/20">
+                        <h3 class="font-bold text-xl mb-3 text-center">২× পেমেন্ট অফার</h3>
+                        <ul class="space-y-2 text-sm">
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle text-green-300 mr-2"></i>
+                                <span>১০০ রেফার করুন</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle text-green-300 mr-2"></i>
+                                <span>উইথড্র করুন যেকোনো পরিমাণ</span>
+                            </li>
+                            <li class="flex items-center">
+                                <i class="fas fa-check-circle text-green-300 mr-2"></i>
+                                <span>পাবেন ডাবল টাকা!</span>
+                            </li>
+                        </ul>
+                        
+                        <!-- Example -->
+                        <div class="mt-4 p-3 bg-white/10 rounded-lg">
+                            <p class="text-center font-bold">📊 উদাহরণ</p>
+                            <p class="text-center text-sm">৫০০ টাকা উইথড্র = ১০০০ টাকা পাবেন</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Timer -->
+                    <div class="text-center mb-6">
+                        <div class="text-sm opacity-90 mb-2">⏰ অফার শেষ হতে বাকি:</div>
+                        <div class="text-3xl font-mono font-bold bg-black/30 py-2 px-4 rounded-lg inline-block" id="promoTimer">
+                            12:00:00
+                        </div>
+                        <p class="text-xs mt-2 opacity-80">আজ রাত ১২টা পর্যন্ত</p>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="grid grid-cols-1 gap-3">
+                        <button onclick="goToReferralSection()" 
+                                class="bg-white text-red-600 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 active:scale-95 transition-all duration-200 shadow-lg">
+                            <i class="fas fa-rocket mr-2"></i>
+                            এখনই শুরু করুন
+                        </button>
+                        
+                        <button onclick="closePromoBanner()" 
+                                class="bg-white/20 text-white py-3 rounded-lg font-semibold hover:bg-white/30 transition-colors">
+                            পরে দেখব
+                        </button>
+                    </div>
+                    
+                    <!-- Note -->
+                    <p class="text-center text-xs opacity-70 mt-4">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        এই অফার শুধুমাত্র আজকের জন্য
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Hint Text -->
+            <div class="text-center mt-4">
+                <p class="text-white/60 text-sm animate-bounce">
+                    <i class="fas fa-arrow-down mr-1"></i>
+                    Offer দেখার জন্য উপরের বাটনে ক্লিক করুন
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Content -->
     <div class="container mx-auto px-4 py-4 fade-in">
         <!-- হেডার -->
         <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-4 text-white mb-4">
@@ -102,51 +227,48 @@
 
         <!-- দ্রুত একশন -->
         <div class="bg-white rounded-xl p-4 shadow-sm mb-4">
-    <h3 class="font-bold text-lg mb-3">দ্রুত একশন</h3>
-    <div class="grid grid-cols-2 gap-3">
-        <a href="tasks.html" class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center hover:bg-blue-100 transition-colors">
-            <i class="fas fa-tasks text-blue-500 text-xl mb-1"></i>
-            <p class="font-semibold text-blue-700">টাস্ক করুন</p>
-        </a>
-        <a href="support.html" class="bg-green-50 border border-green-200 rounded-lg p-3 text-center hover:bg-green-100 transition-colors">
-            <i class="fas fa-hand-holding-usd text-green-500 text-xl mb-1"></i>
-            <p class="font-semibold text-green-700">উইথড্র</p>
-        </a>
-    </div>
-    <div class="border rounded-xl p-3 mt-3" id="videoTask">
-        <div class="flex items-center justify-between mb-2">
-            <div>
-                <h4 class="font-semibold">কাজের ভিডিও দেখুন</h4>
-                <p class="text-gray-600 text-sm">কাজের নিয়ম শিখুন</p>
+            <h3 class="font-bold text-lg mb-3">দ্রুত একশন</h3>
+            <div class="grid grid-cols-2 gap-3">
+                <a href="tasks.html" class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center hover:bg-blue-100 transition-colors">
+                    <i class="fas fa-tasks text-blue-500 text-xl mb-1"></i>
+                    <p class="font-semibold text-blue-700">টাস্ক করুন</p>
+                </a>
+                <a href="support.html" class="bg-green-50 border border-green-200 rounded-lg p-3 text-center hover:bg-green-100 transition-colors">
+                    <i class="fas fa-hand-holding-usd text-green-500 text-xl mb-1"></i>
+                    <p class="font-semibold text-green-700">উইথড্র</p>
+                </a>
             </div>
-            <i class="fas fa-video text-purple-500 text-xl"></i>
+            
+            <div class="border rounded-xl p-3 mt-3" id="videoTask">
+                <div class="flex items-center justify-between mb-2">
+                    <div>
+                        <h4 class="font-semibold">কাজের ভিডিও দেখুন</h4>
+                        <p class="text-gray-600 text-sm">কাজের নিয়ম শিখুন</p>
+                    </div>
+                    <i class="fas fa-video text-purple-500 text-xl"></i>
+                </div>
+                <button onclick="watchVideo()" id="videoBtn" class="w-full bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
+                    কাজের ভিডিও দেখুন
+                </button>
+            </div>
+            
+            <div class="border rounded-xl p-3 mt-3">
+                <div class="flex items-center justify-between mb-2">
+                    <div>
+                        <h4 class="font-semibold">পেমেন্ট প্রুফ চ্যানেল</h4>
+                        <p class="text-gray-600 text-sm">আমাদের টেলিগ্রাম প্রুফ চ্যানেল</p>
+                    </div>
+                    <i class="fas fa-paper-plane text-blue-500 text-xl"></i>
+                </div>
+                <a href="https://t.me/sohojincome629" target="_blank"
+                   class="w-full block bg-green-500 text-white text-center py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
+                    চ্যানেলটি ভিজিট করুন
+                </a>
+            </div>
         </div>
-        <button onclick="watchVideo()" id="videoBtn" class="w-full bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
-            কাজের ভিডিও দেখুন
-        </button>
-    </div>
-</div>
-<script>  function watchVideo() {
-            const videoLink = "https://youtu.be/XLXw5o1uU3E?si=HmuoguPxrQY4PmkH";
-            window.open(videoLink, '_blank');
-            showNotification("ভিডিওটি দেখুন এবং কাজের নিয়ম শিখুন!", "info");
-        }</script>
-<div class="border rounded-xl p-3 mt-3">
-    <div class="flex items-center justify-between mb-2">
-        <div>
-            <h4 class="font-semibold">পেমেন্ট প্রুফ চ্যানেল</h4>
-            <p class="text-gray-600 text-sm">আমাদের টেলিগ্রাম প্রুফ চ্যানেল</p>
-        </div>
-        <i class="fas fa-paper-plane text-blue-500 text-xl"></i>
-    </div>
-    <a href="https://t.me/sohojincome629" target="_blank"
-       class="w-full block bg-green-500 text-white text-center py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
-        চ্যানেলটি ভিজিট করুন
-    </a>
-</div>
 
         <!-- রেফারেল সেকশন -->
-        <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 text-white">
+        <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 text-white" id="referral-section">
             <h3 class="font-bold text-lg mb-2">বন্ধুকে রেফার করুন</h3>
             <p class="text-white/90 text-sm mb-3">প্রতি রেফারেলে পাবেন ১০০ টাকা</p>
             
@@ -188,9 +310,180 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <!-- Firebase-এর পরিবর্তে এই scripts ব্যবহার করুন -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app-supabase.js"></script>
+    <!-- External JS Files -->
+    <script src="app-supabase.js"></script>
+
+    <script>
+        // Promotional Banner Functions
+        function showPromoBanner() {
+            // Check if banner was closed in this session
+            const sessionClosed = sessionStorage.getItem('promoBannerSessionClosed');
+            
+            if (sessionClosed === 'true') {
+                return; // Don't show if closed in this session
+            }
+            
+            const banner = document.getElementById('promoBanner');
+            if (banner) {
+                // Show banner after 1 second delay
+                setTimeout(() => {
+                    banner.style.display = 'flex';
+                    banner.style.animation = 'slideInUp 0.5s ease-out';
+                    startPromoTimer();
+                }, 1000);
+            }
+        }
+
+        function closePromoBanner() {
+            const banner = document.getElementById('promoBanner');
+            if (banner) {
+                banner.style.display = 'none';
+                // Store in SESSION storage (not local storage)
+                sessionStorage.setItem('promoBannerSessionClosed', 'true');
+            }
+        }
+
+        function goToReferralSection() {
+            closePromoBanner();
+            
+            // Scroll to referral section
+            setTimeout(() => {
+                const referralSection = document.getElementById('referral-section');
+                if (referralSection) {
+                    referralSection.scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+                
+                // Show offer details
+                showOfferPopup();
+            }, 300);
+        }
+
+        function showOfferPopup() {
+            const message = `🎯 **স্পেশাল অফার - ডাবল পেমেন্ট!**\n\n` +
+                           `📌 **অফার বিবরণ:**\n` +
+                           `• ১০০টি রেফার করুন\n` +
+                           `• যেকোনো পরিমাণ উইথড্র করুন\n` +
+                           `• পাবেন ডাবল টাকা!\n\n` +
+                           `💰 **উদাহরণ:**\n` +
+                           `• ৫০০ টাকা উইথড্র = ১০০০ টাকা\n` +
+                           `• ১০০০ টাকা উইথড্র = ২০০০ টাকা\n\n` +
+                           `📋 **শর্তাবলী:**\n` +
+                           `• ন্যূনতম ১০০ রেফার\n` +
+                           `• আজকের মধ্যে উইথড্র রিকোয়েস্ট\n` +
+                           `• পেমেন্ট ২৪ ঘন্টার মধ্যে\n\n` +
+                           `⏰ **অফার শেষ:** আজ রাত ১২টা`;
+            
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.showPopup({
+                    title: "🎁 ডাবল পেমেন্ট অফার",
+                    message: message,
+                    buttons: [{ type: 'close' }]
+                });
+            } else {
+                alert(message);
+            }
+        }
+
+        function startPromoTimer() {
+            // Calculate time until midnight (12 AM)
+            const now = new Date();
+            const midnight = new Date();
+            midnight.setHours(24, 0, 0, 0); // Set to 12:00 AM
+            
+            const diff = midnight - now;
+            
+            if (diff <= 0) {
+                document.getElementById('promoTimer').textContent = "অফার শেষ!";
+                return;
+            }
+            
+            const timerElement = document.getElementById('promoTimer');
+            if (!timerElement) return;
+            
+            // Update timer every second
+            const timerInterval = setInterval(() => {
+                const now = new Date();
+                const diff = midnight - now;
+                
+                if (diff <= 0) {
+                    clearInterval(timerInterval);
+                    timerElement.textContent = "অফার শেষ!";
+                    
+                    // Auto-hide banner when offer expires
+                    setTimeout(() => {
+                        closePromoBanner();
+                    }, 2000);
+                    return;
+                }
+                
+                // Calculate hours, minutes, seconds
+                const totalSeconds = Math.floor(diff / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                
+                // Format as HH:MM:SS
+                const formattedTime = 
+                    `${hours.toString().padStart(2, '0')}:` +
+                    `${minutes.toString().padStart(2, '0')}:` +
+                    `${seconds.toString().padStart(2, '0')}`;
+                
+                timerElement.textContent = formattedTime;
+                
+                // Change color when less than 1 hour remaining
+                if (hours === 0 && minutes < 60) {
+                    timerElement.style.color = '#FF0000';
+                    timerElement.classList.add('animate-pulse');
+                }
+            }, 1000);
+        }
+
+        function watchVideo() {
+            const videoLink = "https://youtu.be/XLXw5o1uU3E?si=HmuoguPxrQY4PmkH";
+            window.open(videoLink, '_blank');
+            showNotification("ভিডিওটি দেখুন এবং কাজের নিয়ম শিখুন!", "info");
+        }
+
+        function showNotification(message, type = 'info') {
+            if (window.Telegram && Telegram.WebApp) {
+                Telegram.WebApp.showPopup({
+                    title: type === 'success' ? 'সফল!' : 'মেসেজ',
+                    message: message,
+                    buttons: [{ type: 'close' }]
+                });
+            } else {
+                alert(message);
+            }
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show promo banner on EVERY page load (unless closed in this session)
+            setTimeout(showPromoBanner, 800);
+            
+            // Hide loading overlay
+            setTimeout(hideLoading, 500);
+            
+            // Add bounce animation to hint text
+            const hintText = document.querySelector('.animate-bounce');
+            if (hintText) {
+                hintText.style.animation = 'bounce 2s infinite';
+            }
+            
+            // Add float and glow animation to banner card
+            const bannerCard = document.querySelector('#promoBanner > div > div');
+            if (bannerCard) {
+                bannerCard.style.animation = 'float 3s ease-in-out infinite, glow 2s ease-in-out infinite';
+            }
+        });
+    </script>
 </body>
 </html>
