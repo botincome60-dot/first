@@ -45,6 +45,22 @@
             50% { transform: scale(1.02); box-shadow: 0 0 30px rgba(255, 100, 100, 0.8); }
             100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 100, 100, 0.5); }
         }
+        
+        /* Modal transition */
+        .modal-enter {
+            animation: modalEnter 0.3s ease-out;
+        }
+        
+        @keyframes modalEnter {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -58,7 +74,7 @@
 
     <!-- Promotional Offer Banner (Centered with smaller width) -->
     <div id="promoBanner" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" style="display: none;">
-        <div class="w-full max-w-sm mx-auto"> <!-- Changed from max-w-md to max-w-sm -->
+        <div class="w-full max-w-sm mx-auto">
             <!-- Close Button (Top Right) -->
             <button onclick="closePromoBanner()" 
                     class="absolute top-6 right-4 text-white/80 hover:text-white text-2xl z-10">
@@ -87,7 +103,7 @@
                         <ul class="space-y-1 text-xs">
                             <li class="flex items-center">
                                 <i class="fas fa-check-circle text-green-300 mr-2"></i>
-                                <span>১০০ রেফার করুন</span>
+                                <span><strong>২০০ রেফার করুন</strong></span>
                             </li>
                             <li class="flex items-center">
                                 <i class="fas fa-check-circle text-green-300 mr-2"></i>
@@ -103,6 +119,7 @@
                         <div class="mt-3 p-2 bg-white/10 rounded-lg">
                             <p class="text-center font-bold text-sm">📊 উদাহরণ</p>
                             <p class="text-center text-xs">৫০০ টাকা উইথড্র = ১০০০ টাকা পাবেন</p>
+                            <p class="text-center text-xs mt-1">১০০০ টাকা উইথড্র = ২০০০ টাকা পাবেন</p>
                         </div>
                     </div>
                     
@@ -110,9 +127,9 @@
                     <div class="text-center mb-4">
                         <div class="text-xs opacity-90 mb-1">⏰ অফার শেষ হতে বাকি:</div>
                         <div class="text-xl font-mono font-bold bg-black/30 py-1 px-3 rounded-lg inline-block" id="promoTimer">
-                            12:00:00
+                            15 দিন 00:00:00
                         </div>
-                        <p class="text-xs mt-1 opacity-80">আজ রাত ১২টা পর্যন্ত</p>
+                        <p class="text-xs mt-1 opacity-80"><strong>২০ ডিসেম্বর</strong> পর্যন্ত</p>
                     </div>
                     
                     <!-- Action Buttons -->
@@ -132,7 +149,7 @@
                     <!-- Note -->
                     <p class="text-center text-xs opacity-70 mt-3">
                         <i class="fas fa-info-circle mr-1"></i>
-                        এই অফার শুধুমাত্র আজকের জন্য
+                        এই অফার শুধুমাত্র <strong>২০ ডিসেম্বর</strong> পর্যন্ত
                     </p>
                 </div>
             </div>
@@ -301,18 +318,18 @@
     <script>
         // Promotional Banner Functions
         function showPromoBanner() {
-            // Check if banner was closed in this session
-            const sessionClosed = sessionStorage.getItem('promoBannerSessionClosed');
-            
-            if (sessionClosed === 'true') {
-                return;
-            }
-            
+            // No storage check - always show on page load
             const banner = document.getElementById('promoBanner');
             if (banner) {
+                // Remove any timeout that might automatically close it
+                if (window.promoTimeout) {
+                    clearTimeout(window.promoTimeout);
+                    window.promoTimeout = null;
+                }
+                
                 setTimeout(() => {
                     banner.style.display = 'flex';
-                    banner.style.animation = 'slideInUp 0.5s ease-out';
+                    banner.classList.add('modal-enter');
                     startPromoTimer();
                     
                     // Add pulse animation
@@ -330,7 +347,7 @@
             const banner = document.getElementById('promoBanner');
             if (banner) {
                 banner.style.display = 'none';
-                sessionStorage.setItem('promoBannerSessionClosed', 'true');
+                // No storage saving - will show again on next page load
             }
         }
 
@@ -353,17 +370,17 @@
         function showOfferPopup() {
             const message = `🎯 **স্পেশাল অফার - ডাবল পেমেন্ট!**\n\n` +
                            `📌 **অফার বিবরণ:**\n` +
-                           `• ১০০টি রেফার করুন\n` +
+                           `• **২০০টি রেফার করুন**\n` +
                            `• যেকোনো পরিমাণ উইথড্র করুন\n` +
                            `• পাবেন ডাবল টাকা!\n\n` +
                            `💰 **উদাহরণ:**\n` +
                            `• ৫০০ টাকা উইথড্র = ১০০০ টাকা\n` +
                            `• ১০০০ টাকা উইথড্র = ২০০০ টাকা\n\n` +
                            `📋 **শর্তাবলী:**\n` +
-                           `• ন্যূনতম ১০০ রেফার\n` +
-                           `• আজকের মধ্যে উইথড্র রিকোয়েস্ট\n` +
+                           `• ন্যূনতম **২০০ রেফার**\n` +
+                           `• **২০ ডিসেম্বর** পর্যন্ত উইথড্র রিকোয়েস্ট\n` +
                            `• পেমেন্ট ২৪ ঘন্টার মধ্যে\n\n` +
-                           `⏰ **অফার শেষ:** আজ রাত ১২টা`;
+                           `⏰ **অফার শেষ:** **২০ ডিসেম্বর**`;
             
             if (window.Telegram && Telegram.WebApp) {
                 Telegram.WebApp.showPopup({
@@ -377,51 +394,36 @@
         }
 
         function startPromoTimer() {
-            const now = new Date();
-            const midnight = new Date();
-            midnight.setHours(24, 0, 0, 0);
-            
-            const diff = midnight - now;
-            
-            if (diff <= 0) {
-                document.getElementById('promoTimer').textContent = "অফার শেষ!";
-                return;
-            }
+            const targetDate = new Date('2024-12-20T23:59:59');
             
             const timerElement = document.getElementById('promoTimer');
             if (!timerElement) return;
             
-            const timerInterval = setInterval(() => {
+            const updateTimer = () => {
                 const now = new Date();
-                const diff = midnight - now;
+                const diff = targetDate - now;
                 
                 if (diff <= 0) {
-                    clearInterval(timerInterval);
                     timerElement.textContent = "অফার শেষ!";
-                    
-                    setTimeout(() => {
-                        closePromoBanner();
-                    }, 3000);
                     return;
                 }
                 
-                const totalSeconds = Math.floor(diff / 1000);
-                const hours = Math.floor(totalSeconds / 3600);
-                const minutes = Math.floor((totalSeconds % 3600) / 60);
-                const seconds = totalSeconds % 60;
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
                 
-                const formattedTime = 
-                    `${hours.toString().padStart(2, '0')}:` +
-                    `${minutes.toString().padStart(2, '0')}:` +
-                    `${seconds.toString().padStart(2, '0')}`;
-                
-                timerElement.textContent = formattedTime;
-                
-                if (hours === 0 && minutes < 60) {
+                if (days > 0) {
+                    timerElement.textContent = `${days} দিন ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                } else {
+                    timerElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                     timerElement.style.color = '#FFEB3B';
                     timerElement.style.fontWeight = 'bold';
                 }
-            }, 1000);
+            };
+            
+            updateTimer();
+            const timerInterval = setInterval(updateTimer, 1000);
         }
 
         function watchVideo() {
@@ -451,6 +453,23 @@
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(showPromoBanner, 500);
             setTimeout(hideLoading, 800);
+            
+            // Add click event to prevent auto-close when clicking on banner content
+            const banner = document.getElementById('promoBanner');
+            if (banner) {
+                banner.addEventListener('click', function(e) {
+                    // Prevent closing when clicking inside the banner content
+                    e.stopPropagation();
+                });
+                
+                // Only close when clicking on the overlay background
+                banner.addEventListener('click', function(e) {
+                    if (e.target === banner) {
+                        // Optional: You can choose to close when clicking overlay
+                        // closePromoBanner();
+                    }
+                }, true);
+            }
         });
     </script>
 </body>
