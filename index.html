@@ -127,9 +127,9 @@
                     <div class="text-center mb-4">
                         <div class="text-xs opacity-90 mb-1">⏰ অফার শেষ হতে বাকি:</div>
                         <div class="text-xl font-mono font-bold bg-black/30 py-1 px-3 rounded-lg inline-block" id="promoTimer">
-                            15 দিন 00:00:00
+                            লোড হচ্ছে...
                         </div>
-                        <p class="text-xs mt-1 opacity-80"><strong>২০ ডিসেম্বর</strong> পর্যন্ত</p>
+                        <p class="text-xs mt-1 opacity-80"><strong>২০ ডিসেম্বর ২০২৫</strong> পর্যন্ত</p>
                     </div>
                     
                     <!-- Action Buttons -->
@@ -149,7 +149,7 @@
                     <!-- Note -->
                     <p class="text-center text-xs opacity-70 mt-3">
                         <i class="fas fa-info-circle mr-1"></i>
-                        এই অফার শুধুমাত্র <strong>২০ ডিসেম্বর</strong> পর্যন্ত
+                        এই অফার শুধুমাত্র <strong>২০ ডিসেম্বর ২০২৫</strong> পর্যন্ত
                     </p>
                 </div>
             </div>
@@ -378,9 +378,9 @@
                            `• ১০০০ টাকা উইথড্র = ২০০০ টাকা\n\n` +
                            `📋 **শর্তাবলী:**\n` +
                            `• ন্যূনতম **২০০ রেফার**\n` +
-                           `• **২০ ডিসেম্বর** পর্যন্ত উইথড্র রিকোয়েস্ট\n` +
+                           `• **২০ ডিসেম্বর ২০২৫** পর্যন্ত উইথড্র রিকোয়েস্ট\n` +
                            `• পেমেন্ট ২৪ ঘন্টার মধ্যে\n\n` +
-                           `⏰ **অফার শেষ:** **২০ ডিসেম্বর**`;
+                           `⏰ **অফার শেষ:** **২০ ডিসেম্বর ২০২৫**`;
             
             if (window.Telegram && Telegram.WebApp) {
                 Telegram.WebApp.showPopup({
@@ -394,7 +394,8 @@
         }
 
         function startPromoTimer() {
-            const targetDate = new Date('2024-12-20T23:59:59');
+            // Set target date to December 20, 2025 at 23:59:59
+            const targetDate = new Date('December 20, 2025 23:59:59');
             
             const timerElement = document.getElementById('promoTimer');
             if (!timerElement) return;
@@ -405,6 +406,8 @@
                 
                 if (diff <= 0) {
                     timerElement.textContent = "অফার শেষ!";
+                    timerElement.style.color = '#FF5252';
+                    timerElement.style.fontWeight = 'bold';
                     return;
                 }
                 
@@ -415,6 +418,8 @@
                 
                 if (days > 0) {
                     timerElement.textContent = `${days} দিন ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    timerElement.style.color = '';
+                    timerElement.style.fontWeight = 'bold';
                 } else {
                     timerElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                     timerElement.style.color = '#FFEB3B';
@@ -423,7 +428,7 @@
             };
             
             updateTimer();
-            const timerInterval = setInterval(updateTimer, 1000);
+            window.promoTimerInterval = setInterval(updateTimer, 1000);
         }
 
         function watchVideo() {
@@ -470,6 +475,13 @@
                     }
                 }, true);
             }
+            
+            // Clear interval on page unload
+            window.addEventListener('beforeunload', function() {
+                if (window.promoTimerInterval) {
+                    clearInterval(window.promoTimerInterval);
+                }
+            });
         });
     </script>
 </body>
