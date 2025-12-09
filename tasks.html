@@ -82,24 +82,29 @@
             <h3 class="font-bold text-lg mb-3">বোনাস টাস্কস</h3>
             <div class="space-y-3">
 
-<!-- tasks.html ফাইলে এটা যোগ করুন অন্যান্য টাস্কের সাথে -->
-
-<!-- নতুন ভিডিও এড টাস্ক -->
-
-<!-- <div class="border border-gray-200 rounded-xl p-3">
-    <div class="flex items-center justify-between mb-2">
-        <div>
-            <h4 class="font-semibold">ভিডিও এড দেখুন</h4>
-            <p class="text-green-600 text-sm font-semibold">১০ টাকা/ভিডিও</p>
-        </div>
-        <i class="fas fa-video text-red-500 text-xl"></i>
-    </div>
-    <a href="videoad.html" class="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white py-2 rounded-lg font-semibold text-center block hover:from-red-600 hover:to-orange-600 transition-colors">
-        ভিডিও এড দেখুন
-    </a>
-</div> -->
-
-                     <div class="border border-gray-200 rounded-xl p-3" id="telegramTask">
+                <!-- নতুন বাডাও এড টাস্ক -->
+                <div class="border border-gray-200 rounded-xl p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h4 class="font-semibold">প্রিমিয়াম এড দেখুন</h4>
+                            <p class="text-green-600 text-sm font-semibold">৭ টাকা/এড</p>
+                        </div>
+                        <div class="relative">
+                            <i class="fas fa-bolt text-yellow-500 text-xl"></i>
+                            <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1 rounded-full">NEW</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs text-gray-500">প্রতিদিন ৫০টি এড</span>
+                        <span class="text-xs font-medium text-green-600" id="badDaoTodayAds">০/৫০</span>
+                    </div>
+                    <a href="bad-dao-ads.html" class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-2 rounded-lg font-semibold text-center block hover:from-yellow-600 hover:to-orange-600 transition-colors">
+                        <i class="fas fa-bolt mr-2"></i>
+                        প্রিমিয়াম এড দেখুন
+                    </a>
+                </div>
+         <!-- টাস্ক ১ - Telegram Channel -->
+                <div class="border border-gray-200 rounded-xl p-3" id="telegramTask">
                     <div class="flex items-center justify-between mb-2">
                         <div>
                             <h4 class="font-semibold">টেলিগ্রাম চ্যানেল জয়েন করুন</h4>
@@ -167,8 +172,7 @@
                     </a>
                 </div>  
                 
-                <!-- টাস্ক ১ - Telegram Channel -->
-           
+       
                 
                 <!-- টাস্ক ৩ - Video Task -->
                 <div class="border border-gray-200 rounded-xl p-3" id="videoTask">
@@ -210,9 +214,8 @@
     </div>
 
     <!-- Firebase SDK -->
-  <!-- Firebase SDK-এর পরিবর্তে -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app-supabase.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app-supabase.js"></script>
 
     <script>
         // টাস্ক স্টেট ম্যানেজমেন্ট
@@ -226,11 +229,30 @@
             if (user) {
                 const remaining = 10 - user.today_ads;
                 document.getElementById('adsRemaining').textContent = remaining > 0 ? remaining : 0;
+                
+                // Load Bad Dao Ads count
+                loadBadDaoTaskCount();
             }
 
             // লোড টাস্ক স্টেটস
             loadTaskStates();
+            updateTaskButtons();
             hideLoading();
+        }
+
+        // Load Bad Dao Task count
+        function loadBadDaoTaskCount() {
+            const today = new Date().toDateString();
+            const savedDate = localStorage.getItem('badDaoLastDate');
+            const savedAds = localStorage.getItem('badDaoTodayAds');
+            
+            let todayAds = 0;
+            
+            if (savedDate === today) {
+                todayAds = parseInt(savedAds) || 0;
+            }
+            
+            document.getElementById('badDaoTodayAds').textContent = `${todayAds}/৫০`;
         }
 
         function loadTaskStates() {
@@ -242,8 +264,6 @@
                     telegram: parsedStates.telegram || false,
                     youtube: parsedStates.youtube || false
                 });
-                
-                updateTaskButtons();
             }
         }
 

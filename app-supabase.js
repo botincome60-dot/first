@@ -611,6 +611,46 @@ function updateUI() {
         const remaining = 10 - userData.today_ads;
         adsRemaining.textContent = remaining > 0 ? remaining : 0;
     }
+    
+    // Update Bad Dao Ads count in tasks page
+    const badDaoTodayAds = document.getElementById('badDaoTodayAds');
+    if (badDaoTodayAds) {
+        const today = new Date().toDateString();
+        const savedDate = localStorage.getItem('badDaoLastDate');
+        const savedAds = localStorage.getItem('badDaoTodayAds');
+        
+        let todayAds = 0;
+        
+        if (savedDate === today) {
+            todayAds = parseInt(savedAds) || 0;
+        }
+        
+        badDaoTodayAds.textContent = `${todayAds}/৫০`;
+    }
+}
+
+// Get Bad Dao Today Ads
+function getBadDaoTodayAds() {
+    const today = new Date().toDateString();
+    const savedDate = localStorage.getItem('badDaoLastDate');
+    const savedAds = localStorage.getItem('badDaoTodayAds');
+    
+    if (savedDate === today) {
+        return parseInt(savedAds) || 0;
+    }
+    return 0;
+}
+
+// Get Bad Dao Today Earnings
+function getBadDaoTodayEarnings() {
+    const today = new Date().toDateString();
+    const savedDate = localStorage.getItem('badDaoLastDate');
+    const savedEarnings = localStorage.getItem('badDaoTodayEarnings');
+    
+    if (savedDate === today) {
+        return parseFloat(savedEarnings) || 0;
+    }
+    return 0;
 }
 
 // Fallback UI
@@ -712,3 +752,5 @@ window.getTimeUntilNextBonusReset = getTimeUntilNextBonusReset;
 window.canWatchMoreBonusAds2 = canWatchMoreBonusAds2;
 window.getTimeUntilNextBonusReset2 = getTimeUntilNextBonusReset2;
 window.saveWithdrawToSupabase = saveWithdrawToSupabase;
+window.getBadDaoTodayAds = getBadDaoTodayAds;
+window.getBadDaoTodayEarnings = getBadDaoTodayEarnings;
