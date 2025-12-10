@@ -103,7 +103,10 @@
                         প্রিমিয়াম এড দেখুন
                     </a>
                 </div>
-         <!-- টাস্ক ১ - Telegram Channel -->
+                
+                
+
+                <!-- টাস্ক ১ - Telegram Channel -->
                 <div class="border border-gray-200 rounded-xl p-3" id="telegramTask">
                     <div class="flex items-center justify-between mb-2">
                         <div>
@@ -127,6 +130,19 @@
                         <i class="fab fa-youtube text-red-500 text-xl"></i>
                     </div>
                     <button onclick="completeYoutubeTask()" id="youtubeBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
+                        ক্লেইম করুন
+                    </button>
+                </div>
+                <!-- নতুন: PixelForge YouTube চ্যানেল সাবস্ক্রাইব টাস্ক -->
+                <div class="border border-gray-200 rounded-xl p-3" id="pixelForgeTask">
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <h4 class="font-semibold">PixelForge YouTube চ্যানেল সাবস্ক্রাইব করুন</h4>
+                            <p class="text-green-600 text-sm font-semibold">৫০ টাকা বোনাস</p>
+                        </div>
+                        <i class="fab fa-youtube text-red-500 text-xl"></i>
+                    </div>
+                    <button onclick="completePixelForgeTask()" id="pixelForgeBtn" class="w-full bg-red-500 text-white py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors">
                         ক্লেইম করুন
                     </button>
                 </div>
@@ -171,8 +187,6 @@
                         বোনাস এড ২ দেখুন
                     </a>
                 </div>  
-                
-       
                 
                 <!-- টাস্ক ৩ - Video Task -->
                 <div class="border border-gray-200 rounded-xl p-3" id="videoTask">
@@ -221,7 +235,8 @@
         // টাস্ক স্টেট ম্যানেজমেন্ট
         const TASK_STATES = {
             telegram: false,
-            youtube: false
+            youtube: false,
+            pixelForge: false // নতুন টাস্ক স্টেট
         };
 
         function initTasksPage() {
@@ -262,7 +277,8 @@
                 
                 Object.assign(TASK_STATES, {
                     telegram: parsedStates.telegram || false,
-                    youtube: parsedStates.youtube || false
+                    youtube: parsedStates.youtube || false,
+                    pixelForge: parsedStates.pixelForge || false // নতুন টাস্ক স্টেট
                 });
             }
         }
@@ -290,12 +306,50 @@
                 document.getElementById('youtubeTask').classList.add('task-completed');
             }
 
+            // NEW: PixelForge YouTube Task
+            if (TASK_STATES.pixelForge) {
+                document.getElementById('pixelForgeBtn').innerHTML = '✅ ক্লেইমড';
+                document.getElementById('pixelForgeBtn').classList.remove('bg-red-500', 'hover:bg-red-600');
+                document.getElementById('pixelForgeBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
+                document.getElementById('pixelForgeBtn').disabled = true;
+                document.getElementById('pixelForgeTask').classList.add('task-completed');
+            }
+
             // Video Task - Always enabled
             document.getElementById('videoBtn').innerHTML = 'কাজের ভিডিও দেখুন';
             document.getElementById('videoBtn').classList.remove('bg-gray-400', 'cursor-not-allowed');
             document.getElementById('videoBtn').classList.add('bg-blue-500', 'hover:bg-blue-600');
             document.getElementById('videoBtn').disabled = false;
             document.getElementById('videoTask').classList.remove('task-completed');
+        }
+
+        // NEW: PixelForge YouTube চ্যানেল সাবস্ক্রাইব ফাংশন
+        function completePixelForgeTask() {
+            if (TASK_STATES.pixelForge) {
+                showNotification('আপনি ইতিমধ্যে এই টাস্কটি কমপ্লিট করেছেন!', 'info');
+                return;
+            }
+
+            const pixelForgeLink = "https://youtube.com/@pixelforge-v9e?si=7kKTPJFXQrRa1eS9";
+            
+            // YouTube চ্যানেল লিঙ্ক ওপেন করো
+            window.open(pixelForgeLink, '_blank');
+            
+            // টাস্ক স্টেট আপডেট করো
+            TASK_STATES.pixelForge = true;
+            saveTaskStates();
+            updateTaskButtons();
+            
+            // ৫০ টাকা বোনাস যোগ করো
+            addTaskBonus(50, "PixelForge YouTube চ্যানেল সাবস্ক্রাইব");
+            
+            // সফলতা মেসেজ দেখাও
+            showNotification(
+                "🎉 PixelForge YouTube চ্যানেলে সাবস্ক্রাইব করুন এবং ৫০ টাকা বোনাস পান!\n\n" +
+                "✅ সাবস্ক্রাইব করার পর বাটনে ক্লিক করুন\n" +
+                "💰 ৫০ টাকা বোনাস অটোমেটিক যোগ হবে",
+                "success"
+            );
         }
 
         // স্পেশাল এড ফাংশন
