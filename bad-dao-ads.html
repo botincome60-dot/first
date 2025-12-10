@@ -434,10 +434,10 @@
         }
 
         // Finish ad process
+                // Finish ad process
         function finishBadDaoAd() {
-            if (appState.adWindow && !appState.adWindow.closed) {
-                appState.adWindow.close();
-            }
+            // Ad window বন্ধ করা লাইনটি মুছে দেওয়া হয়েছে
+            // এখন ad ট্যাব auto close হবে না
             
             document.getElementById('adStatus').innerHTML = '<i class="fas fa-check-circle mr-2"></i>এড সম্পূর্ণ';
             document.getElementById('adStatusText').textContent = '৭ টাকা আপনার ব্যালেন্সে যোগ হয়েছে!';
