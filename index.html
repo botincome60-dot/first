@@ -47,7 +47,7 @@
         }
         
         /* Modal transition */
-        .modal-enter {
+        #promoBanner {
             animation: modalEnter 0.3s ease-out;
         }
         
@@ -318,15 +318,19 @@
     <script>
         // Promotional Banner Functions
         function showPromoBanner() {
-            // No storage check - always show on page load
+            // Check if user has already seen the banner in this browser session
+            if (sessionStorage.getItem('promoBannerShown')) {
+                console.log('Banner already shown in this session');
+                hideLoading();
+                return;
+            }
+
             const banner = document.getElementById('promoBanner');
             if (banner) {
-                // Remove any timeout that might automatically close it
-                if (window.promoTimeout) {
-                    clearTimeout(window.promoTimeout);
-                    window.promoTimeout = null;
-                }
+                // Mark as shown in session storage
+                sessionStorage.setItem('promoBannerShown', 'true');
                 
+                // Show banner after a short delay
                 setTimeout(() => {
                     banner.style.display = 'flex';
                     banner.classList.add('modal-enter');
@@ -339,7 +343,11 @@
                             bannerCard.style.animation = 'pulse 2s infinite';
                         }, 1000);
                     }
+                    
+                    hideLoading();
                 }, 800);
+            } else {
+                hideLoading();
             }
         }
 
@@ -347,7 +355,6 @@
             const banner = document.getElementById('promoBanner');
             if (banner) {
                 banner.style.display = 'none';
-                // No storage saving - will show again on next page load
             }
         }
 
@@ -456,8 +463,8 @@
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(showPromoBanner, 500);
-            setTimeout(hideLoading, 800);
+            // Show promo banner with session check
+            showPromoBanner();
             
             // Add click event to prevent auto-close when clicking on banner content
             const banner = document.getElementById('promoBanner');
