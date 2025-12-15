@@ -4,11 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>সহজ ইনকাম - বোনাস এড</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
+    
+    <!-- Adexium Widget -->
+    <script type="text/javascript" src="https://cdn.tgads.space/assets/js/adexium-widget.min.js"></script>
+    
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app-supabase.js"></script>
+    
     <style>
         body {
             padding-bottom: 20px;
@@ -59,6 +71,17 @@
             border-left: 4px solid #FF6B35;
         }
     </style>
+    
+    <script type="text/javascript">
+        // Adexium Widget ইনিশিয়ালাইজেশন
+        document.addEventListener('DOMContentLoaded', () => {
+            window.adexiumWidget = new AdexiumWidget({
+                wid: '2645403f-b319-4ed9-9096-fb9c905c2b2c', 
+                adFormat: 'interstitial'
+            });
+            window.adexiumWidget.autoMode();
+        });
+    </script>
 </head>
 <body class="bg-gray-50">
     
@@ -130,7 +153,7 @@
                     <p class="text-orange-600 text-sm">• প্রতি ঘন্টায় ১০টি বোনাস এড দেখতে পারবেন</p>
                     <p class="text-orange-600 text-sm">• এড দেখার পর ১০ সেকেন্ড এই পেজে অপেক্ষা করুন</p>
                     <p class="text-orange-600 text-sm">• ১ ঘন্টা পর এড কাউন্টার রিসেট হবে</p>
-                    <p class="text-orange-600 text-sm">• এড ট্যাব বন্ধ করবেন না, রিওয়ার্ড পেতে অপেক্ষা করুন</p>
+                    <p class="text-orange-600 text-sm">• এড পূর্ণ স্ক্রিন দেখানো হবে, রিওয়ার্ড পেতে অপেক্ষা করুন</p>
                 </div>
             </div>
         </div>
@@ -146,33 +169,17 @@
     <div id="countdown-overlay">
         <div id="countdown-text">দয়া করে অপেক্ষা করুন</div>
         <div id="countdown-number">১০</div>
-        <div id="redirect-notice">এডটি খোলা হয়েছে। ১০ সেকেন্ড পর রিওয়ার্ড দেওয়া হবে</div>
+        <div id="redirect-notice">এডটি দেখানো হচ্ছে। ১০ সেকেন্ড পর রিওয়ার্ড দেওয়া হবে</div>
         <div class="text-yellow-400 mt-4 text-sm">
             <i class="fas fa-exclamation-triangle mr-2"></i>
-            দয়া করে এড ট্যাব বন্ধ করবেন না
+            দয়া করে এড বন্ধ করবেন না
         </div>
     </div>
 
     <script>
-        // Direct link এর লিস্ট
-        const adLinks = [
-            "https://ferocitysuperintend.com/q3gtdwtif0?key=8fab9c833a59630b50874801fba88f73",
-            "https://ferocitysuperintend.com/wzvdzr4ka?key=7a422407e8fedbc108da1c1da906f0a9",
-            "https://adexora.my.id/dl/uDjmlB4uoO",
-            "https://otieu.com/4/9809044",
-            "https://otieu.com/4/10095617",
-            "https://otieu.com/4/9345167",
-            "https://otieu.com/4/9569635",
-            "https://otieu.com/4/10155431",
-            "https://adexora.my.id/dl/FroDWns7Gj",
-            "https://otieu.com/4/9550427",
-            "https://ferocitysuperintend.com/img7n81xh8?key=60effca0c228e66afd204784027d8b16"
-        ];
-        
         let isBonusAdActive = false;
         let countdownInterval;
         let currentCountdown = 10;
-        let openedTab = null;
         let currentUser = null;
         let userBonusAdsData = {
             today_bonus_ads: 0,
@@ -286,7 +293,7 @@
             }
         }
 
-        // বোনাস এড দেখাও
+        // বোনাস এড দেখাও (Adexium Widget ব্যবহার করে)
         async function showBonusAd() {
             // আগে রিসেট প্রয়োজন কিনা চেক করি
             await checkAndResetBonusAdsCounter();
@@ -311,26 +318,43 @@
             // Disable button and show loading
             const watchBtn = document.getElementById('watchBonusAdBtn');
             watchBtn.disabled = true;
-            watchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>এড খোলা হচ্ছে...';
-            document.getElementById('bonusAdStatus').textContent = 'এড খোলা হচ্ছে...';
+            watchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>এড লোড হচ্ছে...';
+            document.getElementById('bonusAdStatus').textContent = 'এড লোড হচ্ছে...';
             document.getElementById('bonusAdStatus').className = 'text-xs text-blue-600';
             
-            // ১ সেকেন্ড পরে লিঙ্ক ওপেন করো এবং কাউন্টডাউন শুরু করো
-            setTimeout(() => {
-                openRandomAdAndStartCountdown();
-            }, 1000);
+            // Adexium Widget দিয়ে এড দেখানোর চেষ্টা করি
+            try {
+                // Adexium Widget থেকে এড রিকুয়েস্ট করি
+                if (window.adexiumWidget && typeof window.adexiumWidget.load === 'function') {
+                    console.log('Loading Adexium interstitial ad...');
+                    
+                    // এড লোড করি
+                    const adLoaded = window.adexiumWidget.load();
+                    
+                    if (adLoaded) {
+                        console.log('Adexium ad loaded successfully');
+                        
+                        // ১.৫ সেকেন্ড পর এড শো করি
+                        setTimeout(() => {
+                            startAdexiumAdCountdown();
+                        }, 1500);
+                    } else {
+                        throw new Error('Adexium ad load failed');
+                    }
+                } else {
+                    throw new Error('Adexium widget not available');
+                }
+            } catch (error) {
+                console.error('Error loading Adexium ad:', error);
+                alert('এড লোড করতে সমস্যা হয়েছে। দয়া করে আবার চেষ্টা করুন।');
+                resetBonusAdButton();
+                isBonusAdActive = false;
+            }
         }
 
-        // র‍্যান্ডম এড ওপেন করো এবং কাউন্টডাউন শুরু করো
-        function openRandomAdAndStartCountdown() {
-            // র‍্যান্ডম একটি লিঙ্ক নির্বাচন করো
-            const randomIndex = Math.floor(Math.random() * adLinks.length);
-            const selectedLink = adLinks[randomIndex];
-            
-            // ট্যাব খুলো
-            openedTab = window.open(selectedLink, '_blank');
-            
-            // বাটন আপডেট করো
+        // Adexium এডের জন্য কাউন্টডাউন শুরু করি
+        function startAdexiumAdCountdown() {
+            // বাটন আপডেট করি
             const watchBtn = document.getElementById('watchBonusAdBtn');
             watchBtn.innerHTML = '<i class="fas fa-clock mr-2"></i>দয়া করে অপেক্ষা করুন...';
             
@@ -342,13 +366,13 @@
             overlay.style.display = 'flex';
             currentCountdown = 10;
             countdownNumber.textContent = currentCountdown;
-            countdownText.textContent = 'এডটি খোলা হয়েছে!';
+            countdownText.textContent = 'এডটি দেখানো হচ্ছে!';
             
             // পেজের নিচে কাউন্টডাউন দেখাও
             document.getElementById('countdownInfo').textContent = '১০ সেকেন্ড অপেক্ষা করুন...';
             document.getElementById('countdownInfo').className = 'text-xs text-orange-600';
             
-            // কাউন্টডাউন শুরু করো
+            // কাউন্টডাউন শুরু করি
             countdownInterval = setInterval(() => {
                 currentCountdown--;
                 countdownNumber.textContent = currentCountdown;
@@ -361,14 +385,14 @@
             }, 1000);
         }
 
-        // এড ভিউইং সম্পূর্ণ করো
+        // এড ভিউইং সম্পূর্ণ করি
         async function finishAdViewing() {
             if (!currentUser) {
                 alert('ডেটা লোড হয়নি। দয়া করে পেজ রিফ্রেশ করুন।');
                 return;
             }
             
-            // ওভারলে আপডেট করো
+            // ওভারলে আপডেট করি
             const countdownNumber = document.getElementById('countdown-number');
             const countdownText = document.getElementById('countdown-text');
             
@@ -376,7 +400,7 @@
             countdownNumber.textContent = '✓';
             countdownNumber.style.color = '#10B981';
             
-            // ১.৫ সেকেন্ড পর ওভারলে বন্ধ করো
+            // ১.৫ সেকেন্ড পর ওভারলে বন্ধ করি
             setTimeout(async () => {
                 const overlay = document.getElementById('countdown-overlay');
                 overlay.style.display = 'none';
@@ -425,7 +449,7 @@
                 // ইউজার ডেটা রিফ্রেশ করি
                 currentUser = getUserData();
                 
-                // UI আপডেট করো
+                // UI আপডেট করি
                 updateBonusCounter();
                 updateBonusResetTimer();
                 
@@ -437,7 +461,7 @@
                 document.getElementById('countdownInfo').textContent = 'রিওয়ার্ড যোগ করা হয়েছে!';
                 document.getElementById('countdownInfo').className = 'text-xs text-green-600';
                 
-                // বাটন আপডেট করো
+                // বাটন আপডেট করি
                 const watchBtn = document.getElementById('watchBonusAdBtn');
                 watchBtn.innerHTML = '<i class="fas fa-check mr-2"></i>সফল! ১০ টাকা যোগ হয়েছে';
                 watchBtn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-orange-600');
@@ -445,7 +469,7 @@
                 
                 alert('🎉 সফল! বোনাস এড সম্পূর্ণ। ১০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।');
                 
-                // ৪ সেকেন্ড পর রিসেট করো
+                // ৪ সেকেন্ড পর রিসেট করি
                 setTimeout(() => {
                     if (canWatchMoreBonusAds()) {
                         resetBonusAdButton();
@@ -505,10 +529,10 @@
             }
         }
 
-        // প্রতি মিনিটে রিসেট টাইমার আপডেট করো
+        // প্রতি মিনিটে রিসেট টাইমার আপডেট করি
         setInterval(updateBonusResetTimer, 30000);
         
-        // প্রতি মিনিটে রিসেট চেক করো
+        // প্রতি মিনিটে রিসেট চেক করি
         setInterval(async () => {
             await checkAndResetBonusAdsCounter();
             updateBonusCounter();
