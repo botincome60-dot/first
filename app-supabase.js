@@ -701,22 +701,17 @@ function hideLoading() {
     if (overlay) overlay.style.display = 'none';
 }
 
-// Save withdrawal to Supabase - Updated to handle object parameter
-async function saveWithdrawToSupabase(withdrawDetails) {
-    if (!userData) {
-        console.error("❌ User data not available");
-        throw new Error("User data not available");
-    }
+// Save withdrawal to Supabase
+async function saveWithdrawToSupabase(amount, accountNumber, methodName) {
+    if (!userData) return;
     
     try {
-        console.log("💾 Saving withdraw request to Supabase:", withdrawDetails);
-        
         const withdrawData = {
             user_id: userData.id,
             user_name: userData.first_name,
-            amount: withdrawDetails.amount,
-            account_number: withdrawDetails.account,
-            method: withdrawDetails.method,
+            amount: amount,
+            account_number: accountNumber,
+            method: methodName,
             status: 'pending',
             request_date: new Date().toISOString(),
             timestamp: Date.now(),
@@ -724,28 +719,18 @@ async function saveWithdrawToSupabase(withdrawDetails) {
             user_referrals: userData.total_referrals
         };
         
-        // Add USDT specific fields if applicable
-        if (withdrawDetails.method === 'usdt') {
-            withdrawData.usdt_amount = withdrawDetails.usdt_amount;
-            withdrawData.usdt_network = withdrawDetails.usdt_network;
-            withdrawData.usdt_rate = withdrawDetails.usdt_rate;
-            withdrawData.wallet_address = withdrawDetails.account; // For USDT
-        }
-        
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from('withdrawals')
-            .insert([withdrawData])
-            .select();
+            .insert([withdrawData]);
             
         if (error) {
-            console.error('❌ Error saving withdraw request:', error);
+            console.error('Error saving withdraw request:', error);
             throw error;
         }
         
-        console.log('✅ Withdraw request saved to Supabase:', data);
-        return data;
+        console.log('✅ Withdraw request saved to Supabase');
     } catch (error) {
-        console.error('❌ Error saving withdraw request:', error);
+        console.error('Error saving withdraw request:', error);
         throw error;
     }
 }
@@ -769,4 +754,3 @@ window.getTimeUntilNextBonusReset2 = getTimeUntilNextBonusReset2;
 window.saveWithdrawToSupabase = saveWithdrawToSupabase;
 window.getBadDaoTodayAds = getBadDaoTodayAds;
 window.getBadDaoTodayEarnings = getBadDaoTodayEarnings;
-window.generateReferralLink = generateReferralLink;
