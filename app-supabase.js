@@ -4,8 +4,8 @@ console.log("🚀 Supabase App.js loading...");
 const tg = window.Telegram?.WebApp;
 
 // Supabase Configuration - YOUR CREDENTIALS
-const SUPABASE_URL = 'https://mpnrxrweobzaawupcmah.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wbnJ4cndlb2J6YWF3dXBjbWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1MDcwNTQsImV4cCI6MjA4MDA4MzA1NH0.sHpTZFFi3KsEOETPkvX-aqsXTFc9OTx_8rqiZslOxEI';
+const SUPABASE_URL = 'https://zmnqdagnksdoztaxstqr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbnFkYWdua3Nkb3p0YXhzdHFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNTg4MDIsImV4cCI6MjA4MTYzNDgwMn0.pRfNGNDwsF_RaAZfA7sjUdyVt5Ff98fviT9cXHFJhPc';
 
 // Initialize Supabase
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
