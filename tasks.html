@@ -82,32 +82,24 @@
             <h3 class="font-bold text-lg mb-3">বোনাস টাস্কস</h3>
             <div class="space-y-3">
 
-                <!-- নতুন বাডাও এড টাস্ক -->
-                <div class="border border-gray-200 rounded-xl p-3">
-                    <div class="flex items-center justify-between mb-2">
-                        <div>
-                            <h4 class="font-semibold">প্রিমিয়াম এড দেখুন</h4>
-                            <p class="text-green-600 text-sm font-semibold">৭ টাকা/এড</p>
-                        </div>
-                        <div class="relative">
-                            <i class="fas fa-bolt text-yellow-500 text-xl"></i>
-                            <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1 rounded-full">NEW</span>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs text-gray-500">প্রতিদিন ৫০টি এড</span>
-                        <span class="text-xs font-medium text-green-600" id="badDaoTodayAds">০/৫০</span>
-                    </div>
-                    <a href="bad-dao-ads.html" class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-2 rounded-lg font-semibold text-center block hover:from-yellow-600 hover:to-orange-600 transition-colors">
-                        <i class="fas fa-bolt mr-2"></i>
-                        প্রিমিয়াম এড দেখুন
-                    </a>
-                </div>
-                
-                
+<!-- tasks.html ফাইলে এটা যোগ করুন অন্যান্য টাস্কের সাথে -->
 
-                <!-- টাস্ক ১ - Telegram Channel -->
-                <div class="border border-gray-200 rounded-xl p-3" id="telegramTask">
+<!-- নতুন ভিডিও এড টাস্ক -->
+
+<div class="border border-gray-200 rounded-xl p-3">
+    <div class="flex items-center justify-between mb-2">
+        <div>
+            <h4 class="font-semibold">ভিডিও এড দেখুন</h4>
+            <p class="text-green-600 text-sm font-semibold">১০ টাকা/ভিডিও</p>
+        </div>
+        <i class="fas fa-video text-red-500 text-xl"></i>
+    </div>
+    <a href="videoad.html" class="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white py-2 rounded-lg font-semibold text-center block hover:from-red-600 hover:to-orange-600 transition-colors">
+        ভিডিও এড দেখুন
+    </a>
+</div>
+
+                     <div class="border border-gray-200 rounded-xl p-3" id="telegramTask">
                     <div class="flex items-center justify-between mb-2">
                         <div>
                             <h4 class="font-semibold">টেলিগ্রাম চ্যানেল জয়েন করুন</h4>
@@ -130,19 +122,6 @@
                         <i class="fab fa-youtube text-red-500 text-xl"></i>
                     </div>
                     <button onclick="completeYoutubeTask()" id="youtubeBtn" class="w-full bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors">
-                        ক্লেইম করুন
-                    </button>
-                </div>
-                <!-- নতুন: PixelForge YouTube চ্যানেল সাবস্ক্রাইব টাস্ক -->
-                <div class="border border-gray-200 rounded-xl p-3" id="pixelForgeTask">
-                    <div class="flex items-center justify-between mb-2">
-                        <div>
-                            <h4 class="font-semibold">PixelForge YouTube চ্যানেল সাবস্ক্রাইব করুন</h4>
-                            <p class="text-green-600 text-sm font-semibold">৫০ টাকা বোনাস</p>
-                        </div>
-                        <i class="fab fa-youtube text-red-500 text-xl"></i>
-                    </div>
-                    <button onclick="completePixelForgeTask()" id="pixelForgeBtn" class="w-full bg-red-500 text-white py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors">
                         ক্লেইম করুন
                     </button>
                 </div>
@@ -188,6 +167,9 @@
                     </a>
                 </div>  
                 
+                <!-- টাস্ক ১ - Telegram Channel -->
+           
+                
                 <!-- টাস্ক ৩ - Video Task -->
                 <div class="border border-gray-200 rounded-xl p-3" id="videoTask">
                     <div class="flex items-center justify-between mb-2">
@@ -228,15 +210,15 @@
     </div>
 
     <!-- Firebase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app-supabase.js"></script>
+  <!-- Firebase SDK-এর পরিবর্তে -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app-supabase.js"></script>
 
     <script>
         // টাস্ক স্টেট ম্যানেজমেন্ট
         const TASK_STATES = {
             telegram: false,
-            youtube: false,
-            pixelForge: false // নতুন টাস্ক স্টেট
+            youtube: false
         };
 
         function initTasksPage() {
@@ -244,30 +226,11 @@
             if (user) {
                 const remaining = 10 - user.today_ads;
                 document.getElementById('adsRemaining').textContent = remaining > 0 ? remaining : 0;
-                
-                // Load Bad Dao Ads count
-                loadBadDaoTaskCount();
             }
 
             // লোড টাস্ক স্টেটস
             loadTaskStates();
-            updateTaskButtons();
             hideLoading();
-        }
-
-        // Load Bad Dao Task count
-        function loadBadDaoTaskCount() {
-            const today = new Date().toDateString();
-            const savedDate = localStorage.getItem('badDaoLastDate');
-            const savedAds = localStorage.getItem('badDaoTodayAds');
-            
-            let todayAds = 0;
-            
-            if (savedDate === today) {
-                todayAds = parseInt(savedAds) || 0;
-            }
-            
-            document.getElementById('badDaoTodayAds').textContent = `${todayAds}/৫০`;
         }
 
         function loadTaskStates() {
@@ -277,9 +240,10 @@
                 
                 Object.assign(TASK_STATES, {
                     telegram: parsedStates.telegram || false,
-                    youtube: parsedStates.youtube || false,
-                    pixelForge: parsedStates.pixelForge || false // নতুন টাস্ক স্টেট
+                    youtube: parsedStates.youtube || false
                 });
+                
+                updateTaskButtons();
             }
         }
 
@@ -306,50 +270,12 @@
                 document.getElementById('youtubeTask').classList.add('task-completed');
             }
 
-            // NEW: PixelForge YouTube Task
-            if (TASK_STATES.pixelForge) {
-                document.getElementById('pixelForgeBtn').innerHTML = '✅ ক্লেইমড';
-                document.getElementById('pixelForgeBtn').classList.remove('bg-red-500', 'hover:bg-red-600');
-                document.getElementById('pixelForgeBtn').classList.add('bg-gray-400', 'cursor-not-allowed');
-                document.getElementById('pixelForgeBtn').disabled = true;
-                document.getElementById('pixelForgeTask').classList.add('task-completed');
-            }
-
             // Video Task - Always enabled
             document.getElementById('videoBtn').innerHTML = 'কাজের ভিডিও দেখুন';
             document.getElementById('videoBtn').classList.remove('bg-gray-400', 'cursor-not-allowed');
             document.getElementById('videoBtn').classList.add('bg-blue-500', 'hover:bg-blue-600');
             document.getElementById('videoBtn').disabled = false;
             document.getElementById('videoTask').classList.remove('task-completed');
-        }
-
-        // NEW: PixelForge YouTube চ্যানেল সাবস্ক্রাইব ফাংশন
-        function completePixelForgeTask() {
-            if (TASK_STATES.pixelForge) {
-                showNotification('আপনি ইতিমধ্যে এই টাস্কটি কমপ্লিট করেছেন!', 'info');
-                return;
-            }
-
-            const pixelForgeLink = "https://youtube.com/@pixelforge-v9e?si=7kKTPJFXQrRa1eS9";
-            
-            // YouTube চ্যানেল লিঙ্ক ওপেন করো
-            window.open(pixelForgeLink, '_blank');
-            
-            // টাস্ক স্টেট আপডেট করো
-            TASK_STATES.pixelForge = true;
-            saveTaskStates();
-            updateTaskButtons();
-            
-            // ৫০ টাকা বোনাস যোগ করো
-            addTaskBonus(50, "PixelForge YouTube চ্যানেল সাবস্ক্রাইব");
-            
-            // সফলতা মেসেজ দেখাও
-            showNotification(
-                "🎉 PixelForge YouTube চ্যানেলে সাবস্ক্রাইব করুন এবং ৫০ টাকা বোনাস পান!\n\n" +
-                "✅ সাবস্ক্রাইব করার পর বাটনে ক্লিক করুন\n" +
-                "💰 ৫০ টাকা বোনাস অটোমেটিক যোগ হবে",
-                "success"
-            );
         }
 
         // স্পেশাল এড ফাংশন

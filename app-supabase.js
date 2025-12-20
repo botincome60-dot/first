@@ -4,8 +4,8 @@ console.log("🚀 Supabase App.js loading...");
 const tg = window.Telegram?.WebApp;
 
 // Supabase Configuration - YOUR CREDENTIALS
-const SUPABASE_URL = 'https://yhzavcwrgsidowtymajn.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_0126YdKWKtSjlF6XD8ExVQ_FYJBj5Xi';
+const SUPABASE_URL = 'https://mpnrxrweobzaawupcmah.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1wbnJ4cndlb2J6YWF3dXBjbWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1MDcwNTQsImV4cCI6MjA4MDA4MzA1NH0.sHpTZFFi3KsEOETPkvX-aqsXTFc9OTx_8rqiZslOxEI';
 
 // Initialize Supabase
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -489,7 +489,7 @@ async function loadReferralCount() {
 // Generate referral link
 function generateReferralLink() {
     if (!userData) return 'লোড হচ্ছে...';
-    return `https://t.me/sohojincome_bot?startapp=ref${userData.id}`;
+    return `https://t.me/sohojincomebot?startapp=ref${userData.id}`;
 }
 
 // Copy referral link
@@ -611,46 +611,6 @@ function updateUI() {
         const remaining = 10 - userData.today_ads;
         adsRemaining.textContent = remaining > 0 ? remaining : 0;
     }
-    
-    // Update Bad Dao Ads count in tasks page
-    const badDaoTodayAds = document.getElementById('badDaoTodayAds');
-    if (badDaoTodayAds) {
-        const today = new Date().toDateString();
-        const savedDate = localStorage.getItem('badDaoLastDate');
-        const savedAds = localStorage.getItem('badDaoTodayAds');
-        
-        let todayAds = 0;
-        
-        if (savedDate === today) {
-            todayAds = parseInt(savedAds) || 0;
-        }
-        
-        badDaoTodayAds.textContent = `${todayAds}/৫০`;
-    }
-}
-
-// Get Bad Dao Today Ads
-function getBadDaoTodayAds() {
-    const today = new Date().toDateString();
-    const savedDate = localStorage.getItem('badDaoLastDate');
-    const savedAds = localStorage.getItem('badDaoTodayAds');
-    
-    if (savedDate === today) {
-        return parseInt(savedAds) || 0;
-    }
-    return 0;
-}
-
-// Get Bad Dao Today Earnings
-function getBadDaoTodayEarnings() {
-    const today = new Date().toDateString();
-    const savedDate = localStorage.getItem('badDaoLastDate');
-    const savedEarnings = localStorage.getItem('badDaoTodayEarnings');
-    
-    if (savedDate === today) {
-        return parseFloat(savedEarnings) || 0;
-    }
-    return 0;
 }
 
 // Fallback UI
@@ -752,5 +712,3 @@ window.getTimeUntilNextBonusReset = getTimeUntilNextBonusReset;
 window.canWatchMoreBonusAds2 = canWatchMoreBonusAds2;
 window.getTimeUntilNextBonusReset2 = getTimeUntilNextBonusReset2;
 window.saveWithdrawToSupabase = saveWithdrawToSupabase;
-window.getBadDaoTodayAds = getBadDaoTodayAds;
-window.getBadDaoTodayEarnings = getBadDaoTodayEarnings;
