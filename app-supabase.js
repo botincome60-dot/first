@@ -489,7 +489,7 @@ async function loadReferralCount() {
 // Generate referral link
 function generateReferralLink() {
     if (!userData) return 'লোড হচ্ছে...';
-    return `https://t.me/sohojincomebot?startapp=ref${userData.id}`;
+    return `https://t.me/sohojincome_bot?startapp=ref${userData.id}`;
 }
 
 // Copy referral link
