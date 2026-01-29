@@ -52,8 +52,8 @@
         <div class="bg-white rounded-xl p-4 shadow-sm mb-4 text-center">
             <div class="mb-4">
                 <h3 class="font-bold text-lg mb-2">আজকের এড কাউন্ট</h3>
-                <div class="text-4xl font-bold text-blue-600" id="adsCounter">০/২০</div>
-                <p class="text-gray-500 text-sm mt-2" id="resetTimer">প্রতি ঘন্টায় ২০টি এড দেখতে পারবেন</p>
+                <div class="text-4xl font-bold text-blue-600" id="adsCounter">০/১০</div>
+                <p class="text-gray-500 text-sm mt-2" id="resetTimer">প্রতি ঘন্টায় ১০টি এড দেখতে পারবেন</p>
             </div>
             
             <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
@@ -69,7 +69,7 @@
                 <p class="text-gray-600">এই এডটি দেখে পাবেন <span class="font-bold text-green-600">৩০.০০ টাকা</span></p>
             </div>
             
-            <!-- এড কন্টেন্ট এরয়া -->
+            <!-- এড কন্টেন্ট এরিয়া -->
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center mb-4">
                 <div id="adContent">
                     <h4 class="font-bold text-lg mb-2">🎬 রিওয়ার্ডেড এড</h4>
@@ -101,9 +101,9 @@
                 <div>
                     <h4 class="font-semibold text-yellow-700">গুরুত্বপূর্ণ তথ্য</h4>
                     <p class="text-yellow-600 text-sm">• এড দেখার পর ৩০ টাকা অটো যোগ হবে</p>
-                    <p class="text-yellow-600 text-sm">• প্রতি ঘন্টায় ২০টি এড দেখতে পারবেন</p>
-                    <p class="text-yellow-600 text-sm">• প্রতিটি এড ১০ সেকেন্ড দেখতে হবে</p>
-                    <p class="text-yellow-600 text-sm">• এড উইন্ডো ব্যবহারকারী নিজে বন্ধ করবেন</p>
+                    <p class="text-yellow-600 text-sm">• প্রতি ঘন্টায় ১০টি এড দেখতে পারবেন</p>
+                    <p class="text-yellow-600 text-sm">• এড লোড হতে ১০-১৫ সেকেন্ড সময় লাগতে পারে</p>
+                    <p class="text-yellow-600 text-sm">• ইন্টারনেট কানেকশন চেক করুন</p>
                 </div>
             </div>
         </div>
@@ -116,9 +116,10 @@
     </div>
 
     <!-- Firebase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app-supabase.js"></script>
-
+  <!-- At the end of watch-ads.html -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="app.js"></script>
     <script>
         // লিংক তালিকা
         const AD_LINKS = [
@@ -140,7 +141,6 @@
             today_ads: 0,
             last_ad_reset: null
         };
-        let adWindow = null; // এড উইন্ডো রেফারেন্স
 
         function initAdsPage() {
             loadAdsData();
@@ -192,8 +192,8 @@
         }
 
         function updateCounter() {
-            document.getElementById('adsCounter').textContent = `${userAdsData.today_ads}/২০`;
-            const progress = (userAdsData.today_ads / 20) * 100;
+            document.getElementById('adsCounter').textContent = `${userAdsData.today_ads}/১০`;
+            const progress = (userAdsData.today_ads / 10) * 100;
             document.getElementById('progressBar').style.width = `${progress}%`;
             
             // Check if user can watch more ads
@@ -213,7 +213,7 @@
         function updateResetTimer() {
             const resetTimer = document.getElementById('resetTimer');
             const timeUntilReset = getTimeUntilNextReset();
-            resetTimer.textContent = `প্রতি ঘন্টায় ২০টি এড দেখতে পারবেন (রিসেট: ${timeUntilReset})`;
+            resetTimer.textContent = `প্রতি ঘন্টায় ১০টি এড দেখতে পারবেন (রিসেট: ${timeUntilReset})`;
         }
 
         function canWatchMoreAds() {
@@ -232,8 +232,8 @@
                 return true;
             }
             
-            // Check if user hasn't reached the hourly limit (now 20)
-            return userAdsData.today_ads < 20;
+            // Check if user hasn't reached the hourly limit
+            return userAdsData.today_ads < 10;
         }
 
         function getTimeUntilNextReset() {
@@ -286,11 +286,6 @@
             document.getElementById('adStatus').className = 'text-xs text-yellow-600';
 
             try {
-                // আগের এড উইন্ডো বন্ধ করুন (যদি খোলা থাকে)
-                if (adWindow && !adWindow.closed) {
-                    adWindow.close();
-                }
-                
                 await showAdLink();
                 
             } catch (error) {
@@ -306,54 +301,43 @@
         }
 
         // Random ad link function
-        function showAdLink() {
-            return new Promise((resolve) => {
-                document.getElementById('adStatus').textContent = 'এড দেখানো হচ্ছে... ১০ সেকেন্ড অপেক্ষা করুন';
-                document.getElementById('adStatus').className = 'text-xs text-blue-600';
+function showAdLink() {
+    return new Promise((resolve) => {
+        document.getElementById('adStatus').textContent = 'এড দেখানো হচ্ছে... ১০ সেকেন্ড অপেক্ষা করুন';
+        document.getElementById('adStatus').className = 'text-xs text-blue-600';
+        
+        const watchBtn = document.getElementById('watchAdBtn');
+        watchBtn.innerHTML = '<i class="fas fa-eye mr-2"></i>এড চলছে...';
+        
+        // Randomly select a link - CORRECTED
+        const randomIndex = Math.floor(Math.random() * AD_LINKS.length);
+        const selectedLink = AD_LINKS[randomIndex];
+        
+        console.log(`Selected ad index: ${randomIndex}, Link: ${selectedLink}`);
+        
+        // Open the link in new tab
+        const newWindow = window.open(selectedLink, '_blank');
+        
+        // Focus back to main window after a short delay
+        setTimeout(() => {
+            if (window.focus) window.focus();
+        }, 500);
+        
+        // Simulate ad watching for 10 seconds
+        setTimeout(async () => {
+            try {
+                await rewardUserForAd();
                 
-                const watchBtn = document.getElementById('watchAdBtn');
-                watchBtn.innerHTML = '<i class="fas fa-eye mr-2"></i>এড চলছে...';
-                
-                // Randomly select a link
-                const randomIndex = Math.floor(Math.random() * AD_LINKS.length);
-                const selectedLink = AD_LINKS[randomIndex];
-                
-                console.log(`Selected ad index: ${randomIndex}, Link: ${selectedLink}`);
-                
-                // Open the link in new tab - WITHOUT auto-closing
-                adWindow = window.open(selectedLink, '_blank', 'width=800,height=600');
-                
-                if (!adWindow) {
-                    alert('পপআপ ব্লকার ডিজেবল করুন! এড দেখতে পপআপ অ্যালাউ দিতে হবে।');
-                    resetAdButton();
-                    isAdLoading = false;
-                    resolve();
-                    return;
+                // Close the ad window if it's still open
+                if (newWindow && !newWindow.closed) {
+                    newWindow.close();
                 }
-                
-                // Focus back to main window after a short delay
-                setTimeout(() => {
-                    if (window.focus) window.focus();
-                }, 500);
-                
-                // Simulate ad watching for 10 seconds only
-                // এড উইন্ডো অটোমেটিক বন্ধ হবে না, শুধু ১০ সেকেন্ড পর রিওয়ার্ড দিবে
-                setTimeout(async () => {
-                    try {
-                        await rewardUserForAd();
-                        
-                        // এখানে উইন্ডো বন্ধ করবো না - ব্যবহারকারী নিজে বন্ধ করবে
-                        // শুধু নোটিফিকেশন দিবো যে এড দেখা সম্পন্ন হয়েছে
-                        
-                        document.getElementById('adStatus').textContent = '১০ সেকেন্ড পূর্ণ! এড উইন্ডো নিজে বন্ধ করুন';
-                        document.getElementById('adStatus').className = 'text-xs text-green-600';
-                        
-                    } finally {
-                        resolve();
-                    }
-                }, 10000); // শুধুমাত্র ১০ সেকেন্ড
-            });
-        }
+            } finally {
+                resolve();
+            }
+        }, 20000);
+    });
+}
 
         async function rewardUserForAd() {
             const user = getUserData();
@@ -382,8 +366,8 @@
                     console.log("Resetting counter due to time passed");
                 }
                 
-                // Check if user has reached limit (now 20)
-                if (todayAds >= 20) {
+                // Check if user has reached limit
+                if (todayAds >= 10) {
                     alert('আপনার এড লিমিট শেষ হয়েছে! ১ ঘন্টা পর আবার চেষ্টা করুন।');
                     resetAdButton();
                     isAdLoading = false;
@@ -410,6 +394,8 @@
                 updateResetTimer();
                 
                 // Success message
+                document.getElementById('adStatus').textContent = 'এড দেখা সম্পন্ন! ৩০ টাকা যোগ হয়েছে';
+                document.getElementById('adStatus').className = 'text-xs text-green-600';
                 document.getElementById('rewardStatus').textContent = '৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে!';
                 document.getElementById('rewardStatus').className = 'text-sm text-green-600 font-semibold';
                 
@@ -418,7 +404,7 @@
                 watchBtn.classList.remove('ad-loading', 'bg-gradient-to-r', 'from-green-500', 'to-green-600', 'hover:from-green-600', 'hover:to-green-700');
                 watchBtn.classList.add('bg-green-500');
                 
-                showNotification('🎉 ১০ সেকেন্ড এড দেখা সম্পন্ন! ৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।\nএড উইন্ডো নিজে বন্ধ করুন।', 'success');
+                showNotification('🎉 এড দেখা সম্পন্ন! ৩০ টাকা আপনার একাউন্টে যোগ করা হয়েছে।', 'success');
                 
                 // Reset button after 3 seconds
                 setTimeout(() => {

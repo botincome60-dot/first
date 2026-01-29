@@ -1,28 +1,29 @@
-// app.js - Fixed with Hourly AD Reset System and Bonus Ads
-console.log("🚀 App.js loading...");
+// app.js - Complete Firebase Version
+console.log("🚀 Firebase App.js loading...");
 
 const tg = window.Telegram?.WebApp;
 
-// Firebase initialization
-let db;
-
-// Initialize Firebase immediately
-try {
-    if (!firebase.apps.length) {
-        firebase.initializeApp({
-               apiKey: "AIzaSyABdp9WK7eGLwE5nY19jp-nlDlyTuTyMR0",
+// Firebase Configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyABdp9WK7eGLwE5nY19jp-nlDlyTuTyMR0",
   authDomain: "sohojincome-36f1f.firebaseapp.com",
   projectId: "sohojincome-36f1f",
   storageBucket: "sohojincome-36f1f.firebasestorage.app",
   messagingSenderId: "398153090805",
   appId: "1:398153090805:web:fc8d68130afbc2239be7bc",
   measurementId: "G-VZ47961SJV"
-        });
-    }
-    db = firebase.firestore();
-    console.log("✅ Firebase initialized successfully");
+};
+
+// Initialize Firebase
+let db;
+try {
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  db = firebase.firestore();
+  console.log("✅ Firebase initialized successfully");
 } catch (error) {
-    console.error("❌ Firebase initialization error:", error);
+  console.error("❌ Firebase initialization error:", error);
 }
 
 // Global user data
@@ -30,7 +31,7 @@ let userData = null;
 
 // Initialize user data
 async function initializeUserData() {
-    console.log("🔄 Initializing user data...");
+    console.log("🔄 Initializing user data with Firebase...");
     
     try {
         // Expand Telegram Web App
@@ -58,11 +59,9 @@ async function initializeUserData() {
             userData = userDoc.data();
             console.log("✅ User data loaded from Firebase:", userData);
             
-            // Check and reset daily ads if needed
+            // Check and reset hourly ads if needed
             await checkAndResetHourlyAds();
-            // Check and reset bonus ads if needed
             await checkAndResetBonusAds();
-            // Check and reset bonus ads 2 if needed
             await checkAndResetBonusAds2();
         } else {
             // Create new user
@@ -73,16 +72,16 @@ async function initializeUserData() {
                 balance: 50.00,
                 today_ads: 0,
                 total_ads: 0,
-                today_bonus_ads: 0, // New: Bonus ads counter
-                today_bonus_ads_2: 0, // New: Bonus ads 2 counter
+                today_bonus_ads: 0,
+                today_bonus_ads_2: 0,
                 total_referrals: 0,
                 total_income: 50.00,
                 join_date: new Date().toISOString(),
                 lastActive: firebase.firestore.FieldValue.serverTimestamp(),
                 referred_by: null,
-                last_ad_reset: new Date().toISOString(), // Track last reset time for main ads
-                last_bonus_ad_reset: new Date().toISOString(), // New: Track last reset time for bonus ads
-                last_bonus_ad_reset_2: new Date().toISOString() // New: Track last reset time for bonus ads 2
+                last_ad_reset: new Date().toISOString(),
+                last_bonus_ad_reset: new Date().toISOString(),
+                last_bonus_ad_reset_2: new Date().toISOString()
             };
             
             await db.collection('users').doc(userId).set(userData);
@@ -110,7 +109,7 @@ async function initializeUserData() {
 
 // Check and reset hourly ads for main ads
 async function checkAndResetHourlyAds() {
-    if (!userData || !db) return;
+    if (!userData) return;
     
     try {
         const lastReset = new Date(userData.last_ad_reset || userData.join_date);
@@ -118,7 +117,6 @@ async function checkAndResetHourlyAds() {
         const hoursDiff = (now - lastReset) / (1000 * 60 * 60);
         
         console.log(`🕒 Last main ad reset: ${lastReset}`);
-        console.log(`🕒 Current time: ${now}`);
         console.log(`🕒 Hours difference: ${hoursDiff.toFixed(2)}`);
         
         // Reset if 1 hour has passed since last reset
@@ -131,9 +129,6 @@ async function checkAndResetHourlyAds() {
             });
             
             console.log('✅ Hourly main ads reset to 0');
-        } else {
-            const remainingMinutes = Math.ceil(60 - (hoursDiff * 60));
-            console.log(`⏳ Next main ad reset in: ${remainingMinutes} minutes`);
         }
         
     } catch (error) {
@@ -141,9 +136,9 @@ async function checkAndResetHourlyAds() {
     }
 }
 
-// NEW: Check and reset hourly ads for bonus ads
+// Check and reset hourly ads for bonus ads
 async function checkAndResetBonusAds() {
-    if (!userData || !db) return;
+    if (!userData) return;
     
     try {
         const lastReset = new Date(userData.last_bonus_ad_reset || userData.join_date);
@@ -163,9 +158,6 @@ async function checkAndResetBonusAds() {
             });
             
             console.log('✅ Hourly bonus ads reset to 0');
-        } else {
-            const remainingMinutes = Math.ceil(60 - (hoursDiff * 60));
-            console.log(`⏳ Next bonus ad reset in: ${remainingMinutes} minutes`);
         }
         
     } catch (error) {
@@ -173,9 +165,9 @@ async function checkAndResetBonusAds() {
     }
 }
 
-// NEW: Check and reset hourly ads for bonus ads 2
+// Check and reset hourly ads for bonus ads 2
 async function checkAndResetBonusAds2() {
-    if (!userData || !db) return;
+    if (!userData) return;
     
     try {
         const lastReset = new Date(userData.last_bonus_ad_reset_2 || userData.join_date);
@@ -195,9 +187,6 @@ async function checkAndResetBonusAds2() {
             });
             
             console.log('✅ Hourly bonus ads 2 reset to 0');
-        } else {
-            const remainingMinutes = Math.ceil(60 - (hoursDiff * 60));
-            console.log(`⏳ Next bonus ad 2 reset in: ${remainingMinutes} minutes`);
         }
         
     } catch (error) {
@@ -222,7 +211,7 @@ function canWatchMoreAds() {
     return userData.today_ads < 10;
 }
 
-// NEW: Check if user can watch more bonus ads
+// Check if user can watch more bonus ads
 function canWatchMoreBonusAds() {
     if (!userData) return false;
     
@@ -239,7 +228,7 @@ function canWatchMoreBonusAds() {
     return (userData.today_bonus_ads || 0) < 10;
 }
 
-// NEW: Check if user can watch more bonus ads 2
+// Check if user can watch more bonus ads 2
 function canWatchMoreBonusAds2() {
     if (!userData) return false;
     
@@ -262,7 +251,7 @@ function getTimeUntilNextReset() {
     
     const lastReset = new Date(userData.last_ad_reset || userData.join_date);
     const now = new Date();
-    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000)); // 1 hour later
+    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000));
     const timeDiff = nextReset - now;
     
     if (timeDiff <= 0) {
@@ -280,13 +269,13 @@ function getTimeUntilNextReset() {
     }
 }
 
-// NEW: Get time until next reset for bonus ads
+// Get time until next reset for bonus ads
 function getTimeUntilNextBonusReset() {
     if (!userData) return 'লোড হচ্ছে...';
     
     const lastReset = new Date(userData.last_bonus_ad_reset || userData.join_date);
     const now = new Date();
-    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000)); // 1 hour later
+    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000));
     const timeDiff = nextReset - now;
     
     if (timeDiff <= 0) {
@@ -304,13 +293,13 @@ function getTimeUntilNextBonusReset() {
     }
 }
 
-// NEW: Get time until next reset for bonus ads 2
+// Get time until next reset for bonus ads 2
 function getTimeUntilNextBonusReset2() {
     if (!userData) return 'লোড হচ্ছে...';
     
     const lastReset = new Date(userData.last_bonus_ad_reset_2 || userData.join_date);
     const now = new Date();
-    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000)); // 1 hour later
+    const nextReset = new Date(lastReset.getTime() + (60 * 60 * 1000));
     const timeDiff = nextReset - now;
     
     if (timeDiff <= 0) {
@@ -328,16 +317,16 @@ function getTimeUntilNextBonusReset2() {
     }
 }
 
-// PROCESS REFERRAL WITH STARTAPP - MAIN FUNCTION
+// PROCESS REFERRAL WITH STARTAPP
 async function processReferralWithStartApp() {
-    if (!userData || !db) return;
+    if (!userData) return;
     
     try {
         console.log('🔍 Processing referral with startapp...');
         
         let referralCode = null;
         
-        // METHOD 1: Check Telegram start_param (startapp parameter)
+        // METHOD 1: Check Telegram start_param
         if (tg?.initDataUnsafe?.start_param) {
             referralCode = tg.initDataUnsafe.start_param;
             console.log('🎯 Found referral code in start_param:', referralCode);
@@ -445,16 +434,31 @@ async function giveReferralBonuses(referrerUserId) {
             total_income: (referrerData.total_income || 0) + 100,
             total_referrals: firebase.firestore.FieldValue.increment(1)
         });
+    } else {
+        // Create new document for referrer if doesn't exist
+        await referrerRef.set({
+            id: referrerUserId,
+            first_name: 'Referrer',
+            balance: 100,
+            total_income: 100,
+            total_referrals: 1,
+            join_date: new Date().toISOString(),
+            lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+            last_ad_reset: new Date().toISOString(),
+            last_bonus_ad_reset: new Date().toISOString(),
+            last_bonus_ad_reset_2: new Date().toISOString()
+        });
     }
 }
 
 // Load referral count from Firebase
 async function loadReferralCount() {
-    if (!userData || !db) return;
+    if (!userData) return;
     
     try {
-        const referralsRef = db.collection('referrals');
-        const snapshot = await referralsRef.where('referredBy', '==', userData.id).get();
+        const snapshot = await db.collection('referrals')
+            .where('referredBy', '==', userData.id)
+            .get();
         
         const count = snapshot.size;
         if (count !== userData.total_referrals) {
@@ -468,7 +472,7 @@ async function loadReferralCount() {
 // Generate referral link
 function generateReferralLink() {
     if (!userData) return 'লোড হচ্ছে...';
-    return `https://t.me/sohojincomebot?startapp=ref${userData.id}`;
+    return `https://t.me/sohojincome_bot?startapp=ref${userData.id}`;
 }
 
 // Copy referral link
@@ -538,7 +542,7 @@ function updateUI() {
         'todayAds': userData.today_ads + '/10',
         'adsCounter': userData.today_ads + '/10',
         'bonusAdsCount': (userData.today_bonus_ads || 0) + '/10',
-        'bonusAdsCount2': (userData.today_bonus_ads_2 || 0) + '/10', // NEW: Bonus ads 2 counter
+        'bonusAdsCount2': (userData.today_bonus_ads_2 || 0) + '/10',
         'totalReferrals': userData.total_referrals,
         'totalReferrals2': userData.total_referrals,
         'totalAds': userData.total_ads,
@@ -556,21 +560,19 @@ function updateUI() {
         if (element) element.textContent = value;
     }
     
-    // Update progress bar for main ads
+    // Update progress bars
     const progressBar = document.getElementById('progressBar');
     if (progressBar) {
         const progress = (userData.today_ads / 10) * 100;
         progressBar.style.width = `${progress}%`;
     }
     
-    // Update progress bar for bonus ads
     const bonusProgressBar = document.getElementById('bonusProgressBar');
     if (bonusProgressBar) {
         const bonusProgress = ((userData.today_bonus_ads || 0) / 10) * 100;
         bonusProgressBar.style.width = `${bonusProgress}%`;
     }
     
-    // Update progress bar for bonus ads 2
     const bonusProgressBar2 = document.getElementById('bonusProgressBar2');
     if (bonusProgressBar2) {
         const bonusProgress2 = ((userData.today_bonus_ads_2 || 0) / 10) * 100;
@@ -633,9 +635,36 @@ function hideLoading() {
     if (overlay) overlay.style.display = 'none';
 }
 
+// Save withdrawal to Firebase
+async function saveWithdrawToFirebase(amount, accountNumber, methodName) {
+    if (!userData) return;
+    
+    try {
+        const withdrawData = {
+            user_id: userData.id,
+            user_name: userData.first_name,
+            amount: amount,
+            account_number: accountNumber,
+            method: methodName,
+            status: 'pending',
+            request_date: new Date().toISOString(),
+            timestamp: Date.now(),
+            user_ads: userData.total_ads,
+            user_referrals: userData.total_referrals
+        };
+        
+        await db.collection('withdrawals').add(withdrawData);
+            
+        console.log('✅ Withdraw request saved to Firebase');
+    } catch (error) {
+        console.error('Error saving withdraw request:', error);
+        throw error;
+    }
+}
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 DOM loaded, initializing app...");
+    console.log("🚀 DOM loaded, initializing Firebase app...");
     setTimeout(initializeUserData, 1000);
 });
 
@@ -647,5 +676,6 @@ window.canWatchMoreAds = canWatchMoreAds;
 window.getTimeUntilNextReset = getTimeUntilNextReset;
 window.canWatchMoreBonusAds = canWatchMoreBonusAds;
 window.getTimeUntilNextBonusReset = getTimeUntilNextBonusReset;
-window.canWatchMoreBonusAds2 = canWatchMoreBonusAds2; // NEW: Export bonus ads 2 function
-window.getTimeUntilNextBonusReset2 = getTimeUntilNextBonusReset2; // NEW: Export bonus reset 2 function
+window.canWatchMoreBonusAds2 = canWatchMoreBonusAds2;
+window.getTimeUntilNextBonusReset2 = getTimeUntilNextBonusReset2;
+window.saveWithdrawToFirebase = saveWithdrawToFirebase;

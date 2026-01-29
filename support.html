@@ -141,6 +141,13 @@
                         <p class="text-gray-600 text-sm">@sohojincome_support</p>
                     </div>
                 </div>
+                <div class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class="fab fa-telegram text-blue-400 mr-3"></i>
+                    <div>
+                        <p class="font-semibold">পেমেন্ট প্রুফ চ্যানেল</p>
+                        <p class="text-gray-600 text-sm">@sohojincome629</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -167,9 +174,10 @@
         </div>
     </div>
 
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app-supabase.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="app.js"></script>
 
     <script>
         let selectedMethod = 'bkash';
@@ -262,7 +270,7 @@
                 return;
             }
 
-            // Check AD requirement - NEW REQUIREMENT
+            // Check AD requirement
             if (user.total_ads < 10) {
                 showNotification(
                     `এড দেখার প্রয়োজন!\n\nআপনার দেখা এড: ${user.total_ads} টি\nপ্রয়োজন: ১০ টি\n\nআরও ${10 - user.total_ads} টি এড দেখুন।`,
@@ -272,10 +280,10 @@
             }
 
             // All checks passed - Process withdraw
-            await processWithdrawRequestSupabase(amount, accountNumber);
+            await processWithdrawRequestFirebase(amount, accountNumber);
         }
 
-        async function processWithdrawRequestSupabase(amount, accountNumber) {
+        async function processWithdrawRequestFirebase(amount, accountNumber) {
             const user = getUserData();
             
             try {
@@ -289,8 +297,8 @@
                     balance: user.balance - amount
                 });
 
-                // Save withdraw request to Supabase
-                await saveWithdrawToSupabase(amount, accountNumber, selectedMethod);
+                // Save withdraw request to Firebase
+                await saveWithdrawToFirebase(amount, accountNumber, selectedMethod);
 
                 // Success message
                 showNotification(
