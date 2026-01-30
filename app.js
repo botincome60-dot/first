@@ -1,4 +1,4 @@
-// app.js - Complete Firebase Version
+// app.js - Complete Firebase Version (FIXED)
 console.log("🚀 Firebase App.js loading...");
 
 const tg = window.Telegram?.WebApp;
@@ -71,7 +71,7 @@ async function initializeUserData() {
                 username: tg?.initDataUnsafe?.user?.username || '',
                 balance: 50.00,
                 today_ads: 0,
-                total_ads: 0,
+                total_ads: 0,  // 🔴 IMPORTANT: Initialize total_ads
                 today_bonus_ads: 0,
                 today_bonus_ads_2: 0,
                 total_referrals: 0,
@@ -509,19 +509,38 @@ async function copyReferralLink() {
     }
 }
 
-// Update user data in Firebase
+// 🔴🔴🔴 **CRITICAL FIX: Updated updateUserData function**
 async function updateUserData(updates) {
-    if (!userData || !db) return;
+    if (!userData || !db) return null;
     
     try {
+        // Merge updates with existing userData
         Object.assign(userData, updates);
         userData.lastActive = firebase.firestore.FieldValue.serverTimestamp();
         
-        await db.collection('users').doc(userData.id).set(userData, { merge: true });
+        // 🔴 IMPORTANT: If total_ads is being incremented, use FieldValue.increment
+        if (updates.total_ads && typeof updates.total_ads === 'number') {
+            await db.collection('users').doc(userData.id).update({
+                ...updates,
+                total_ads: firebase.firestore.FieldValue.increment(1),
+                lastActive: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } else {
+            // Normal update
+            await db.collection('users').doc(userData.id).set(userData, { merge: true });
+        }
+        
+        // Reload user data from Firebase to ensure consistency
+        const userDoc = await db.collection('users').doc(userData.id).get();
+        if (userDoc.exists) {
+            userData = userDoc.data();
+        }
+        
         updateUI();
         return userData;
     } catch (error) {
         console.error("❌ Error updating user data:", error);
+        return null;
     }
 }
 
@@ -545,8 +564,8 @@ function updateUI() {
         'bonusAdsCount2': (userData.today_bonus_ads_2 || 0) + '/10',
         'totalReferrals': userData.total_referrals,
         'totalReferrals2': userData.total_referrals,
-        'totalAds': userData.total_ads,
-        'profileTotalAds': userData.total_ads,
+        'totalAds': userData.total_ads || 0,  // 🔴 Fixed this line
+        'profileTotalAds': userData.total_ads || 0,  // 🔴 Fixed this line
         'totalIncome': userData.total_income.toFixed(2) + ' টাকা',
         'profileTotalIncome': userData.total_income.toFixed(2) + ' টাকা',
         'referralLink': generateReferralLink(),
@@ -649,8 +668,8 @@ async function saveWithdrawToFirebase(amount, accountNumber, methodName) {
             status: 'pending',
             request_date: new Date().toISOString(),
             timestamp: Date.now(),
-            user_ads: userData.total_ads,
-            user_referrals: userData.total_referrals
+            user_ads: userData.total_ads || 0,  // 🔴 Fixed this line
+            user_referrals: userData.total_referrals || 0
         };
         
         await db.collection('withdrawals').add(withdrawData);
@@ -659,6 +678,29 @@ async function saveWithdrawToFirebase(amount, accountNumber, methodName) {
     } catch (error) {
         console.error('Error saving withdraw request:', error);
         throw error;
+    }
+}
+
+// 🔴 NEW: Function to manually fix total_ads for testing
+async function fixTotalAds(count = 10) {
+    if (!userData || !db) return;
+    
+    try {
+        await db.collection('users').doc(userData.id).update({
+            total_ads: count
+        });
+        
+        // Reload user data
+        const userDoc = await db.collection('users').doc(userData.id).get();
+        if (userDoc.exists) {
+            userData = userDoc.data();
+            updateUI();
+        }
+        
+        console.log(`✅ total_ads fixed to ${count}`);
+        showNotification(`total_ads fixed to ${count}! Now try withdrawal.`, 'success');
+    } catch (error) {
+        console.error("Error fixing total_ads:", error);
     }
 }
 
@@ -679,3 +721,4 @@ window.getTimeUntilNextBonusReset = getTimeUntilNextBonusReset;
 window.canWatchMoreBonusAds2 = canWatchMoreBonusAds2;
 window.getTimeUntilNextBonusReset2 = getTimeUntilNextBonusReset2;
 window.saveWithdrawToFirebase = saveWithdrawToFirebase;
+window.fixTotalAds = fixTotalAds;  // 🔴 Added for testing

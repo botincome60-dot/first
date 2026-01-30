@@ -255,46 +255,72 @@
                 return;
             }
 
-            // Check balance
-            if (amount > user.balance) {
-                showNotification(`আপনার ব্যালেন্স insufficient!\nআপনার ব্যালেন্স: ${user.balance.toFixed(2)} টাকা`, 'error');
-                return;
-            }
-
-            // Check referral requirement
-            if (user.total_referrals < 15) {
-                showNotification(
-                    `রেফারেল প্রয়োজন!\n\nআপনার রেফারেল: ${user.total_referrals} জন\nপ্রয়োজন: ১৫ জন\n\nআরও ${15 - user.total_referrals} জন রেফারেল প্রয়োজন।`,
-                    'error'
-                );
-                return;
-            }
-
-            // Check AD requirement
-            if (user.total_ads < 10) {
-                showNotification(
-                    `এড দেখার প্রয়োজন!\n\nআপনার দেখা এড: ${user.total_ads} টি\nপ্রয়োজন: ১০ টি\n\nআরও ${10 - user.total_ads} টি এড দেখুন।`,
-                    'error'
-                );
-                return;
-            }
-
-            // All checks passed - Process withdraw
+            // 🔴🔴🔴 **FIXED: Now checking total_ads properly**
             await processWithdrawRequestFirebase(amount, accountNumber);
         }
 
         async function processWithdrawRequestFirebase(amount, accountNumber) {
             const user = getUserData();
-            
-            try {
-                // Show loading
-                const withdrawBtn = document.getElementById('withdrawBtn');
-                withdrawBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>প্রসেস হচ্ছে...';
-                withdrawBtn.disabled = true;
+            if (!user) {
+                showNotification('ডেটা লোড হয়নি। রিফ্রেশ করুন।', 'error');
+                return;
+            }
 
+            // Show loading
+            const withdrawBtn = document.getElementById('withdrawBtn');
+            withdrawBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>প্রসেস হচ্ছে...';
+            withdrawBtn.disabled = true;
+
+            try {
+                // 🔴 **IMPORTANT: Get fresh user data**
+                const currentUser = getUserData();
+                const totalAds = currentUser.total_ads || 0;
+                const totalReferrals = currentUser.total_referrals || 0;
+                const balance = currentUser.balance || 0;
+                
+                console.log("=== Withdrawal Check ===");
+                console.log("Balance:", balance);
+                console.log("Amount requested:", amount);
+                console.log("Total Ads:", totalAds);
+                console.log("Total Referrals:", totalReferrals);
+                console.log("======================");
+                
+                // Check balance
+                if (amount > balance) {
+                    showNotification(`আপনার ব্যালেন্স insufficient!\n\nআপনার ব্যালেন্স: ${balance.toFixed(2)} টাকা\nপ্রয়োজন: ${amount} টাকা\n\nআরও ${amount - balance} টাকা প্রয়োজন।`, 'error');
+                    withdrawBtn.innerHTML = 'উইথড্র রিকোয়েস্ট করুন';
+                    withdrawBtn.disabled = false;
+                    return;
+                }
+
+                // Check referral requirement
+                if (totalReferrals < 15) {
+                    showNotification(
+                        `রেফারেল প্রয়োজন!\n\nআপনার রেফারেল: ${totalReferrals} জন\nপ্রয়োজন: ১৫ জন\n\nআরও ${15 - totalReferrals} জন রেফারেল প্রয়োজন।`,
+                        'error'
+                    );
+                    withdrawBtn.innerHTML = 'উইথড্র রিকোয়েস্ট করুন';
+                    withdrawBtn.disabled = false;
+                    return;
+                }
+
+                // 🔴 **FIXED: Check AD requirement - Now properly checking total_ads**
+                if (totalAds < 10) {
+                    showNotification(
+                        `এড দেখার প্রয়োজন!\n\nআপনার দেখা মোট এড: ${totalAds} টি\nপ্রয়োজন: ১০ টি\n\nআরও ${10 - totalAds} টি এড দেখুন।`,
+                        'error'
+                    );
+                    withdrawBtn.innerHTML = 'উইথড্র রিকোয়েস্ট করুন';
+                    withdrawBtn.disabled = false;
+                    return;
+                }
+
+                // All checks passed - Process withdraw
+                console.log("All checks passed! Processing withdrawal...");
+                
                 // Deduct balance from user
                 await updateUserData({
-                    balance: user.balance - amount
+                    balance: balance - amount
                 });
 
                 // Save withdraw request to Firebase
@@ -311,11 +337,14 @@
                 document.getElementById('accountNumber').value = '';
                 
                 // Update balance display
-                document.getElementById('withdrawBalance').textContent = (user.balance - amount).toFixed(2) + ' টাকা';
+                const updatedUser = getUserData();
+                if (updatedUser) {
+                    document.getElementById('withdrawBalance').textContent = updatedUser.balance.toFixed(2) + ' টাকা';
+                }
 
             } catch (error) {
                 console.error('Withdraw error:', error);
-                showNotification('উইথড্র রিকোয়েস্ট ব্যর্থ! আবার চেষ্টা করুন।', 'error');
+                showNotification('উইথড্র রিকোয়েস্ট ব্যর্থ! আবার চেষ্টা করুন।\nError: ' + error.message, 'error');
             } finally {
                 // Reset button
                 withdrawBtn.innerHTML = 'উইথড্র রিকোয়েস্ট করুন';

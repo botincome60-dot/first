@@ -4,13 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>সহজ ইনকাম - বোনাস এড</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Supabase SDK -->
-<!-- At the end of bonus-ads.html -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-<script src="app.js"></script>
     <style>
         body {
             padding-bottom: 20px;
@@ -154,6 +150,11 @@
             দয়া করে এড ট্যাব বন্ধ করবেন না
         </div>
     </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="app.js"></script>
 
     <script>
         // Direct link এর লিস্ট
@@ -393,7 +394,7 @@
             }, 1500);
         }
 
-        // বোনাস রিওয়ার্ড দিন
+        // 🔴🔴🔴 **FIXED: বোনাস রিওয়ার্ড দিন - এখন total_ads বাড়বে**
         async function giveBonusReward() {
             try {
                 // রিসেট প্রয়োজন কিনা আবার চেক করি
@@ -410,13 +411,13 @@
                     return;
                 }
                 
-                // Supabase এ ডেটা আপডেট করি
+                // Firebase এ ডেটা আপডেট করি
                 await updateUserData({ 
                     balance: (currentUser.balance || 0) + 10,
                     total_income: (currentUser.total_income || 0) + 10,
                     today_bonus_ads: newBonusAdCount,
-                    last_bonus_ad_reset: userBonusAdsData.last_bonus_ad_reset,
-                    total_ads: (currentUser.total_ads || 0) + 1
+                    last_bonus_ad_reset: userBonusAdsData.last_bonus_ad_reset
+                    // 🔴 total_ads automatically increments in updateUserData function
                 });
                 
                 // লোকাল ডেটা আপডেট করি
